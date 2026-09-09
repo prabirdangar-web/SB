@@ -52,6 +52,10 @@
         .balance-num{color:var(--red);font-weight:700;}
         .ml-note{display:block;font-size:.66rem;color:#334155;text-align:left;margin-top:2px;font-style:italic;}
         .table-wrap{overflow-x:auto;}
+
+        /* Leave A/c: never print browser date placeholder text such as dd/mm/yyyy. */
+        #mainTable input[type="date"]:invalid { color: transparent; }
+        #mainTable input[type="date"]:valid { color: inherit; }
         
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -1158,7 +1162,16 @@
     function togglePromotionSection() {
         const enabled = document.getElementById('enablePromotion').checked;
         document.getElementById('promotionFields').style.display = enabled ? '' : 'none';
+        if(typeof periods !== 'undefined' && document.getElementById('leaveUpToDate')?.value && document.getElementById('doj')?.value){
+          autoGenerateRows();
+        }
     }
+
+    document.addEventListener('change', function(e){
+      if(e.target && e.target.id === 'promotionDate' && typeof periods !== 'undefined' && document.getElementById('leaveUpToDate')?.value){
+        autoGenerateRows();
+      }
+    });
 
     function toggleRopa09Section() {
         const enabled = document.getElementById('enableRopa09').checked;
@@ -2373,8 +2386,9 @@ function showStatus(msg, isError){
 }
 
 function fmt(d){
-  if(!d) return '-';
+  if(!d || String(d).trim()==='') return '';
   const dt = new Date(d+'T00:00:00');
+  if(isNaN(dt.getTime())) return '';
   const dd = String(dt.getDate()).padStart(2,'0');
   const mm = String(dt.getMonth()+1).padStart(2,'0');
   return `${dd}-${mm}-${dt.getFullYear()}`;
@@ -2479,6 +2493,16 @@ function autoGenerateRows(){
       const td = new Date(t.date+'T00:00:00');
       if(td > dojDate && td < dorDate) breakpoints.push(td.getTime());
     });
+  }
+
+  // Promotion / higher-scale date is also a Leave Account period boundary.
+  // This makes the promotion date visible in the Leave A/c without changing
+  // the annual leave-credit cycle.
+  const promoEnabled = document.getElementById('enablePromotion');
+  const promoDateVal = document.getElementById('promotionDate')?.value || '';
+  if(promoEnabled?.checked && promoDateVal){
+    const pd = new Date(promoDateVal+'T00:00:00');
+    if(!isNaN(pd) && pd > dojDate && pd < dorDate) breakpoints.push(pd.getTime());
   }
 
   breakpoints = [...new Set(breakpoints)].sort((a,b)=>a-b).map(t=>new Date(t));
@@ -2592,7 +2616,7 @@ function assignMlEntries(){
     const leaveFrom = new Date(entry.from+'T00:00:00');
     const leaveTo = new Date(entry.to+'T00:00:00');
     const totalDays = daysBetween(entry.from, entry.to);
-    const totalDebit = (entry.type==='half') ? Math.ceil(totalDays/2) : (entry.type==='avg' ? totalDays : 0);
+    const totalDebit = (entry.type==='half') ? (totalDays * 2) : (entry.type==='avg' ? totalDays : 0);
     periods.forEach(p=>{
       if(!p.from || !p.to) return;
       const pFrom = new Date(p.from+'T00:00:00');
@@ -2604,7 +2628,7 @@ function assignMlEntries(){
         const segFrom = toISO(overlapStart);
         const segTo = toISO(overlapEnd);
         const segDays = daysBetween(segFrom, segTo);
-        const segDebit = (segDays===totalDays) ? totalDebit : Math.round(totalDebit * segDays/totalDays);
+        const segDebit = (entry.type==='half') ? (segDays * 2) : ((segDays===totalDays) ? totalDebit : Math.round(totalDebit * segDays/totalDays));
         p.mlEntries.push({id:entry.id, from:segFrom, to:segTo, type:entry.type, days:segDays, debitDays:segDebit});
         if(entry.type==='lwp_effect' || entry.type==='lwp_noeffect'){
           p.lwp = (p.lwp||0) + segDays;
