@@ -3584,7 +3584,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         })();
     const govOrderWord = govType === 'MC' ? 'Resolution' : 'Administrator Order';
 
-    const doc8 = `
+     const doc8 = `
         <div class="cas-di-office-memo">
         <div style="text-align:center;">
             <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" style="height:50px;margin-bottom:2px;">
@@ -3594,6 +3594,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <div style="border-bottom:1px solid #000;margin:4px auto 0;width:96%;"></div>
             <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
         </div>
+
         <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
         <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
