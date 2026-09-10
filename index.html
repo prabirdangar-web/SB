@@ -13,6 +13,7 @@
             --yellow:#ffff00; --pink:#fde2e2; --blue:#dbeafe; --red:#dc2626;
         }
 
+
         /* Top section tabs */
         .top-tabs {
             position: sticky; top: 0; z-index: 1000;
@@ -49,8 +50,10 @@
         .taken-cell{background:var(--pink);}
         .vacdet-cell{background:var(--blue);}
         .balance-num{color:var(--red);font-weight:700;}
+        .ml-note{display:block;font-size:.66rem;color:#334155;text-align:left;margin-top:2px;font-style:italic;}
         .table-wrap{overflow-x:auto;}
 
+        /* Leave A/c: never print browser date placeholder text such as dd/mm/yyyy. */
         #mainTable input[type="date"]:invalid { color: transparent; }
         #mainTable input[type="date"]:valid { color: inherit; }
         
@@ -192,6 +195,7 @@
             .sb-section-title { font-size: 1.05rem; border-bottom: 1px solid #000; padding-bottom: 4px; margin-top: 16px; page-break-before: always; }
             .sb-section-title.sb-first { page-break-before: auto; }
 
+            /* ---- Annexure-III (ROPA-2009 / ROPA-2019) Initial Pay Fixation Forms ---- */
             .annex-page { page-break-before: always; font-family:'Times New Roman', Times, serif; color:#000; padding-top: 4mm; }
             .annex-title { text-align:center; font-size:15pt; font-weight:bold; text-decoration:underline; margin:0 0 3mm 0; }
             .annex-seepara { text-align:center; font-weight:bold; font-size:10.5pt; margin:-2mm 0 3mm 0; }
@@ -751,8 +755,8 @@
             <div class="fg"><label>Leave Enjoyed To</label><input type="date" id="mlTo"></div>
         </div>
         <p style="font-size:.75rem;color:#555;margin:8px 0 0;">
-            Posted into the Leave Account (split across period rows if it crosses a year-end) and noted in the "Event / Reason" column of every ROPA-1998/2009/2019 row whose Effective Date–Date of Termination window overlaps these dates.
-            For option 1 ("LWP — WITH effect on 10/18/20Y increment"), every ROPA-1998/2009/2019 increment and 10/18/20-Year milestone date falling on or after this entry's start date is automatically shifted to account for it — multiple LWP spells across the whole career are all added up, there's no need to enter anything separately in Sections 2–4.
+            Posted into the Leave Account (split across period rows if it crosses a year-end) and noted in the "Event / Reason" column of every ROPA-1998/2009/2019 row whose Effective Date&ndash;Date of Termination window overlaps these dates.
+            For option 1 ("LWP — WITH effect on 10/18/20Y increment"), every ROPA-1998/2009/2019 increment and 10/18/20-Year milestone date falling on or after this entry's start date is automatically shifted to account for it — multiple LWP spells across the whole career are all added up, there's no need to enter anything separately in Sections 2&ndash;4.
         </p>
         <div class="btn-row">
             <button class="btn-add" onclick="addMlEntry()">+ Add Leave Entry</button>
@@ -1075,6 +1079,9 @@
 
 <script>
     const matrixData19 = {
+    // ROPA-2019 matrix cells are 1-based for display. Example:
+    // Level-15: Cell-19 = Rs.72,600; Cell-20 = Rs.74,800.
+    // Keep all calculations/display synchronized with this 1-based convention.
         1: [17000, 17500, 18000, 18500, 19100, 19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600],
         2: [17600, 18100, 18600, 19200, 19800, 20400, 21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200],
         3: [18800, 19400, 20000, 20600, 21200, 21800, 22500, 23200, 23900, 24600, 25300, 26100, 26900, 27700, 28500, 29400, 30300, 31200, 32100, 33200, 34200, 35200, 36300, 37400, 38500, 39700, 40900, 42100, 43400, 44700, 46000, 47400, 48800, 50300, 51800, 53400, 55000, 56700, 58400, 60200, 62000, 63900],
@@ -1101,6 +1108,10 @@
         5400: 15600, 6600: 18600, 7000: 18600, 7600: 22320, 8000: 23250
     };
 
+    const pbMap19 = {
+        1700: "PB-1", 1800: "PB-1", 2600: "PB-2", 2900: "PB-2", 3900: "PB-3", 4100: "PB-3", 4400: "PB-4", 4700: "PB-4", 4800: "PB-4", 5400: "PB-4"
+    };
+
     const levelMap19 = {
         1700: 1, 1800: 2, 2600: 3, 2900: 7, 3900: 10, 4100: 11, 4400: 12, 4700: 14, 4800: 15, 5400: 16
     };
@@ -1122,11 +1133,15 @@
 
     const ROPA98_TO_09_FACTOR = 1.86;
 
+    // PAY SCALE column fix: for ROPA-1998 rows only, show the actual
+    // ROPA-1998 pay scale (Rs. min-max ladder range) instead of the
+    // "Old Scale → GP <code>" grade-pay-style label.
     function ropa98ScaleLabel(key) {
         const arr = matrixData98[key] || [];
         if (!arr.length) return `ROPA-1998 Scale`;
         return `Rs. ${arr[0].toLocaleString('en-IN')}-${arr[arr.length - 1].toLocaleString('en-IN')}`;
     }
+
 
     function ceilToNext10(value) {
         return Math.ceil(value / 10) * 10;
@@ -1191,9 +1206,12 @@
         return (increment % 10 < 1) ? Math.floor(increment / 10) * 10 : Math.ceil(increment / 10) * 10;
     }
 
+    // True when `date` falls between 2nd January and 30th June (inclusive) of its own calendar year.
+    // Used for the HM/AHM (Level 16) pay-fixation rule: the one-increment-in-old-level benefit is
+    // added only when joining falls in this window; otherwise no increment is added.
     function isInPromoIncrWindow(date) {
         const y = date.getFullYear();
-        const start = new Date(y, 0, 2);  // 2 January
+        const start = new Date(y, 0, 2);   // 2 January
         const end = new Date(y, 5, 30);    // 30 June
         const d = new Date(y, date.getMonth(), date.getDate());
         return d >= start && d <= end;
@@ -1234,10 +1252,19 @@
         return d;
     }
 
+    function resolveDateNoWindow(originalDate, entries) {
+        const lwpDays = lwpDaysAppliedBy(entries, originalDate);
+        return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
+    }
+
     function resolveDateWithLwp(originalDate, entries) {
         const win = checkWindow(originalDate);
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
 
+        // Whenever LWP pushes a 10/18/20-Year milestone forward by that many days and the
+        // resulting (shifted) date itself lands within 2.1–30.6 of its own year, ROPA-09 /
+        // ROPA-19 place it at 1.7 of that year as a normal (non-deferred) increment — this
+        // applies regardless of which window the ORIGINAL (pre-LWP) milestone date fell in.
         function finalizeShift(shiftedDate) {
             if (checkWindow(shiftedDate) === 'A') {
                 const jul1 = new Date(shiftedDate.getFullYear(), 6, 1);
@@ -1335,6 +1362,7 @@
         });
     }
 
+    /* --- ROPA-1998 TIMELINE COMPUTATION --- */
     function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, promotionDate, promotionTargetGp, evType) {
         let ladder = matrixData98[scaleKey] || [];
         let currentScaleKey = scaleKey;
@@ -1360,7 +1388,7 @@
         ];
         if (!isEligible18Y) milestoneDefs = milestoneDefs.filter(m => m.type !== "18Y");
         milestoneDefs = milestoneDefs.map(m => ({ ...m, d: resolveRopa98MilestoneDate(m.d, lwpEntries98) }))
-                                     .filter(m => m.d >= optionDate && m.d <= endDate);
+                                      .filter(m => m.d >= optionDate && m.d <= endDate);
         milestoneDefs.forEach(m => pushEvent(m.d, { label: m.name, isMilestone: true, milestoneType: m.type }));
 
         function vestingExtendedNextDate(milestoneDate) {
@@ -1375,6 +1403,7 @@
         let lwpConsumedSoFar98 = 0;
 
         if (promotionActive98) {
+            // 1. Pre-promotion annual increments (based on optionMonth)
             let loopYear = optionDate.getFullYear() + 1;
             while (loopYear <= promotionDate.getFullYear()) {
                 let normalCycleDate = new Date(loopYear, optionMonth, 1);
@@ -1390,6 +1419,7 @@
                 loopYear++;
             }
 
+            // 2. Post-promotion annual increments (based on promotionDate month as per ROPA-98 Rule)
             let promoMonth = promotionDate.getMonth();
             let postLoopYear = promotionDate.getFullYear() + 1;
             while (postLoopYear <= endDate.getFullYear() + 1) {
@@ -1412,6 +1442,7 @@
                 postLoopYear++;
             }
         } else {
+            // No promotion: standard annual increments based on optionMonth
             let loopYear = optionDate.getFullYear() + 1;
             while (loopYear <= endDate.getFullYear() + 1) {
                 let normalCycleDate = new Date(loopYear, optionMonth, 1);
@@ -1482,7 +1513,7 @@
                 }
             }
             compiledRows.push({
-                date: ev.date,
+                date: (ev.isPromotion && promoDetail && promoDetail.targetLevel === 16) ? promoDetail.date : ev.date,
                 label: ev.label,
                 scaleStr: ropa98ScaleLabel(currentScaleKey),
                 trackCol: '',
@@ -1498,6 +1529,7 @@
         return { rows: compiledRows, finalScaleKey: currentScaleKey };
     }
 
+    /* --- ROPA-2009 TIMELINE COMPUTATION --- */
     function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, promotionDate, promotionTargetGp, evType) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
@@ -1508,7 +1540,7 @@
 
         const promotionActive = (promotionDate instanceof Date && !isNaN(promotionDate) && promotionDate >= optionDate && promotionDate <= endDate);
         if (promotionActive) {
-            const targetLevelForPromotion = levelMap19[promotionTargetGp] || 1;
+            const targetLevelForPromotion = levelMap19[promotionTargetGp] || levelInput;
             const hmAhmOptionApplied = targetLevelForPromotion === 16 && isInPromoIncrWindow(promotionDate);
 
             pushEvent(promotionDate, {
@@ -1519,13 +1551,18 @@
                 hmAhmOptionApplied
             });
 
+            // When an HM/AHM joining date is 02-Jan to 30-Jun, the option is exercised
+            // from 01-Jul. Keep a same-day INCREMENT row so the pay table reads:
+            // 01-Jul to 01-Jul (INCREMENT), followed by 01-Jul to 30-Jun of next year.
+            // This row is display/period-control only: the HM/AHM one increment is already
+            // included in Sl. 5.a and must NOT be added a second time.
             if (hmAhmOptionApplied) {
-                const optDateVal = new Date(promotionDate.getFullYear(), 6, 1);
-                pushEvent(optDateVal, {
+                const optionDate = new Date(promotionDate.getFullYear(), 6, 1);
+                pushEvent(optionDate, {
                     label: "INCREMENT",
                     isAnnual: true,
                     isHmAhmOptionIncrementRow: true,
-                    notionalDate: optDateVal
+                    notionalDate: optionDate
                 });
             }
         }
@@ -1544,6 +1581,7 @@
         let prevCycleBoundary09 = optionDate;
 
         if (promotionActive) {
+            // 1. Pre-promotion annual increments (01-July prior to promotionDate)
             let firstIncrementYear = optionDate.getFullYear();
             let optionDay = optionDate.getDate();
             let optionMonth = optionDate.getMonth();
@@ -1567,6 +1605,9 @@
                 loopYear++;
             }
 
+            // 2. Post-promotion annual increments (01-July calculated WRT promotionDate as per ROPA Rules)
+            // If promotion is on Jan 1: service on July 1st is 6 months -> next increment is July 1st of promotion year.
+            // If promotion is between Jan 2 and Dec 31: service on July 1st is < 6 months (or after July 1st) -> next increment is July 1st of NEXT year.
             let postPromoStartYear = (promotionDate.getMonth() === 0 && promotionDate.getDate() === 1) ? promotionDate.getFullYear() : promotionDate.getFullYear() + 1;
             let postLoopYear = postPromoStartYear;
             prevCycleBoundary09 = promotionDate;
@@ -1584,6 +1625,7 @@
                 postLoopYear++;
             }
         } else {
+            // No promotion: standard annual increments
             let firstIncrementYear = optionDate.getFullYear();
             let optionDay = optionDate.getDate();
             let optionMonth = optionDate.getMonth();
@@ -1636,7 +1678,7 @@
             }
 
             if (ev.isInitial) {
-                // Initial row
+                // Staging index row
             } else if (ev.isPromotion) {
                 let oldGp = runningGp;
                 runningGp = ev.targetGp;
@@ -1707,6 +1749,7 @@
         return { rows: compiledRows };
     }
 
+    /* --- ROPA-2019 TIMELINE COMPUTATION --- */
     function computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, promotionDate, promotionTargetGp, evType) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
@@ -1734,6 +1777,7 @@
         let prevCycleBoundary19 = startDate;
 
         if (promotionActive) {
+            // 1. Pre-promotion annual increments (01-July prior to promotionDate)
             let firstIncrementYear = startDate.getFullYear();
             let optionDay = startDate.getDate();
             let optionMonth = startDate.getMonth();
@@ -1757,6 +1801,7 @@
                 loopYear++;
             }
 
+            // 2. Post-promotion annual increments (01-July calculated WRT promotionDate as per ROPA Rules)
             let postPromoStartYear = (promotionDate.getMonth() === 0 && promotionDate.getDate() === 1) ? promotionDate.getFullYear() : promotionDate.getFullYear() + 1;
             let postLoopYear = postPromoStartYear;
             prevCycleBoundary19 = promotionDate;
@@ -1774,6 +1819,7 @@
                 postLoopYear++;
             }
         } else {
+            // No promotion: standard annual increments
             let firstIncrementYear = startDate.getFullYear();
             let optionDay = startDate.getDate();
             let optionMonth = startDate.getMonth();
@@ -1837,19 +1883,35 @@
                 let asOnDate = new Date(ev.date);
                 asOnDate.setDate(asOnDate.getDate() - 1);
                 
+                // HM/AHM (Level-16) rule:
+                // 1) The two HM/AHM increments in the existing level apply ONLY when
+                //    the joining date is within 02-Jan to 30-Jun.
+                // 2) In that window the beneficial option applies and fixation/effective
+                //    date becomes 01-Jul of the same year.
+                // 3) Outside that window, 5.a and 5.c are NOT applicable; existing pay is
+                //    fitted directly into Level-16 on the actual joining date.
+                // For other target levels, retain the existing promotion/high-scale logic.
                 let isHmAhm = (targetLevel === 16);
                 let optionApplied = isHmAhm && isInPromoIncrWindow(ev.date);
+                // HM/AHM extra increment benefit applies ONLY when DOJ/joining date
+                // falls in the 02-Jan to 30-Jun window. Outside this window, 5.a and
+                // 5.c are NOT applicable and the existing pay is fitted directly to L-16.
                 let addIncr = isHmAhm ? true : (evType === 'promo');
                 let fixDate = optionApplied
                     ? new Date(ev.date.getFullYear(), 6, 1)
                     : new Date(ev.date);
 
                 if (addIncr) {
+                    // HM/AHM Level-16 fixation: TWO increments are stepped in the
+                    // existing level before fitment into Level-16. Example: L-15
+                    // Cell 14 Rs.62,600 -> Cell 15 Rs.64,500 -> Cell 16 Rs.66,400
+                    // and only then fit into L-16, giving Rs.67,000.
                     const oldLadder = matrixData19[runningLevel] || [];
                     const firstIdx = cellData.index + 1;
                     const secondIdx = cellData.index + 2;
                     const firstStepValue = oldLadder[firstIdx] || runningBasicPay;
                     const secondStepValue = oldLadder[secondIdx] || firstStepValue;
+                    // 5.a is conditional; 5.c is compulsory for every HM/AHM fixation.
                     const oneStepValue = optionApplied ? firstStepValue : existingBasic;
                     const oneStepAdded = optionApplied ? (firstStepValue - existingBasic) : 0;
                     const twoStepValue = optionApplied ? secondStepValue : firstStepValue;
@@ -1897,6 +1959,8 @@
                 }
             } else if (ev.isAnnual) {
                 if (ev.isHmAhmOptionIncrementRow) {
+                    // Both HM/AHM increments have already been applied in Sl. 5.a/5.c before
+                    // Level-16 fitment. Do not add another increment on the same 01-Jul.
                     colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
                     slipBlockHTML = `
                         <div class="slip-box">
@@ -2141,11 +2205,17 @@
         axData.carryLevel = carryLevel;
         axData.ax19Cell = findCell19(carryLevel, carryBasic).cell;
 
+        // Expose for the Mode-of-Fixation boxes (used immediately below) and for
+        // Section 6 CAS document generation.
         window.CAS_axData = axData;
         window.CAS_ropa98Rows = enableRopa98 ? ropa98Rows : [];
         window.CAS_ropa09Rows = enableRopa09 ? ropa09Rows : [];
         window.CAS_ropa19Rows = result19.rows;
 
+        // Show the ROPA-09 / ROPA-19 "Mode of Fixation" remarks directly on the
+        // initial DOA/Option row of the MAIN pay tables (Sections 3 & 4), right
+        // after clicking "Generate Pay Tables" — instead of only appearing later
+        // when a 10/18/20-Year CAS document is generated.
         if (enableRopa09 && ropa09Rows.length) {
             const mof09 = casBuildModeOfFixation09Box(doj);
             if (mof09) ropa09Rows[0].slipHTML = (ropa09Rows[0].slipHTML || '') + mof09;
@@ -2180,6 +2250,7 @@
 
         renderAnnexureForms(axData, doj, dor, ropa09Rows, result19.rows);
 
+        /* --- Exposed for Section 6 (CAS / Milestone Benefit Documents) — additive only, does not affect the above --- */
         window.CAS_ropa98Rows = enableRopa98 ? ropa98Rows : [];
         window.CAS_ropa09Rows = enableRopa09 ? ropa09Rows : [];
         window.CAS_ropa19Rows = result19.rows;
@@ -2187,6 +2258,7 @@
         window.CAS_axData = axData;
     }
 
+    /* ---------- Annexure-III (ROPA-2009 & ROPA-2019) Initial Pay Fixation Forms — official-format print output ---------- */
     function renderAnnexureForms(ax, doj, dor, ropa09Rows, ropa19Rows) {
         const page09 = document.getElementById('annexRopa09Page');
         const page19 = document.getElementById('annexRopa19Page');
@@ -2200,6 +2272,7 @@
         const nameDesig = `${staffName} ; ${designation}`;
         const rs = n => 'Rs. ' + Number(n).toLocaleString('en-IN');
 
+        /* ---- ROPA-2009 Annexure-III ---- */
         if (ax.ropa09Enabled) {
             page09.style.display = '';
             document.getElementById('ax09Office').textContent = schoolName;
@@ -2231,6 +2304,7 @@
             page09.style.display = 'none';
         }
 
+        /* ---- ROPA-2019 Annexure-III ---- */
         page19.style.display = '';
         document.getElementById('ax19Office').textContent = schoolName;
         document.getElementById('ax19NameDesig').textContent = nameDesig;
@@ -2288,11 +2362,14 @@
 </script>
 
 <script>
+/* =========================================================================
+   LEAVE ACCOUNT (REGISTER) ENGINE
+   ========================================================================= */
 window.onerror = function(msg, url, line, col, err){
   const el = document.getElementById('errorBanner');
   if(el){
     el.style.display = '';
-    el.textContent = 'Something went wrong and the page could not update: ' + msg + ' (line ' + line + '). Please refresh the page.';
+    el.textContent = 'Something went wrong and the page could not update: ' + msg + ' (line ' + line + '). Please refresh the page; if this keeps happening, try opening the file in Chrome or Edge.';
   }
   return false;
 };
@@ -2302,7 +2379,7 @@ function showStatus(msg, isError){
   if(el){
     el.style.color = isError ? '#dc2626' : '#059669';
     el.textContent = msg;
-    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ }
+    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ /* ignore */ }
   } else {
     console.log(msg);
   }
@@ -2399,7 +2476,7 @@ function autoGenerateRows(){
 
   const hasTransfer = document.getElementById('hasTransfer').value === 'yes';
   if(hasTransfer && transferEvents.length===0){
-    showStatus('You selected "Yes - transferred" but haven\'t added a transfer date yet.', true);
+    showStatus('You selected "Yes - transferred" but haven\'t added a transfer date yet. Please add one, or switch back to "No" if there was none.', true);
     return;
   }
 
@@ -2418,6 +2495,9 @@ function autoGenerateRows(){
     });
   }
 
+  // Promotion / higher-scale date is also a Leave Account period boundary.
+  // This makes the promotion date visible in the Leave A/c without changing
+  // the annual leave-credit cycle.
   const promoEnabled = document.getElementById('enablePromotion');
   const promoDateVal = document.getElementById('promotionDate')?.value || '';
   if(promoEnabled?.checked && promoDateVal){
@@ -2465,14 +2545,15 @@ function addMlEntry(){
 
   if(!assigned.has(masterMlEntries[masterMlEntries.length-1].id)){
     masterMlEntries.pop();
-    showStatus('These dates do not fall within any existing Period of Duty row.', true);
+    showStatus('These dates do not fall within any existing Period of Duty row. Please add/extend a period row (or Auto-Generate rows) to cover this date range first.', true);
     return;
   }
 
   document.getElementById('mlFrom').value='';
   document.getElementById('mlTo').value='';
   renderAll();
-  showStatus(`Leave entry added successfully.`, false);
+  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'}[type] || type;
+  showStatus(`${typeLabel} entry added: ${fmt(from)} to ${fmt(to)}.`, false);
 }
 
 function annotateAllTablesWithLeave(tables){
@@ -2680,9 +2761,9 @@ function renderAll(){
 
   document.getElementById('rowManageList').innerHTML = periods.map((p,i)=>
     `<span style="display:inline-flex;align-items:center;gap:6px;background:#e2e8f0;border-radius:4px;padding:3px 8px;margin:2px;">
-        Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}
-        <button class="btn-del" onclick="deletePeriodRow(${i})">Delete</button>
-       </span>`).join('');
+       Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}
+       <button class="btn-del" onclick="deletePeriodRow(${i})">Delete</button>
+     </span>`).join('');
 
   document.getElementById('transferList').innerHTML = transferEvents.length===0
     ? '<span style="color:#64748b;">No transfer events added.</span>'
@@ -2739,7 +2820,15 @@ window.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
-const CAS_EMBLEM_B64 = "data:image/png;base64,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g248xK1uLPvL6r0uACgrO7b+AP5vL7n819O7Hh9l7kQkG708E2Q5r7s4M8tBqP4E8c31K5s88tL5qK6tQ/fA9Vf839Ww5k8gC+c5cO9L9XnZcW5Yv78ZqM78rO7v3z8Z5T1l4v2F9kH9Q6U3dMvO8cM69q37j8P6xVdfF/OaK26J2B9q96s6M5G913DkM8b3d6y5039p6bH7Zz70qE1G97Y5z4XfQ98n+p7vYffw3Zl8wD8c5u7Z4P1r77K9U/v5v6/mX1Z6uW6t1YQfN3fF6OAGjE64B/O09U77bXvXz76/c67fS7n+vH55T95/59V6zP+yufjQeE6wQG905Vv1Fq6vYl/PqS4yE0Z/8w732s76J+7Wj170m41fBwE/08G2S5t4uC9f0yZ16R01MvvK4y2qE2rYm3Mv3/T4d6j7q2a4z+zWfE58G3w3c67t9sN227xV0u9QYF3bO4/Z7wW21Ofeh3o3p94sM/O8cM77v398w0eX/fMvV43Xw3a0qf6n+p7v6Xv5+03/7P1jV95m/WpWtfG33/p+f906f3p54559x25/nS17o4+Z/n3988/b+gB3bB9i0v3n7h58L39912uO//dO3b320v9w+x+fF37u596N169uY0X4v7h1659q+vS7Yx77g684rW540V6e9O4/s6x0ffu8f8d95/2b3x3z1+22/f8v9n3994++n378+0LqR/6+959c++2+uXfe2t+e+P33t3+Y7ffX7Z3z06399187/z7t3s+e9+70Xvv47W8797N6+b7f7390O7e//Xz+4/H/A1KjZ92aE0AAAAAElFTkSuQmCC";
+/* =========================================================================
+   SECTION 6 — CAS / MILESTONE (10 / 18 / 20 YEARS) BENEFIT DOCUMENT ENGINE
+   Additive module: reads window.CAS_ropa98Rows / CAS_ropa09Rows / CAS_ropa19Rows
+   (exposed by processFixationTimeline in the core engine above) and the
+   Staff & Service Details already entered in Section 1. Does not alter any
+   existing calculation, table, or print flow.
+   ========================================================================= */
+
+const CAS_EMBLEM_B64 = "data:image/png;base64,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";
 const CAS_GO_REF = {
     '98': 'U/M No. 25-SE(B) dt. 12.02.1999, as per ROPA-1998',
     '09': 'G.O. No. 46-SE(B) dated 27.02.2009 read with G.O. No. 181-SE(B) dated 10.02.2009 and para-I of G.O. 30-SE(B) dated 10.02.2010, as per ROPA-2009',
@@ -2749,6 +2838,7 @@ const CAS_REGIME_NAME = { '98': 'ROPA-1998', '09': 'ROPA-2009', '19': 'ROPA-2019
 const CAS_MILESTONE_LABEL = { '10': '10 YEARS', '18': '18 YEARS', '20': '20 YEARS' };
 const CAS_MILESTONE_BN = { '10': '১০ বছর', '18': '১৮ বছর', '20': '২০ বছর' };
 
+/* ---------- Prior-school (multi-school career) rows ---------- */
 let casPriorSchoolSeq = 0;
 function casAddPriorSchool(name, doj, dol) {
     casPriorSchoolSeq++;
@@ -2838,6 +2928,9 @@ function casNormalizeCellLabel(value) {
 
 function casDescribeRow(row) {
     if (!row) return { scaleLabel: '—', payLabel: '—', basicDisplay: '0', cellLabel: '' };
+    // Keep the numeric/display basic pay available to fixation calculations.
+    // Previously this function returned only payLabel, so the memorandum
+    // parser read the existing pay as 0 even though the pay-table showed it.
     return {
         scaleLabel: row.scaleStr || '—',
         payLabel: 'Rs. ' + (row.basicDisplay || '—'),
@@ -2860,8 +2953,11 @@ function casNextPayDetails(row, regime) {
         const cell = casCellNumber(row);
         const arr = level ? matrixData19[level] : null;
 
+        // ROPA-2019 cells are 1-based in the printed documents, while the
+        // matrix array is 0-based.  Thus Cell-19 (index 18) must advance to
+        // Cell-20 (index 19), e.g. Level-15: Rs.72,600 -> Rs.74,800.
         if (arr && Number.isInteger(cell) && cell >= 1 && cell < arr.length) {
-            const nextPay = arr[cell];
+            const nextPay = arr[cell];       // next 1-based cell
             const nextCell = cell + 1;
             return {
                 amount: Math.max(0, nextPay - basic),
@@ -2893,6 +2989,8 @@ function casNextPayDetails(row, regime) {
 }
 
 function casInitDefaultStaffData() {
+    // Default working example requested for the dashboard. This is only the
+    // initial form state; an imported/saved JSON dataset can replace it.
     const name = document.getElementById('staffName');
     const dob = document.getElementById('dob');
     const doj = document.getElementById('doj');
@@ -2908,12 +3006,21 @@ function casInitDefaultStaffData() {
     if (approval && !approval.value) approval.value = '1954/S; dated 04-07-2022';
     if (prev && !prev.value) prev.value = 'Kharikasuli Madhabpur J H S, P.O.: Baital, P.S.- Joypur, Dist.: Bankura, PIN: 722138';
 
+    // Seed one prior-school service row so the first generated application
+    // automatically contains the previous-school service chain.
     const list = document.getElementById('casPriorSchoolsList');
     if (list && !list.querySelector('[id^="casPS_row_"]') && prev && prev.value) {
         casAddPriorSchool(prev.value, '2008-09-24', '2022-06-28');
     }
 }
 
+/* ---------- Mode-of-Fixation remarks boxes (ROPA-09 from ROPA-98 / ROPA-19 from ROPA-09) ----------
+   Used inside the ROPA-2009 / ROPA-2019 MAIN pay tables (Sections 3 & 4), on the
+   exact initial row where the pay revision / carry-forward happens — right after
+   "Generate Pay Tables" is clicked. Also reused inside the Service Book "Pay
+   Structure" Remarks column of the generated CAS documents. Pulls the
+   already-computed figures from window.CAS_axData (set by processFixationTimeline)
+   — no other calculation, table, or document is touched. */
 function casMofRs(n) {
     const num = Number(n);
     return Number.isFinite(num) ? 'Rs. ' + num.toLocaleString('en-IN') : '';
@@ -2937,12 +3044,16 @@ function casMofBoxWrap(titleText, rows, noteHTML, optionDateText, nextIncrementT
         </table>
       </div>`;
 }
-
+// Resolves whether the w.e.f. date in the Mode-of-Fixation note should be labelled
+// "DATE OF OPTION" or "DATE OF JOINING": if the statutory revision date (1-1-2006 for
+// ROPA-09, 1-1-2016 for ROPA-19) is later than the employee's 1st Date of Joining
+// (i.e. the employee was already in service and had an option to exercise), it is
+// "DATE OF OPTION"; otherwise (employee joined on/after the statutory date, so pay was
+// fixed directly from the date of joining, with no option involved) it is "DATE OF JOINING".
 function casMofOptionOrJoiningLabel(statutoryDate, doj) {
     if (doj instanceof Date && !isNaN(doj) && statutoryDate > doj) return 'DATE OF OPTION';
     return 'DATE OF JOINING';
 }
-
 function casBuildModeOfFixation09Box(doj) {
     const ax = window.CAS_axData;
     if (!ax || !ax.ropa98Enabled) return '';
@@ -2955,14 +3066,13 @@ function casBuildModeOfFixation09Box(doj) {
     const nextInc09 = (window.CAS_ropa09Rows || []).find(r => r.date > ax.ropa09OptionDate && /INCREMENT/i.test(r.label));
     const nextIncDate = nextInc09 ? formatDate(nextInc09.date) : '&mdash;';
     const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel09} at ${casMofRs(revisedBasic09)} in terms of ${CAS_GO_REF['09']} w.e.f. ${optDate} [${dateLabel09}]. Pay &amp; Allowances admissible actually w.e.f. 1-4-2008.`;
-    return casMofBoxWrap('PAY REVISION — MODE OF FIXATION (ROPA-09)', [
+    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-09', [
         [`Pay in the existing Scale of pay ${scaleLabel} on ${optDate}`, casMofRs(ax.ropa98BasicPay)],
         [`Pay in Band ${ax.ropa98BasicPay.toLocaleString('en-IN')}&times;1.86:=${Math.round(rawBand).toLocaleString('en-IN')} i.e.=`, casMofRs(ax.ropa09BandPay)],
         [`Applicable Grade Pay Rs.`, casMofRs(ax.ropa09Gp)],
         [`Pay Fixed at`, casMofRs(revisedBasic09)]
     ], note, optDate, nextIncDate);
 }
-
 function casBuildModeOfFixation19Box(doj) {
     const ax = window.CAS_axData;
     if (!ax || !ax.ropa09Enabled) return '';
@@ -2974,7 +3084,7 @@ function casBuildModeOfFixation19Box(doj) {
     const nextAfter19 = (window.CAS_ropa19Rows || []).find(r => r.date > ax.ropa19OptionDate);
     const nextIncDate = nextAfter19 ? formatDate(nextAfter19.date) : '&mdash;';
     const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel19} at ${casMofRs(ax.carryBasic)} in terms of ${CAS_GO_REF['19']} w.e.f. ${optDate} [${dateLabel19}]. Pay &amp; Allowances admissible actually w.e.f. 1-1-2020.`;
-    return casMofBoxWrap('PAY REVISION — MODE OF FIXATION (ROPA-19)', [
+    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-19', [
         [`Pre-revised Basic Pay (Band Pay + Grade Pay) as on date of option i.e. on ${optDate}`, casMofRs(ax.notionalBasic)],
         [`Amount arrived at by multiplying Basic Pay by 2.57 Rounded off to nearest Rupee`, casMofRs(ax.revisedRaw)],
         [`Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay`, levelStr],
@@ -3011,6 +3121,9 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
 
     const htmlRows = [];
     const pushRows = (rows, regimeLabel) => rows.forEach(r => {
+        // Omit leave dates: the Pay Structure "Remarks" column should not show
+        // the ML/HPL/LWP/"NO LEAVE" leave-account annotation that other tables
+        // append to row.label — strip that trailing note before display.
         let remarks = (r.label || '').replace(/<br>\s*<span style="font-weight:400;font-size:\.78em;color:#334155;">.*?<\/span>\s*$/, '');
         const upper = remarks.toUpperCase();
         if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
@@ -3031,6 +3144,8 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
         });
     });
 
+    // Keep the service-book structure grouped in the same order as the source
+    // pay regimes: ROPA-1998, ROPA-2009, then ROPA-2019.
     pushRows(rows98, 'ROPA-1998');
     pushRows(rows09, 'ROPA-2009');
     pushRows(rows19, 'ROPA-2019');
@@ -3056,6 +3171,7 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
       </div>`;
 }
 
+/* ---------- HM / AHM FIXATION FORM (ROPA-2019, matches official DI-office form) ---------- */
 function casDiDistrictName() {
     const el = document.getElementById('casDistrict');
     return (el && el.value) ? el.value : 'Bankura';
@@ -3077,6 +3193,7 @@ function casGenerateHmAhmForm() {
     const empStatus = empStatusSel ? (empStatusSel.value === 'OFFICIATING' ? 'Officiating' : 'Substantive') : 'Substantive';
     const district = casDiDistrictName();
 
+    // Date of next annual increment: first INCREMENT-labelled row after the promotion event.
     const idx = rows.indexOf(promoRow);
     let dniRow = null;
     for (let i = idx + 1; i < rows.length; i++) {
@@ -3148,6 +3265,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     previewEl.innerHTML = '';
 
     if (!window.CAS_dataReady) {
+        // Document generation is self-contained: generate the pay tables first
+        // so the selected 10Y/18Y/20Y pay structure is available automatically.
         processFixationTimeline();
     }
     if (!window.CAS_dataReady) {
@@ -3160,12 +3279,23 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     const detected = casDetectRegime(type);
     if (!detected) {
-        statusEl.textContent = `No ${CAS_MILESTONE_LABEL[type]} milestone was found for this staff member within the generated tables.`;
+        statusEl.textContent = `No ${CAS_MILESTONE_LABEL[type]} milestone was found for this staff member within the generated tables — either not yet reached, falls outside the option/DOR window, or the staff member's Grade Pay is excluded from the scale-change benefit under current rules. (Note: 10-Year and 20-Year milestones normally grant only an additional increment, not a scale change — this is normal.)`;
         return;
     }
 
     const { regime, row: msRow, prevRow, nextRow } = detected;
     const effectDate = new Date(msRow.date);
+    // IMPORTANT: service-completion date and CAS effective date are different.
+    // The actual service-completion date is one day before the ORIGINAL
+    // milestone/anniversary date.  For Window-A (02-Jan to 30-Jun), the
+    // effective date may shift to 01-Jul, but the completion date MUST NOT
+    // shift to 30-Jun. Example: DOJ 24-01-2008 -> 18 years completed on
+    // 23-01-2026; CAS effective date -> 01-07-2026.
+    // ALWAYS derive the actual service anniversary from the entered FIRST DOJ.
+    // Never derive service completion from the shifted 01-July effective date.
+    // Example: DOJ 24-01-2008 + 18 years = 24-01-2026; service is completed
+    // on 23-01-2026.  If the anniversary is in the 02-Jan to 30-Jun window,
+    // the CAS effective date may move to 01-07-2026, but completion stays 23-01-2026.
     const milestoneYears = parseInt(type, 10) || 0;
     const actualMilestoneDate = new Date(doj.getFullYear() + milestoneYears, doj.getMonth(), doj.getDate());
     const completionDate = new Date(actualMilestoneDate);
@@ -3176,6 +3306,9 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         ? new Date(effectDate)
         : (nextRow ? new Date(nextRow.date) : new Date(effectDate.getFullYear() + 1, 6, 1));
 
+    // The existing pay for fixation is the pay actually drawn on the day
+    // immediately BEFORE the CAS effective date.  Do not use the 01-July
+    // annual-increment row when CAS also takes effect on 01-July.
     const regimeRows = (window.CAS_ropa98Rows && regime === '98') ? window.CAS_ropa98Rows
         : (window.CAS_ropa09Rows && regime === '09') ? window.CAS_ropa09Rows
         : (window.CAS_ropa19Rows && regime === '19') ? window.CAS_ropa19Rows : [];
@@ -3185,6 +3318,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         if (!r || !(r.date instanceof Date)) continue;
         if (r.date.getTime() <= completionTime) existingRow = r;
     }
+    // If the generated timeline has no row on/before 30-June, use the last
+    // row strictly before the effect date, then the detected previous row.
     if (!existingRow) {
         for (const r of regimeRows) {
             if (r && r.date instanceof Date && r.date < effectDate) existingRow = r;
@@ -3194,6 +3329,10 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const existing = casDescribeRow(existingRow);
     const fixed = casDescribeRow(msRow);
 
+    // If a normal annual increment is also due on the CAS effect date, it is
+    // applied FIRST.  The additional 18-Year increment is then calculated
+    // from that post-normal-increment pay.  The final CAS scale fitment remains
+    // the value in msRow.
     const sameDateNormalRow = regimeRows.find(r => r && r.date instanceof Date &&
         r.date.getTime() === effectDate.getTime() && String(r.label || '').toUpperCase().includes('INCREMENT') &&
         !String(r.label || '').toUpperCase().includes('10 YEARS') &&
@@ -3203,10 +3342,15 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const memoEffectDate = (type === '18' && regime === '19' && normalIncrementRow)
         ? new Date(normalIncrementRow.date) : effectDate;
     const memoDni = (type === '18' && regime === '19') ? new Date(memoEffectDate.getFullYear() + 1, 6, 1) : nextIncrementDate;
+    const existingNumForFixation = parseInt(String(existing.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
+    const normalNumForFixation = normalIncrementRow ? parseInt(String(normalIncrementRow.basicDisplay || '0').replace(/,/g, ''), 10) || 0 : existingNumForFixation;
+    const normalIncrementAmount = Math.max(0, normalNumForFixation - existingNumForFixation);
+    const additionalIncrementBaseRow = normalIncrementRow || existingRow;
 
     const sex = document.getElementById('casSex').value;
     const sriSmt = sex === 'M' ? 'Sri' : 'Smt.';
     const heShe = sex === 'M' ? 'he' : 'she';
+    const heSheCap = sex === 'M' ? 'He' : 'She';
     const hisHer = sex === 'M' ? 'his' : 'her';
     const himHer = sex === 'M' ? 'him' : 'her';
 
@@ -3215,10 +3359,12 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const schoolName = document.getElementById('schoolName').value || '________________';
     const schoolAddr = document.getElementById('casSchoolAddress').value || '';
     const fullSchool = schoolName + (schoolAddr ? '; ' + schoolAddr : '');
+    const qualification = document.getElementById('casQualification').value || '';
     const district = document.getElementById('casDistrict').value || '';
     const diOffice = document.getElementById('casDiOffice').value || 'The District Inspector of Schools (S.E.),';
     const resolutionNo = document.getElementById('casResolutionNo').value || '________________';
     const approvalNo = document.getElementById('casApprovalNo').value || '________________';
+    const prevSchool = document.getElementById('casPrevSchool').value || '';
     const dojCurrentSchoolVal = document.getElementById('casDojCurrentSchool').value;
     const priorSchoolsForDefault = casGetPriorSchools();
     const lastPriorDol = priorSchoolsForDefault.length ? priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol : null;
@@ -3228,6 +3374,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const optionDate = optionDateVal ? new Date(optionDateVal + 'T00:00:00') : new Date();
     const govType = document.getElementById('casGovType').value;
     const hoiStatus = document.getElementById('casHoiStatus').value || 'Headmaster';
+    // Applicant's application is always addressed to the Administrator through the selected HOI.
+    // The applicant remains the first-person author throughout the letter.
     const authorityRecipient = 'The Administrator,';
     const authorityShort = 'The Administrator';
     const approvalAuthority = govType === 'Administrator' ? 'The Administrator' : 'The Secretary / President, Managing Committee /Adhoc-Committee';
@@ -3244,8 +3392,13 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const goRef = CAS_GO_REF[regime];
 
     const serviceNarrative = casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe);
-    const nextPayDetails = casNextPayDetails(normalIncrementRow || existingRow, regime);
+    const applicantOpening = priorSchools.length
+        ? `I, ${sriSmt} ${staffName}, ${designation}, state that I first joined service on ${casFmt(priorSchools[0].doj || doj)} and served at ${priorSchools.map((s, i) => `${s.name} from ${casFmt(s.doj || (i === 0 ? doj : null))} to ${s.dol ? casFmt(s.dol) : 'till date'}`).join('; ')}. I am now serving as an approved ${designation} of ${fullSchool} since ${casFmt(dojCurrentSchool)}${approvalNo ? ` [Approval No. ${approvalNo}]` : ''}.`
+        : `I, ${sriSmt} ${staffName}, ${designation}, state that I joined service on ${casFmt(doj)} as an approved ${designation} of ${fullSchool} and have been serving continuously and satisfactorily since then.`;
 
+    const nextPayDetails = casNextPayDetails(additionalIncrementBaseRow, regime);
+
+    /* ---------- DOC 1: PART A — OPTION & DECLARATION ---------- */
     const doc1 = `
         <p style="text-align:center;font-weight:bold;font-size:1.02rem;margin-bottom:2px;">PROFORMA FOR OPTION &amp; FIXATION OF PAY FOR CAS FOR ${milestoneWord} UNDER ${regimeName}</p>
         <p style="text-align:center;font-size:.85rem;margin-top:0;">(For availing the benefit in terms of ${goRef})</p>
@@ -3257,6 +3410,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;text-align:right;">Signature of staff ____________________________<br>Name: ${staffName}<br>Designation: ${designation}</td>
         </tr></table>`;
 
+    /* ---------- DOC 2: PART B — FIXATION (BY HOI) ---------- */
     const partBRows = [
         ['1', 'Name of the Employee', staffName],
         ['2', 'Name of the School', fullSchool],
@@ -3282,6 +3436,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin-top:20px;">Approved by ${approvalAuthority} vide ${govType === 'MC' ? 'Resolution' : 'Order'} No. ${resolutionNo}.</p>
         <p style="text-align:right;margin-top:30px;">${govType === 'MC' ? 'Secretary / President, Managing Committee' : 'The Administrator'}</p>`;
 
+    /* ---------- DOC 3: APPLICANT DECLARATION / APPLICATION / OPTION LETTER ---------- */
     const doc3 = `
         <p>To<br>${authorityRecipient}<br>Through the ${hoiStatus},<br>${schoolName}<br>${schoolAddr}</p>
         <p style="margin-top:16px;"><strong>Subject:</strong> Declaration cum Application cum Option for availing the benefit of Career Advancement Scheme for completion of ${milestoneWord} continuous service under ${regimeName}.</p>
@@ -3300,6 +3455,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;text-align:right;">${govType === 'Administrator' ? 'Approved &amp; Passed' : 'Received / Placed before Managing Committee'}<br><br>________________________<br>${authorityShort}</td>
         </tr></table>`;
 
+    /* ---------- DOC 4: HOI REPORT ---------- */
     const doc4 = `
         <p style="font-weight:bold;">HOI Report — ${hoiStatus}</p>
         <p>Proposal No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
@@ -3307,6 +3463,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;">${hisHer[0].toUpperCase()+hisHer.slice(1)} application, along with all other necessary documents, is being placed for taking necessary steps in this regard.</p>
         <p style="text-align:right;margin-top:40px;">________________________<br>${hoiStatus}</p>`;
 
+    /* ---------- DOC 5: GOVERNANCE ORDER / MANAGING COMMITTEE RESOLUTION ---------- */
     const doc5 = govType === 'MC' ? `
         <p style="font-weight:bold;text-align:center;">Managing Committee Resolution</p>
         <p>Resolution No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
@@ -3333,6 +3490,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
         <p style="text-align:right;margin-top:40px;">________________________<br>The Administrator</p>`;
 
+    /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
     const doc6 = `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
         <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
@@ -3365,7 +3523,821 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <li>Certificate of reason for delay (if applicable)</li>
         </ol>`;
 
+    /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
     const doc7 = `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
         <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
-        <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWordSorry, something went wrong. Please try your request again.
+        <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
+        <p>Sir,</p>
+        <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
+        <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>${hoiStatus}</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. Approval of ${milestoneWord} Fixation of ${staffName}</p>`;
+
+    /* ---------- DOC 8: DISTRICT INSPECTOR'S OFFICE MEMORANDUM (final order, matches DI letterhead format) ---------- */
+    // The memorandum's 'existing Basic Pay as on completion date' must be
+    // the pre-effect-date snapshot (e.g. 30-06-2026), not the normal
+    // increment row dated 01-07-2026.
+    // DI Memorandum fixation date:
+    // For the 18-year ROPA-2019 benefit, the memorandum is to show the
+    // 01-07-YYYY fixation cycle: existing pay as on 30-06-YYYY, normal
+    // increment on 01-07-YYYY, then the additional 18-year increment and
+    // final Level-12 fitment.  The final fitment value itself remains the
+    // detected 18-year milestone value.
+    // The DI memorandum has TWO dates with different meanings:
+    // (1) actual service completion date = completionDate;
+    // (2) existing-pay snapshot = the day immediately before the fixation
+    // date (normally 30-06-YYYY when fixation is 01-07-YYYY).
+    const memoExistingPayDate = new Date(memoEffectDate);
+    memoExistingPayDate.setDate(memoExistingPayDate.getDate() - 1);
+
+    let memoExistingRow = existingRow;
+    if (type === '18' && regime === '19') {
+        memoExistingRow = null;
+        for (const r of regimeRows) {
+            if (r && r.date instanceof Date && r.date.getTime() <= memoExistingPayDate.getTime()) {
+                memoExistingRow = r;
+            }
+        }
+        memoExistingRow = memoExistingRow || existingRow;
+    }
+    const memoExisting = casDescribeRow(memoExistingRow);
+    const existingNum = parseInt(String(memoExisting.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
+    const fixedNum = parseInt((msRow.basicDisplay || '0').replace(/,/g, ''), 10);
+    const normalPayNum = normalIncrementRow
+        ? parseInt(String(normalIncrementRow.basicDisplay || '0').replace(/,/g, ''), 10) || 0
+        : existingNum;
+    const normalIncrementAmountForMemo = Math.max(0, normalPayNum - existingNum);
+    const normalNextPayLabel = normalIncrementRow
+        ? (() => {
+            const lvl = String(normalIncrementRow.scaleStr || '').replace(/.*Level-/i, 'LEVEL-');
+            const cell = casNormalizeCellLabel(normalIncrementRow.trackCol);
+            return `${lvl}${cell ? ', CELL-' + cell : ''}`;
+        })()
+        : (() => {
+            const lvl = String(memoExisting.scaleLabel || '').replace(/.*Level-/i, 'LEVEL-');
+            const cell = memoExisting.cellLabel;
+            return `${lvl}${cell ? ', CELL-' + cell : ''}`;
+        })();
+    const govOrderWord = govType === 'MC' ? 'Resolution' : 'Administrator Order';
+
+    const doc8 = `
+        <div class="cas-di-office-memo">
+        <div style="text-align:center;">
+            <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" style="height:50px;margin-bottom:2px;">
+            <div class="di-title" style="font-weight:bold;font-size:1.05rem;">Govt of West Bengal</div>
+            <div class="di-office" style="font-weight:bold;">Office of the District Inspector of School (S.E.)</div>
+            <div style="font-weight:bold;">${district}</div>
+            <div style="border-bottom:1px solid #000;margin:4px auto 0;width:96%;"></div>
+            <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
+        </div>
+        <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
+        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
+        <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in ${normalNextPayLabel} ]</span></p>
+        <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
+        <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
+        <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
+        <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
+        <table style="width:100%;margin-top:16mm;"><tr>
+            <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
+            <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
+        </tr></table>
+        <p style="margin-top:16mm;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
+        <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
+        <ol style="font-size:.9rem;margin:2px 0;">
+            <li>The ${hoiStatus} of ${fullSchool}</li>
+            <li>${sriSmt} ${staffName}; ${designation}; ${fullSchool}</li>
+        </ol>
+        <p style="text-align:right;margin-top:16px;">District Inspector of Schools (S.E.),<br>${district}</p>
+        </div>`;
+
+    /* ---------- DOC 9: NO-LITIGATION CERTIFICATE (NLC) ---------- */
+    const doc9 = `
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Non-Litigation Regarding Post and Appointment</p>
+        <p style="text-align:justify;margin-top:16px;">This is to certify that there is no court case or any form of litigation pending against the post and appointment of ${staffName}, who was appointed to the post of ${designation} with effect from ${casFmt(dojCurrentSchool)} at ${schoolName}. Accordingly, the application for approval of the ${milestoneWord.toLowerCase()} Fixation benefit in ${hisHer} favour is being submitted.</p>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 10: FILE COVER SHEET ---------- */
+    const doc10 = `
+        <div class="cas-file-cover">
+            <div class="cover-top">
+                ${contactNo ? '<div class="cover-meta">Contact No. ' + contactNo + '</div>' : ''}
+                ${email ? '<div class="cover-meta">e-mail ID: ' + email + '</div>' : ''}
+                <div class="cover-school">${schoolName}</div>
+                <div class="cover-address">${schoolAddr}</div>
+                ${subDivision ? '<div class="cover-meta">SUB DIVISION: ' + subDivision + '</div>' : ''}
+            </div>
+
+            <div class="cover-middle">
+                <div class="cover-title">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</div>
+                <div class="cover-effective">w.e.f. :: ${casFmt(effectDate)}</div>
+                <div class="cover-favour">IN FAVOUR OF</div>
+                <div class="cover-name">${staffName}</div>
+                <div class="cover-designation">DESIGNATION: ${designation}</div>
+            </div>
+
+            <div class="cover-bottom"></div>
+        </div>`;
+
+    /* ---------- DOC 11: CERTIFICATE REGARDING STATUS OF SCHOOL ADMINISTRATION ---------- */
+    const doc11 = govType === 'MC' ? `
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The Managing Committee of ${schoolName} has been functioning now.</li>
+            <li>The term of the valid Managing Committee is up to ${mcValidUpto}.</li>
+            <li>There is no Court case, legal bar, or any type of litigation regarding the reconstitution of the Managing Committee of ${schoolName}.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>` : `
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The Administrator has been functioning now in this school.</li>
+            <li>There is no court case or any type of litigation against the appointment of the Administrator.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 12: BENGALI M.C. RESOLUTION (only when Governance = Managing Committee) ---------- */
+    const doc12 = `
+        <p style="font-weight:bold;text-align:center;">পরিচালন সমিতির সভায় গৃহীত সিদ্ধান্ত</p>
+        <p>পরিচালন সমিতির সভাপতি মাননীয় ____________________ মহাশয় অদ্য সভায় সভাপতির আসন গ্রহণ করলে সভার কার্যক্রম শুরু হয়।</p>
+        <p style="text-align:justify;">সভায় অন্যতম আলোচ্য বিষয় ছিল এই স্কুলের ${designation}, মাননীয় ${staffName} মহাশয়/মহাশয়া কর্তৃক ${regimeName} এর অধীনে ${milestoneWordBn}ের একটানা চাকরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা মঞ্জুর করার জন্য জমা দেওয়া আবেদন ও বিদ্যালয়ের ${hoiStatus}-এর পেশ করা সংশ্লিষ্ট নথিপত্র যাচাই করে দেখা যায় যে ${staffName}, ${casFmt(doj)} তারিখ থেকে ${fullSchool} এ অনুমোদিত ${designation} হিসাবে নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি করে চলেছেন${approvalNo ? ' [অনুমোদন নম্বর ' + approvalNo + ']' : ''}।</p>
+        <p style="text-align:justify;">ফলস্বরূপ, ${casFmt(doj)} তারিখ থেকে ধারাবাহিক চাকরির ভিত্তিতে ${casFmt(completionDate)} তারিখে তিনি পূর্ণ ${milestoneWordBn} নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি সম্পন্ন করেছেন।</p>
+        <p style="text-align:justify;">এমতাবস্থায়, ${regimeName} এর অধীনে ${goRef} অনুসারে ও ${staffName} মহাশয়/মহাশয়ার আবেদনক্রমে তাঁর অনুকূলে ${milestoneWordBn}ের নিরবচ্ছিন্ন চাকুরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা ${casFmt(effectDate)} তারিখ থেকে কার্যকর হবে। ${fixed.scaleLabel} স্কেলে উন্নীতকরণ তথা ${milestoneWord} Fixation-এর অনুমোদনের আবেদন District Inspector of Schools (S.E.), ${district} মহাশয়ের নিকট প্রেরণের সর্বসম্মত সিদ্ধান্ত গৃহীত হলো। এছাড়া উল্লেখযোগ্য যে, তাঁর সার্ভিস রেকর্ডে কোনো মামলা-মোকদ্দমা বা আপত্তি নেই।</p>
+        <p style="text-align:justify;">অদ্য সভায় বিদ্যালয়ের ${hoiStatus}-কে প্রয়োজনীয় নথিপত্র ও আবেদনপত্র District Inspector of Schools (S.E.), ${district} অফিসে প্রেরণ করার ক্ষমতা ও দায়িত্ব অর্পণ করা হলো এবং অতি সত্বর এ বিষয়ে প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুরোধ করা হলো।</p>
+        <p style="text-align:justify;">উপরোক্ত সিদ্ধান্তসমূহ অত্র সভায় সর্বসম্মতিক্রমে গৃহীত ও অনুমোদিত হলো। সভায় আর কোনো আলোচ্য বিষয় না থাকায় সভাপতি মহাশয়কে ধন্যবাদ জ্ঞাপনপূর্বক সভার কার্য সমাপ্ত করা হলো।</p>
+        <table style="width:100%;margin-top:30px;"><tr>
+            <td style="width:50%;">তারিখ: ${casFmt(optionDate)}</td>
+            <td style="width:50%;text-align:right;">সম্পাদক / সভাপতি<br>পরিচালন সমিতি</td>
+        </tr></table>`;
+
+    const payStructureDoc = casBuildPayStructureDoc(type, effectDate, staffName, designation, schoolName, schoolAddr, doj);
+
+    /* ---------- DOC 13: CAS CHECK LIST ---------- */
+    const doc13 = `
+        <div style="font-family:'Times New Roman',Times,serif;">
+        <h2 style="text-align:center;text-decoration:underline;margin-bottom:4px;">CHECK LIST FOR ${milestoneWord} CAS FIXATION</h2>
+        <p style="text-align:center;font-weight:bold;margin-top:0;">${staffName} ; ${designation} ; ${schoolName}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.92rem;">
+          <tr><th style="border:1px solid #000;padding:5px;width:8%;">Sl.</th><th style="border:1px solid #000;padding:5px;text-align:left;">Document / Record</th><th style="border:1px solid #000;padding:5px;width:18%;">Checked</th></tr>
+          ${[
+            'Forwarding letter of the HOI',
+            'Incumbent\'s application (Part-A)',
+            'Photocopy of M.C. Resolution / Administrator\'s Order',
+            'Photocopies of all approvals, including 1st approval',
+            `Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)`,
+            'Pay structure from 1st joining to date',
+            'Attested photocopy of updated Service Book with updated leave account and B.Ed details (if applicable)',
+            'Photocopy of prior option/fixation orders (ROPA-2009 & 2019, as applicable)',
+            'Photocopy of educational qualification certificates/mark-sheets',
+            'Photocopy of current month\'s pay slip',
+            'No Litigation Certificate',
+            'Validity Certificate regarding school Administration',
+            'Joining Report (all service)',
+            'Appointment letter / transfer order (all service)',
+            'S.S.C. recommendation (all service)',
+            'Certificate of reason for delay (if applicable)'
+          ].map((x,i)=>`<tr><td style="border:1px solid #000;padding:5px;text-align:center;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${x}</td><td style="border:1px solid #000;padding:5px;text-align:center;">☐</td></tr>`).join('')}
+        </table>
+        <table style="width:100%;margin-top:30px;"><tr><td>Date: ________________</td><td style="text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td></tr></table>
+        </div>`;
+
+    const docs = [
+        { title: 'Part A — Option &amp; Declaration (Staff)', body: doc1 },
+        { title: 'Part B — Fixation Proforma (by HOI)', body: doc2, compact: true },
+        { title: `Declaration cum Application cum Option Letter (Staff → ${govType === 'Administrator' ? 'The Administrator' : 'Secretary / President, Managing Committee'})`, body: doc3 },
+        { title: `HOI Report &amp; ${govType === 'MC' ? 'Managing Committee Resolution' : 'Administrator Order'} (Combined, Single Page)`, body: `<div class="cas-merged-pair">${doc4}<div class="cas-merged-divider"></div>${doc5}</div>`, compact: true },
+        { title: 'Forwarding Letter to the District Inspector of Schools', body: doc6 },
+        { title: 'Final Acceptance / Finalization Request to the District Inspector of Schools', body: doc7 },
+        { title: "District Inspector's Office Memorandum (Final Order)", body: doc8, compact: true },
+        { title: 'No-Litigation Certificate (NLC)', body: doc9 },
+        { title: `Pay Structure — ${milestoneWord}`, body: payStructureDoc, landscape: true },
+        { title: 'File Cover Sheet', body: doc10, compact: true },
+        { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 },
+        { title: `CAS Check List — ${milestoneWord}`, body: doc13 }
+    ];
+    if (govType === 'MC') {
+        docs.push({ title: 'পরিচালন সমিতির সিদ্ধান্ত — Bengali M.C. Resolution', body: doc12 });
+    }
+
+    window._casDocs = docs;
+
+    statusEl.style.color = '#065f46';
+    statusEl.textContent = `${milestoneWord} milestone detected under ${regimeName} (${goRef.split(',')[0]}). Existing pay ${existing.payLabel} → fixed at ${fixed.payLabel}, effective ${casFmt(effectDate)}. ${docs.length} documents generated below.`;
+
+    previewEl.innerHTML = `
+        <div class="btn-group" style="margin-bottom:12px;">
+            <button type="button" class="btn-print" onclick="casPrintAll()">Print All ${docs.length} Documents</button>
+        </div>
+        ${docs.map((d, i) => `
+            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:18px 22px;margin-bottom:16px;background:#fff;font-family:'Times New Roman',Times,serif;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">
+                    <strong style="font-family:Arial,sans-serif;font-size:.9rem;color:#1e3a8a;">${i + 1}. ${d.title}</strong>
+                    <button type="button" class="btn-print" style="padding:5px 12px;font-size:.75rem;" onclick="casPrintOne(${i})">Print</button>
+                </div>
+                <div style="font-size:.92rem;line-height:1.55;">${d.body}</div>
+            </div>`).join('')}
+    `;
+}
+
+/* ---------- TEACHER-WISE SAVE / LOAD / JSON IMPORT / EXPORT (Firestore cloud sync) ---------- */
+const DASHBOARD_STORAGE_KEY = 'TFHS_ROPA_PAY_FIXATION_DASHBOARD_V3';
+const TEACHER_RECORDS_STORAGE_KEY = 'TFHS_ROPA_TEACHER_RECORDS_V1'; // offline fallback cache only
+let dashboardSaveArmed = false;
+let isAdmin = false;
+let teacherRecordsCache = {}; // kept in sync with Firestore in real time
+
+function setSyncStatus(text, color){
+  const el = document.getElementById('syncStatus');
+  if(el){ el.textContent = text; el.style.background = color || '#0f172a'; }
+}
+
+/* ---- Admin login/logout (Firebase Authentication) ---- */
+auth.onAuthStateChanged((user)=>{
+  isAdmin = !!user;
+  document.body.classList.toggle('is-admin', isAdmin);
+  document.getElementById('authLoggedOut').style.display = isAdmin ? 'none' : '';
+  document.getElementById('authLoggedIn').style.display = isAdmin ? '' : 'none';
+});
+function adminLogin(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  auth.signInWithEmailAndPassword(email, pass).catch((err)=>{
+    errEl.textContent = 'Login failed: incorrect email or password.';
+  });
+}
+function adminLogout(){ auth.signOut(); }
+
+/* ---- Real-time cloud sync of all teacher records ---- */
+ropaDocRef.onSnapshot((docSnap)=>{
+  if(docSnap.exists && docSnap.data().records && typeof docSnap.data().records === 'object'){
+    teacherRecordsCache = docSnap.data().records;
+    try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(teacherRecordsCache)); }catch(e){}
+    setSyncStatus('☁ Synced', '#065f46');
+  } else {
+    teacherRecordsCache = {};
+    setSyncStatus('☁ Synced', '#065f46');
+  }
+  refreshTeacherRecordList();
+}, (err)=>{
+  console.error('Firestore sync error, using local cache:', err);
+  setSyncStatus('⚠ Offline (local only)', '#b45309');
+  try{
+    const raw = localStorage.getItem(TEACHER_RECORDS_STORAGE_KEY);
+    teacherRecordsCache = raw ? JSON.parse(raw) : {};
+  }catch(e){ teacherRecordsCache = {}; }
+  refreshTeacherRecordList();
+});
+
+function dashboardFieldState() {
+    const state = {};
+    document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+        if (el.id === 'dashboardJsonImport' || el.id === 'savedTeacherSelect') return;
+        state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    return state;
+}
+
+function collectDashboardState() {
+    return {
+        version: 4,
+        savedAt: new Date().toISOString(),
+        staffName: (document.getElementById('staffName')?.value || '').trim(),
+        fields: dashboardFieldState(),
+        periods: JSON.parse(JSON.stringify(periods || [])),
+        masterMlEntries: JSON.parse(JSON.stringify(masterMlEntries || [])),
+        transferEvents: JSON.parse(JSON.stringify(transferEvents || [])),
+        casPriorSchools: casGetPriorSchools().map(s => ({
+            name: s.name,
+            doj: s.doj ? toISO(s.doj) : '',
+            dol: s.dol ? toISO(s.dol) : ''
+        }))
+    };
+}
+
+function teacherRecordKey(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+function getTeacherRecords() {
+    return teacherRecordsCache || {};
+}
+
+function setTeacherRecords(records) {
+    teacherRecordsCache = records;
+    try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records)); }catch(e){}
+    setSyncStatus('☁ Saving…', '#1e3a8a');
+    ropaDocRef.set({records: records, updatedAt: new Date().toISOString()})
+        .then(()=> setSyncStatus('☁ Synced', '#065f46'))
+        .catch((err)=>{
+            console.error('Firestore save failed:', err);
+            setSyncStatus('⚠ Save failed - check connection', '#b91c1c');
+        });
+}
+
+function refreshTeacherRecordList(selectKey = '') {
+    const selects = [document.getElementById('savedTeacherSelect'), document.getElementById('topSavedTeacherSelect')].filter(Boolean);
+    const counts = [document.getElementById('teacherRecordCount'), document.getElementById('topTeacherRecordCount')].filter(Boolean);
+    if (!selects.length) return;
+    const records = getTeacherRecords();
+    const names = Object.keys(records).sort((a,b) => a.localeCompare(b, 'en'));
+    selects.forEach(sel => {
+        const prevValue = sel.value;
+        sel.innerHTML = '<option value="">-- Select Saved Teacher --</option>' +
+            names.map(k => `<option value="${k.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}">${String(records[k].staffName || k).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join('');
+        if (selectKey && records[selectKey]) sel.value = selectKey;
+        else if (prevValue && records[prevValue]) sel.value = prevValue;
+    });
+    const text = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in the shared cloud database.`;
+    counts.forEach(el => el.textContent = text);
+}
+
+function loadTeacherRecordByTopSelect() {
+    const sel = document.getElementById('topSavedTeacherSelect');
+    if (sel && sel.value) loadTeacherRecordByKey(sel.value);
+}
+
+function loadTeacherRecordFromTop() {
+    const sel = document.getElementById('topSavedTeacherSelect');
+    if (!sel || !sel.value) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    loadTeacherRecordByKey(sel.value);
+}
+
+function applyDashboardState(data) {
+    if (!data || typeof data !== 'object') throw new Error('Invalid dashboard JSON.');
+    const fields = data.fields || {};
+    Object.keys(fields).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || id === 'dashboardJsonImport' || id === 'savedTeacherSelect') return;
+        if (el.type === 'checkbox') el.checked = !!fields[id];
+        else el.value = fields[id] ?? '';
+    });
+
+    periods = Array.isArray(data.periods) ? data.periods : [];
+    masterMlEntries = Array.isArray(data.masterMlEntries) ? data.masterMlEntries : [];
+    transferEvents = Array.isArray(data.transferEvents) ? data.transferEvents : [];
+    const allIds = [
+        ...periods.map(p => Number(p.id) || 0),
+        ...masterMlEntries.map(e => Number(e.id) || 0),
+        ...transferEvents.map(t => Number(t.id) || 0)
+    ];
+    idCounter = Math.max(1, ...allIds, 0) + 1;
+
+    document.getElementById('casPriorSchoolsList').innerHTML = '';
+    casPriorSchoolSeq = 0;
+    (data.casPriorSchools || []).forEach(s => casAddPriorSchool(s.name || '', s.doj || '', s.dol || ''));
+
+    togglePromotionSection();
+    toggleRopa09Section();
+    casToggleGovFields();
+    toggleTransferUI();
+    calculateDOR();
+    assignMlEntries();
+    renderAll();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = '✓ Teacher data loaded successfully.';
+}
+
+function saveTeacherRecord(showMessage = true) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to save.'; }
+        return null;
+    }
+    try {
+        const data = collectDashboardState();
+        const key = teacherRecordKey(data.staffName);
+        if (!key) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Enter Teacher Name before saving.'; }
+            return null;
+        }
+        const records = getTeacherRecords();
+        const existed = !!records[key];
+        records[key] = data;
+        setTeacherRecords(records);
+        localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
+        dashboardSaveArmed = true;
+        refreshTeacherRecordList(key);
+        if (showMessage) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) {
+                status.style.color = '#065f46';
+                status.textContent = `✓ ${existed ? 'Updated' : 'Saved'} teacher: ${data.staffName}`;
+            }
+        }
+        return data;
+    } catch (err) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91b1b'; status.textContent = 'Save failed: ' + err.message; }
+        return null;
+    }
+}
+
+function loadTeacherRecord() {
+    const sel = document.getElementById('savedTeacherSelect');
+    const key = sel ? sel.value : '';
+    if (!key) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    loadTeacherRecordByKey(key);
+}
+
+function loadTeacherRecordBySelect() {
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel && sel.value) loadTeacherRecordByKey(sel.value);
+}
+
+function loadTeacherRecordByKey(key) {
+    try {
+        const records = getTeacherRecords();
+        if (!records[key]) throw new Error('Teacher record not found.');
+        applyDashboardState(records[key]);
+        dashboardSaveArmed = true;
+        refreshTeacherRecordList(key);
+    } catch (err) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Load failed: ' + err.message; }
+    }
+}
+
+function deleteTeacherRecord() {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to delete.'; }
+        return;
+    }
+    const sel = document.getElementById('savedTeacherSelect');
+    const key = sel ? sel.value : '';
+    if (!key) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    const records = getTeacherRecords();
+    const displayName = records[key]?.staffName || key;
+    if (!confirm(`Delete saved data for ${displayName}?`)) return;
+    delete records[key];
+    setTeacherRecords(records);
+    refreshTeacherRecordList();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = `✓ Deleted teacher: ${displayName}`; }
+}
+
+function newTeacherRecord() {
+    if (!confirm('Clear the current form to enter a new teacher? Saved teacher records will remain safe.')) return;
+    document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+        if (['dashboardJsonImport','savedTeacherSelect'].includes(el.id)) return;
+        if (el.type === 'checkbox') el.checked = false;
+        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+    });
+    periods = [];
+    masterMlEntries = [];
+    transferEvents = [];
+    idCounter = 1;
+    const ps = document.getElementById('casPriorSchoolsList');
+    if (ps) ps.innerHTML = '';
+    casPriorSchoolSeq = 0;
+    togglePromotionSection();
+    toggleRopa09Section();
+    casToggleGovFields();
+    toggleTransferUI();
+    calculateDOR();
+    assignMlEntries();
+    renderAll();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = '✓ New teacher form ready. Existing saved records are unchanged.'; }
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel) sel.value = '';
+}
+
+/* Backward-compatible buttons/functions */
+function saveDashboardData(showMessage = true) { return saveTeacherRecord(showMessage); }
+
+function loadSavedDashboardData() {
+    refreshTeacherRecordList();
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel && sel.value) return loadTeacherRecord();
+    try {
+        const raw = localStorage.getItem(DASHBOARD_STORAGE_KEY);
+        if (raw) { applyDashboardState(JSON.parse(raw)); dashboardSaveArmed = true; return; }
+    } catch (_) {}
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = 'Select a saved teacher to load.';
+}
+
+function exportDashboardJSON() {
+    const data = collectDashboardState();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = (document.getElementById('staffName').value || 'Staff').replace(/[^a-z0-9_-]+/gi, '_');
+    a.href = url;
+    a.download = `TFHS_ROPA_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = '✓ Current teacher JSON exported successfully.';
+}
+
+function importDashboardJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to import.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            applyDashboardState(data);
+            const key = teacherRecordKey(data.staffName || data.fields?.staffName || document.getElementById('staffName')?.value);
+            if (key) {
+                const records = getTeacherRecords();
+                records[key] = data;
+                setTeacherRecords(records);
+                refreshTeacherRecordList(key);
+            }
+            localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
+            dashboardSaveArmed = true;
+            const status = document.getElementById('dataSaveStatus');
+            if (status) status.textContent = `✓ JSON imported and saved as teacher: ${data.staffName || key}`;
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsText(file);
+}
+
+/* ---------- EXPORT ALL / IMPORT ALL (full backup & restore of every saved teacher) ----------
+   Unlike "Export/Import JSON" above (single teacher) and "Bulk Import All Staff" below
+   (basic info only, for new/blank staff), these two work on the COMPLETE shared
+   database of teacher records (every field, period, promotion, LWP entry, etc. already
+   saved) — meant for taking a full backup or restoring/transferring it to another device. */
+function exportAllTeachersJSON() {
+    const records = getTeacherRecords();
+    const payload = {
+        exportType: 'TFHS_ALL_TEACHERS',
+        exportedAt: new Date().toISOString(),
+        count: Object.keys(records).length,
+        records: records
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TFHS_ROPA_ALL_TEACHERS_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = `✓ Exported all ${payload.count} teacher record(s) successfully.`; }
+}
+
+function importAllTeachersJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to import all teachers.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            const incoming = (data && typeof data === 'object' && data.records && typeof data.records === 'object') ? data.records : data;
+            if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+                throw new Error('Expected a full "Export All Teachers" JSON file (an object of teacher records).');
+            }
+            const incomingCount = Object.keys(incoming).length;
+            if (!incomingCount) throw new Error('No teacher records found in the file.');
+            const proceed = window.confirm(`This file contains ${incomingCount} teacher record(s). Each will be added to the shared cloud database, or will OVERWRITE the existing record of any teacher with the same name. Continue?`);
+            if (!proceed) { event.target.value = ''; return; }
+            const records = getTeacherRecords();
+            let added = 0, overwritten = 0;
+            Object.keys(incoming).forEach(rawKey => {
+                const rec = incoming[rawKey];
+                const key = teacherRecordKey(rec && rec.staffName ? rec.staffName : rawKey);
+                if (records[key]) overwritten++; else added++;
+                records[key] = rec;
+            });
+            setTeacherRecords(records);
+            refreshTeacherRecordList();
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#065f46'; status.textContent = `✓ Import All complete: ${added} new teacher(s) added, ${overwritten} existing teacher(s) overwritten.`; }
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import All failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsText(file);
+}
+
+/* ---------- BULK STAFF IMPORT (from school salary/service Excel) ----------
+   Accepts a JSON array of staff, each shaped like:
+   {
+     "staffName": "FULL NAME", "designation": "Assistant Teacher",
+     "dob": "YYYY-MM-DD", "doj": "YYYY-MM-DD" (date of FIRST joining service),
+     "sex": "M"/"F", "casApprovalNo": "...", "casDojCurrentSchool": "YYYY-MM-DD",
+     "casQualification": "...",
+     "casPriorSchools": [ {"name": "...", "doj": "YYYY-MM-DD", "dol": "YYYY-MM-DD"}, ... ]
+   }
+   Safe by design: for a staff member who is NOT yet in the shared database, a
+   fresh record is created (Basic/ROPA pay-fixation periods left empty, ready
+   for you to fill in on the relevant ROPA tab). For a staff member who
+   ALREADY has a saved record, only blank basic-info fields are filled in and
+   any pay-fixation work (periods/promotion/LWP) already entered is left
+   untouched. Nothing is ever silently overwritten. */
+function bulkImportStaffJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to bulk import staff.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const list = JSON.parse(e.target.result);
+            if (!Array.isArray(list)) throw new Error('Expected a JSON array of staff records.');
+            const records = getTeacherRecords();
+            let added = 0, updated = 0, skipped = 0;
+            list.forEach(person => {
+                const name = String(person.staffName || '').trim();
+                if (!name) { skipped++; return; }
+                const key = teacherRecordKey(name);
+                const priorSchools = Array.isArray(person.casPriorSchools) ? person.casPriorSchools : [];
+                const basicFields = {
+                    schoolName: document.getElementById('schoolName')?.value || 'TALDANGRA FULMATI HIGH SCHOOL [H.S.]',
+                    staffName: name,
+                    designation: person.designation || '',
+                    dob: person.dob || '',
+                    doj: person.doj || '',
+                    empStatus: 'SUBSTANTIVE',
+                    casSex: person.sex || '',
+                    casApprovalNo: person.casApprovalNo || '',
+                    casDojCurrentSchool: person.casDojCurrentSchool || '',
+                    casQualification: person.casQualification || ''
+                };
+                if (records[key]) {
+                    const existing = records[key];
+                    existing.fields = existing.fields || {};
+                    Object.keys(basicFields).forEach(id => {
+                        if (!existing.fields[id]) existing.fields[id] = basicFields[id];
+                    });
+                    existing.staffName = existing.staffName || name;
+                    if ((!existing.casPriorSchools || !existing.casPriorSchools.length) && priorSchools.length) {
+                        existing.casPriorSchools = priorSchools;
+                    }
+                    updated++;
+                } else {
+                    records[key] = {
+                        version: 4,
+                        savedAt: new Date().toISOString(),
+                        staffName: name,
+                        fields: basicFields,
+                        periods: [],
+                        masterMlEntries: [],
+                        transferEvents: [],
+                        casPriorSchools: priorSchools
+                    };
+                    added++;
+                }
+            });
+            setTeacherRecords(records);
+            refreshTeacherRecordList();
+            const status = document.getElementById('dataSaveStatus');
+            if (status) {
+                status.style.color = '#065f46';
+                status.textContent = `✓ Bulk import complete: ${added} new staff added, ${updated} existing staff updated (blank fields only)${skipped ? `, ${skipped} skipped (no name)` : ''}.`;
+            }
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Bulk import failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsText(file);
+}
+
+function armDashboardAutoSave() {
+    document.addEventListener('change', function(e) {
+        if (!dashboardSaveArmed) return;
+        if (e.target && !['dashboardJsonImport','savedTeacherSelect'].includes(e.target.id)) saveTeacherRecord(false);
+    });
+}
+
+refreshTeacherRecordList();
+
+function casPrintWindowShell(innerHtml, title, landscape = false, compact = false) {
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8">
+        <style>
+            @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: ${compact ? '6mm 7mm' : (landscape ? '10mm 8mm' : '18mm 16mm')}; }
+            body { font-family: 'Times New Roman', Times, serif; font-size: ${compact ? '13.5pt' : '12.5pt'}; color:#000; line-height:${compact ? '1.55' : '1.5'}; }
+            .cas-doc-page { page-break-after: always; padding-bottom: 8mm; }
+            .cas-doc-page:last-child { page-break-after: auto; }
+            .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
+            .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
+            .cas-doc-page.cas-compact { padding-bottom: 0; page-break-inside: avoid; }
+            .cas-letterhead-space { height: 54mm; }
+            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-size: 14pt; line-height: 1.5; padding: 3mm 5mm; }
+            .cas-di-office-memo .di-title { font-size: 19pt !important; }
+            .cas-di-office-memo .di-office { font-size: 16pt !important; }
+            .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
+            .cas-file-cover { width:100%; min-height:255mm; box-sizing:border-box; border:5px double #111827; outline:1px solid #64748b; outline-offset:-10px; padding:18mm 16mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-inside:avoid; overflow:hidden; }
+            .cas-file-cover .cover-top,.cas-file-cover .cover-middle,.cas-file-cover .cover-bottom { width:100%; box-sizing:border-box; text-align:center; }
+            .cas-file-cover .cover-top { margin-bottom:18mm; }
+            .cas-file-cover .cover-middle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5mm; width:100%; }
+            .cas-file-cover .cover-school { display:block; max-width:100%; font-size:24pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-address { max-width:100%; font-size:13pt !important; line-height:1.25; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-title { display:block; width:100%; max-width:190mm; font-size:30pt !important; line-height:1.18; font-weight:900; letter-spacing:1px; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-effective { font-size:18pt !important; font-weight:800; }
+            .cas-file-cover .cover-favour { font-size:17pt !important; font-weight:800; letter-spacing:2px; margin-top:3mm; }
+            .cas-file-cover .cover-name { display:block; width:100%; max-width:190mm; font-size:32pt !important; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-designation { display:block; width:100%; max-width:190mm; font-size:20pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-meta { font-size:15pt !important; line-height:1.25; }
+            .cas-merged-pair { page-break-inside: avoid; }
+            .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
+            p { margin: 6px 0; }
+            table { border-collapse: collapse; }
+            .hmahm-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:1em; }
+            .hmahm-table td { border:1.4px solid #000; padding:7px 9px; vertical-align:top; }
+            .hmahm-table td.hn { width:6%; font-weight:bold; text-align:center; }
+            .hmahm-office-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:1em; }
+            .hmahm-office-table td { border:1.4px solid #000; padding:10px 12px; }
+            .hmahm-stampspace { height:70px; }
+            .cas-hmahm-form h2 { font-size:1.15em; margin-bottom:8px; }
+            .cas-hmahm-form h3 { font-size:1.05em; }
+            .cas-pay-structure { width:100%; font-family:'Times New Roman', Times, serif; color:#000; }
+            .cas-pay-structure .ps-title { text-align:center; font-size:15pt; font-weight:900; line-height:1.2; }
+            .cas-pay-structure .ps-school { text-align:center; font-size:11pt; font-weight:800; margin-top:3px; }
+            .cas-pay-structure .ps-cutoff { text-align:right; font-size:8pt; font-weight:700; margin:4px 0; }
+            .cas-pay-structure .ps-table { width:100%; table-layout:fixed; font-size:8pt; }
+            .cas-pay-structure .ps-table th,.cas-pay-structure .ps-table td { border:1px solid #000; padding:2.5px 3px; vertical-align:middle; }
+            .cas-pay-structure .ps-table th { font-weight:900; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(1) { width:10%; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(2) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(3) { width:9%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(4) { width:7%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
+        </style></head><body>${innerHtml}
+</body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+}
+
+function casPrintOne(i) {
+    const d = window._casDocs && window._casDocs[i];
+    if (!d) return;
+    casPrintWindowShell(`<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`, d.title, !!d.landscape, !!d.compact);
+}
+
+function casPrintAll() {
+    const docs = window._casDocs || [];
+    if (!docs.length) return;
+    // Mixed-compact batches: any landscape doc forces a separate popup per print job,
+    // so batch-print uses each doc's own compact styling but a shared portrait shell.
+    const anyCompact = docs.some(d => d.compact);
+    casPrintWindowShell(docs.map(d => `<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`).join(''), 'CAS Documents', false, false);
+}
+
+// Start one-way auto-save only after the user has explicitly saved/loaded data once.
+armDashboardAutoSave();
+</script>
+
+<script>document.addEventListener('DOMContentLoaded', casInitDefaultStaffData);</script>
+</body>
+</html>
