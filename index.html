@@ -856,8 +856,8 @@
             <input type="text" id="casResolutionNo" placeholder="e.g. 04/25 Dated: 31-10-2025">
         </div>
         <div class="form-group">
-            <label>District Inspector of Schools — Office Address (for letters)</label>
-            <input type="text" id="casDiOffice" value="The District Inspector of Schools (S.E.),">
+            <label>District Inspector of Schools — Office Address (for letters, without "The")</label>
+            <input type="text" id="casDiOffice" value="District Inspector of Schools (S.E.),">
         </div>
         <div class="form-group">
             <label>Date of Option (today, or as applicable)</label>
@@ -3361,7 +3361,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const fullSchool = schoolName + (schoolAddr ? '; ' + schoolAddr : '');
     const qualification = document.getElementById('casQualification').value || '';
     const district = document.getElementById('casDistrict').value || '';
-    const diOffice = document.getElementById('casDiOffice').value || 'The District Inspector of Schools (S.E.),';
+    const diOffice = document.getElementById('casDiOffice').value || 'District Inspector of Schools (S.E.),';
     const resolutionNo = document.getElementById('casResolutionNo').value || '________________';
     const approvalNo = document.getElementById('casApprovalNo').value || '________________';
     const prevSchool = document.getElementById('casPrevSchool').value || '';
@@ -3377,8 +3377,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     // Applicant's application is always addressed to the Administrator through the selected HOI.
     // The applicant remains the first-person author throughout the letter.
     const authorityRecipient = 'The Administrator,';
-    const authorityShort = 'The Administrator';
-    const approvalAuthority = govType === 'Administrator' ? 'The Administrator' : 'The Secretary / President, Managing Committee /Adhoc-Committee';
+    const authorityShort = 'Administrator';
+    const approvalAuthority = govType === 'Administrator' ? 'Administrator' : 'Secretary / President, Managing Committee /Adhoc-Committee';
     const mcValidUptoVal = document.getElementById('casMcValidUpto').value;
     const mcValidUpto = mcValidUptoVal ? casFmt(new Date(mcValidUptoVal + 'T00:00:00')) : '________________';
     const subDivision = document.getElementById('casSubDivision').value || '';
@@ -3433,8 +3433,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;">Date: ________________</td>
             <td style="width:50%;text-align:right;">Signature of the ${hoiStatus}</td>
         </tr></table>
-        <p style="margin-top:20px;">Approved by ${approvalAuthority} vide ${govType === 'MC' ? 'Resolution' : 'Order'} No. ${resolutionNo}.</p>
-        <p style="text-align:right;margin-top:30px;">${govType === 'MC' ? 'Secretary / President, Managing Committee' : 'The Administrator'}</p>`;
+        <p style="margin-top:20px;">Approved by the ${approvalAuthority} vide ${govType === 'MC' ? 'Resolution' : 'Order'} No. ${resolutionNo}.</p>
+        <p style="text-align:right;margin-top:30px;">${govType === 'MC' ? 'Secretary / President, Managing Committee' : 'Administrator'}</p>`;
 
     /* ---------- DOC 3: APPLICANT DECLARATION / APPLICATION / OPTION LETTER ---------- */
     const doc3 = `
@@ -3442,7 +3442,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin-top:16px;"><strong>Subject:</strong> Declaration cum Application cum Option for availing the benefit of Career Advancement Scheme for completion of ${milestoneWord} continuous service under ${regimeName}.</p>
         <p style="text-align:justify;"><strong>I, ${sriSmt} ${staffName}, ${designation},</strong> hereby state that I have joined service on ${casFmt(doj)} and have completed a full ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}. ${priorSchools.length ? `My service history, including my previous school service, is as follows: ${priorSchools.map((s, i) => `${s.name} (${casFmt(s.doj || (i === 0 ? doj : null))} to ${s.dol ? casFmt(s.dol) : 'till date'})`).join('; ')}. I am presently serving at ${fullSchool} since ${casFmt(dojCurrentSchool)}.` : `I am serving continuously and satisfactorily at ${fullSchool}.`}</p>
         <p style="text-align:justify;">Hence, in terms of ${regimeName}, vide ${goRef}, I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? 'my date of next increment' : 'my date of entitlement'}.</p>
-        <p style="text-align:justify;">I therefore request ${authorityShort} to kindly take necessary arrangements to accord approval from the end of the ${diOffice} ${district} in my favour for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
+        <p style="text-align:justify;">I therefore request the ${authorityShort} to kindly take necessary arrangements to accord approval from the end of the ${diOffice} ${district} in my favour for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
         <p style="text-align:justify;">I further state that my present Basic Pay is ${existing.payLabel} in the pay scale/level ${existing.scaleLabel}.</p>
         <p style="text-align:justify;">I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
         <table style="width:100%;margin-top:24px;"><tr>
@@ -3488,12 +3488,12 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
         </table>
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
-        <p style="text-align:right;margin-top:40px;">________________________<br>The Administrator</p>`;
+        <p style="text-align:right;margin-top:40px;">________________________<br>Administrator</p>`;
 
     /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
     const doc6 = `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
-        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p>To<br>The ${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
         <p style="margin-top:16px;"><strong>Subject:</strong> Approval for ${milestoneWord} fixation benefit in favour of ${staffName}, ${designation} of ${schoolName}.</p>
         <p>Sir,</p>
         <p style="text-align:justify;">I would like to submit the necessary documents for approval of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation} of ${schoolName}, in terms of ${regimeName}, vide ${goRef}.</p>
@@ -3527,7 +3527,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
     const doc7 = `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
-        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p>To<br>The ${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
         <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
         <p>Sir,</p>
         <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
