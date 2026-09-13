@@ -1290,15 +1290,12 @@
     }
 
     function resolveRopa98MilestoneDate(originalDate, entries) {
-        const win = checkWindow(originalDate);
+        // ROPA-1998 predates the fixed 1st-July increment-date rule (that rule was
+        // introduced only with the WBS(ROPA) Rules 2009). So, unlike the ROPA-2009 /
+        // ROPA-2019 milestone dates, a ROPA-1998 10/18/20-Year milestone is NEVER
+        // snapped to a Jan2-Jun30 "window" — it always falls on the exact anniversary
+        // of the 1st Date of Joining, shifted only by any LWP days actually taken.
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
-        if (win === 'A') {
-            const jun30 = new Date(originalDate.getFullYear(), 5, 30);
-            if (lwpDays === 0) return jun30;
-            const gapDays = Math.round((jun30 - originalDate) / 86400000);
-            if (lwpDays <= gapDays) return jun30;
-            return addDays(originalDate, lwpDays);
-        }
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
     }
 
