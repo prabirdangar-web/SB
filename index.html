@@ -220,6 +220,12 @@
             .sb-main-table { width: 100%; border-collapse: collapse; }
             .sb-main-table th { background-color: #eaeaea !important; border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; text-align: center; }
             .sb-main-table td { border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; }
+            /* Repeat each table's header row on every printed page of the Service Book
+               whenever a table (ROPA-1998/2009/2019, Leave Account) spans multiple pages. */
+            .sb-main-table thead,
+            #sbLeaveBlock table thead { display: table-header-group; }
+            .sb-main-table tr,
+            #sbLeaveBlock table tr { page-break-inside: avoid; break-inside: avoid; }
             .slip-box { border: 1px solid #000 !important; background: none !important; }
             .no-print { display: none !important; }
 
@@ -3726,7 +3732,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         { title: 'Final Acceptance / Finalization Request to the District Inspector of Schools', body: doc7 },
         { title: "District Inspector's Office Memorandum (Final Order)", body: doc8, compact: true },
         { title: 'No-Litigation Certificate (NLC)', body: doc9 },
-        { title: `Pay Structure — ${milestoneWord}`, body: payStructureDoc, landscape: true },
+        { title: `Pay Structure — ${milestoneWord}`, body: payStructureDoc, landscape: false },
         { title: 'File Cover Sheet', body: doc10, compact: true },
         { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 },
         { title: `CAS Check List — ${milestoneWord}`, body: doc13 }
@@ -4312,6 +4318,11 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
             .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
             .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
+            /* Repeat the table header row on every printed page when a table
+               (e.g. the Pay Structure sheet) spans more than one page. */
+            table thead { display: table-header-group; }
+            table tfoot { display: table-footer-group; }
+            table tr { page-break-inside: avoid; break-inside: avoid; }
         </style></head><body>${innerHtml}
 </body></html>`);
     w.document.close();
