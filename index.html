@@ -3605,7 +3605,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const doc8 = `
         <div class="cas-di-office-memo">
         <div class="memo-header" style="text-align:center;">
-            <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" class="cas-emblem" style="display:block;width:auto;height:50px;max-width:30mm;object-fit:contain;margin:0 auto 2px auto;">
+            <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" class="cas-emblem" style="display:block;width:auto;height:75px;max-width:45mm;object-fit:contain;margin:0 auto 3px auto;">
             <div class="di-title" style="font-weight:bold;">Govt of West Bengal</div>
             <div class="di-office" style="font-weight:bold;">Office of the District Inspector of School (S.E.)</div>
             <div style="font-weight:bold;">${district}</div>
@@ -3617,7 +3617,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
         <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
         <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in ${normalNextPayLabel} ]</span></p>
-        <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
+        <p style="margin:2px 0 2px;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;white-space:nowrap;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
         <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
         <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
         </div>
@@ -4313,7 +4313,7 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
                 flex-direction: column;
                 justify-content: space-between;
             }
-            .cas-di-office-memo .cas-emblem { display:block !important; visibility:visible !important; width:auto !important; height:50px !important; max-width:30mm !important; object-fit:contain !important; margin:0 auto 2px auto !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .cas-di-office-memo .cas-emblem { display:block !important; visibility:visible !important; width:auto !important; height:75px !important; max-width:45mm !important; object-fit:contain !important; margin:0 auto 3px auto !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
             .cas-di-office-memo .di-title { font-size: 26pt !important; }
             .cas-di-office-memo .di-office { font-size: 21pt !important; }
             .cas-di-office-memo .di-memo { font-size: 22pt !important; letter-spacing: .6px; }
