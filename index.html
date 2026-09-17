@@ -230,20 +230,29 @@
             .no-print { display: none !important; }
 
             .cas-di-office-memo {
-                min-height: 218mm;
+                min-height: 250mm;
                 box-sizing: border-box;
                 font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif;
                 font-size: 15pt;
                 line-height: 1.5;
                 padding: 3mm 5mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
-            .cas-di-office-memo .di-title { font-size: 19pt !important; }
-            .cas-di-office-memo .di-office { font-size: 16pt !important; }
-            .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
+            .cas-di-office-memo .di-title { font-size: 26pt !important; }
+            .cas-di-office-memo .di-office { font-size: 21pt !important; }
+            .cas-di-office-memo .di-memo { font-size: 22pt !important; letter-spacing: .6px; }
             /* DI letters/certificates (forwarding letter, acceptance request, NLC, admin-status certificate):
                larger Lucida Bright body copy, and dotted underline on Subject/Ref lines */
             .cas-doc-page:has(.cas-letterhead-space) { font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 14.5pt; line-height: 1.7; }
-            .cas-subject-line, .cas-ref-line { text-decoration: underline; text-decoration-style: dotted; text-decoration-color: #000; text-underline-offset: 4px; }
+            p.cas-subject-line, p.cas-ref-line, .cas-subject-line, .cas-ref-line {
+                text-decoration-line: underline !important;
+                text-decoration-style: dotted !important;
+                text-decoration-color: #000 !important;
+                text-decoration-thickness: 1.5px !important;
+                text-underline-offset: 4px !important;
+            }
             .cas-file-cover {
                 width: 100%;
                 min-height: 255mm;
@@ -331,7 +340,7 @@
                 overflow-wrap:anywhere;
             }
             .cas-file-cover .cover-meta { font-size: 15pt !important; line-height:1.25; }
-            .cas-letterhead-space { height: 67mm; } /* 18mm page margin + 67mm = 85mm (8.5cm) min gap above letterhead content in A4 portrait */
+            .cas-letterhead-space { height: 85mm; } /* 8.5cm reserved space above the letter content, in addition to the page margin, for A4 portrait letterhead pads */
             .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
 
             .hmahm-table { width:100%; border-collapse:collapse; margin-top:6px; }
@@ -3595,14 +3604,15 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     const doc8 = `
         <div class="cas-di-office-memo">
-        <div style="text-align:center;">
+        <div class="memo-header" style="text-align:center;">
             <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" class="cas-emblem" style="display:block;width:auto;height:50px;max-width:30mm;object-fit:contain;margin:0 auto 2px auto;">
-            <div class="di-title" style="font-weight:bold;font-size:1.05rem;">Govt of West Bengal</div>
+            <div class="di-title" style="font-weight:bold;">Govt of West Bengal</div>
             <div class="di-office" style="font-weight:bold;">Office of the District Inspector of School (S.E.)</div>
             <div style="font-weight:bold;">${district}</div>
             <div style="border-bottom:1px solid #000;margin:4px auto 0;width:96%;"></div>
             <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
         </div>
+        <div class="memo-body">
         <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
         <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
@@ -3610,6 +3620,8 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
         <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
         <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
+        </div>
+        <div class="memo-footer">
         <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
         <table style="width:100%;margin-top:16mm;"><tr>
             <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
@@ -3623,6 +3635,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <li>${sriSmt} ${staffName}; ${designation}; ${fullSchool}</li>
         </ol>
         <p style="text-align:right;margin-top:16px;">District Inspector of Schools (S.E.),<br>${district}</p>
+        </div>
         </div>`;
 
     /* ---------- DOC 9: NO-LITIGATION CERTIFICATE (NLC) ---------- */
@@ -4279,15 +4292,31 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
             .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
             .cas-doc-page.cas-compact { padding-bottom: 0; page-break-inside: avoid; }
-            .cas-letterhead-space { height: 67mm; } /* 18mm page margin + 67mm = 85mm (8.5cm) min gap above letterhead content in A4 portrait */
+            .cas-letterhead-space { height: 85mm; } /* 8.5cm reserved space above the letter content, in addition to the page margin, for A4 portrait letterhead pads */
             /* DI letters/certificates: larger body copy in Lucida Bright, with a dotted underline on Subject/Ref lines */
             .cas-doc-page:has(.cas-letterhead-space) { font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 14.5pt; line-height: 1.7; }
-            .cas-subject-line, .cas-ref-line { text-decoration: underline; text-decoration-style: dotted; text-decoration-color: #000; text-underline-offset: 4px; }
-            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 15pt; line-height: 1.55; padding: 3mm 5mm; }
+            p.cas-subject-line, p.cas-ref-line, .cas-subject-line, .cas-ref-line {
+                text-decoration-line: underline !important;
+                text-decoration-style: dotted !important;
+                text-decoration-color: #000 !important;
+                text-decoration-thickness: 1.5px !important;
+                text-underline-offset: 4px !important;
+            }
+            .cas-di-office-memo {
+                min-height: 250mm;
+                box-sizing: border-box;
+                font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif;
+                font-size: 15pt;
+                line-height: 1.55;
+                padding: 3mm 5mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
             .cas-di-office-memo .cas-emblem { display:block !important; visibility:visible !important; width:auto !important; height:50px !important; max-width:30mm !important; object-fit:contain !important; margin:0 auto 2px auto !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-            .cas-di-office-memo .di-title { font-size: 19pt !important; }
-            .cas-di-office-memo .di-office { font-size: 16pt !important; }
-            .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
+            .cas-di-office-memo .di-title { font-size: 26pt !important; }
+            .cas-di-office-memo .di-office { font-size: 21pt !important; }
+            .cas-di-office-memo .di-memo { font-size: 22pt !important; letter-spacing: .6px; }
             .cas-file-cover { width:100%; min-height:255mm; box-sizing:border-box; border:5px double #111827; outline:1px solid #64748b; outline-offset:-10px; padding:18mm 16mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-inside:avoid; overflow:hidden; }
             .cas-file-cover .cover-top,.cas-file-cover .cover-middle,.cas-file-cover .cover-bottom { width:100%; box-sizing:border-box; text-align:center; }
             .cas-file-cover .cover-top { margin-bottom:18mm; }
