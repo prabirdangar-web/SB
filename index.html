@@ -232,13 +232,18 @@
             .cas-di-office-memo {
                 min-height: 218mm;
                 box-sizing: border-box;
-                font-size: 14pt;
-                line-height: 1.42;
+                font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif;
+                font-size: 15pt;
+                line-height: 1.5;
                 padding: 3mm 5mm;
             }
             .cas-di-office-memo .di-title { font-size: 19pt !important; }
             .cas-di-office-memo .di-office { font-size: 16pt !important; }
             .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
+            /* DI letters/certificates (forwarding letter, acceptance request, NLC, admin-status certificate):
+               larger Lucida Bright body copy, and dotted underline on Subject/Ref lines */
+            .cas-doc-page:has(.cas-letterhead-space) { font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 14.5pt; line-height: 1.7; }
+            .cas-subject-line, .cas-ref-line { text-decoration: underline; text-decoration-style: dotted; text-decoration-color: #000; text-underline-offset: 4px; }
             .cas-file-cover {
                 width: 100%;
                 min-height: 255mm;
@@ -326,7 +331,7 @@
                 overflow-wrap:anywhere;
             }
             .cas-file-cover .cover-meta { font-size: 15pt !important; line-height:1.25; }
-            .cas-letterhead-space { height: 54mm; }
+            .cas-letterhead-space { height: 67mm; } /* 18mm page margin + 67mm = 85mm (8.5cm) min gap above letterhead content in A4 portrait */
             .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
 
             .hmahm-table { width:100%; border-collapse:collapse; margin-top:6px; }
@@ -3495,9 +3500,9 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
     const doc6 = `
-        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p>To<br>The ${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
-        <p style="margin-top:16px;"><strong>Subject:</strong> Approval for ${milestoneWord} fixation benefit in favour of ${staffName}, ${designation} of ${schoolName}.</p>
+        <p style="margin-top:16px;" class="cas-subject-line"><strong>Subject:</strong> Approval for ${milestoneWord} fixation benefit in favour of ${staffName}, ${designation} of ${schoolName}.</p>
         <p>Sir,</p>
         <p style="text-align:justify;">I would like to submit the necessary documents for approval of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation} of ${schoolName}, in terms of ${regimeName}, vide ${goRef}.</p>
         <p style="text-align:justify;">${serviceNarrative} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
@@ -3529,9 +3534,9 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
     const doc7 = `
-        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p>To<br>The ${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
-        <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
+        <p style="margin-top:16px;" class="cas-subject-line"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
         <p>Sir,</p>
         <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
         <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
@@ -3610,7 +3615,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
             <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
-        <p style="margin-top:16mm;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="margin-top:16mm;" class="cas-ref-line">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
         <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
@@ -3622,7 +3627,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     /* ---------- DOC 9: NO-LITIGATION CERTIFICATE (NLC) ---------- */
     const doc9 = `
-        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p style="text-align:center;font-weight:bold;">Certificate Regarding Non-Litigation Regarding Post and Appointment</p>
         <p style="text-align:justify;margin-top:16px;">This is to certify that there is no court case or any form of litigation pending against the post and appointment of ${staffName}, who was appointed to the post of ${designation} with effect from ${casFmt(dojCurrentSchool)} at ${schoolName}. Accordingly, the application for approval of the ${milestoneWord.toLowerCase()} Fixation benefit in ${hisHer} favour is being submitted.</p>
         <table style="width:100%;margin-top:40px;"><tr>
@@ -3654,7 +3659,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
     /* ---------- DOC 11: CERTIFICATE REGARDING STATUS OF SCHOOL ADMINISTRATION ---------- */
     const doc11 = govType === 'MC' ? `
-        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
         <p style="margin-top:16px;">Certified that:</p>
         <ol style="line-height:1.8;">
@@ -3666,7 +3671,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;">Date: ________________</td>
             <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
         </tr></table>` : `
-        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (~7.2cm from top of page)"></div>
+        <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
         <p style="margin-top:16px;">Certified that:</p>
         <ol style="line-height:1.8;">
@@ -4274,8 +4279,11 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
             .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
             .cas-doc-page.cas-compact { padding-bottom: 0; page-break-inside: avoid; }
-            .cas-letterhead-space { height: 54mm; }
-            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-size: 14pt; line-height: 1.5; padding: 3mm 5mm; }
+            .cas-letterhead-space { height: 67mm; } /* 18mm page margin + 67mm = 85mm (8.5cm) min gap above letterhead content in A4 portrait */
+            /* DI letters/certificates: larger body copy in Lucida Bright, with a dotted underline on Subject/Ref lines */
+            .cas-doc-page:has(.cas-letterhead-space) { font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 14.5pt; line-height: 1.7; }
+            .cas-subject-line, .cas-ref-line { text-decoration: underline; text-decoration-style: dotted; text-decoration-color: #000; text-underline-offset: 4px; }
+            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif; font-size: 15pt; line-height: 1.55; padding: 3mm 5mm; }
             .cas-di-office-memo .cas-emblem { display:block !important; visibility:visible !important; width:auto !important; height:50px !important; max-width:30mm !important; object-fit:contain !important; margin:0 auto 2px auto !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
             .cas-di-office-memo .di-title { font-size: 19pt !important; }
             .cas-di-office-memo .di-office { font-size: 16pt !important; }
