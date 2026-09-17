@@ -3483,7 +3483,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     /* ---------- DOC 5: GOVERNANCE ORDER / MANAGING COMMITTEE RESOLUTION ---------- */
     const doc5 = govType === 'MC' ? `
         <p style="font-weight:bold;text-align:center;">Managing Committee Resolution</p>
-        <p>Resolution No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p>Resolution No. _ _ _ _ _ _ _ _ _ _ _ _ _&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: _ _ _ _ _ _ _ _ _ _ _ _ _</p>
         <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and after verification of the relevant school records, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">Hence, in terms of ${goRef}, the Managing Committee hereby approves and passes the proposal for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service with effect from ${casFmt(effectDate)}. The following pay details are approved and passed:</p>
         <table style="width:100%;border-collapse:collapse;margin-top:8px;">
@@ -3495,7 +3495,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
         <p style="text-align:right;margin-top:40px;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Secretary / President, Managing Committee</p>` : `
         <p style="font-weight:bold;">Administrator Order</p>
-        <p>Order No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p>Order No. _ _ _ _ _ _ _ _ _ _ _ _ _&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: _ _ _ _ _ _ _ _ _ _ _ _ _</p>
         <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and thereafter verifying related school documents, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">Hence, in terms of ${goRef}, it is hereby approved and passed for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? hisHer + ' date of next increment' : hisHer + ' date of entitlement'}. ${hisHer[0].toUpperCase()+hisHer.slice(1)} following proposed pay details are also approved and passed:</p>
         <table style="width:100%;border-collapse:collapse;margin-top:8px;">
@@ -3627,7 +3627,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
             <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
-        <p style="margin-top:16mm;" class="cas-ref-line">Memo No.  _ _ _ _ _ _ _ _ _ _ _ _ _           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: _ _ _ _ _ _ _ _ _ _ _ _ _</p>
+        <p style="margin-top:16mm;" class="cas-ref-line">Memo No.                                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date:                                         </p>
         <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
