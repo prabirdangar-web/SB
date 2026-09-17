@@ -3239,8 +3239,8 @@ function casGenerateHmAhmForm() {
         </table>
         <p style="margin-top:14px;">Checked &amp; found in order</p>
         <table style="width:100%;margin-top:40px;"><tr>
-            <td style="width:50%;text-align:center;">________________________<br>Signature of A.I of Schools (SE)<br>${district}</td>
-            <td style="width:50%;text-align:center;">________________________<br>Signature of Head of the Institute with designation</td>
+            <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Signature of A.I of Schools (SE)<br>${district}</td>
+            <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Signature of Head of the Institute with designation</td>
         </tr></table>
         <h3 style="text-align:center;margin:16px 0 4px;">SPACE FOR OFFICE USE ONLY</h3>
         <table class="hmahm-office-table">
@@ -3424,7 +3424,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p><strong>Declaration.</strong> I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
         <table style="width:100%;margin-top:24px;"><tr>
             <td style="width:50%;">Date: ${casFmt(optionDate)}<br>Station: ${schoolName}</td>
-            <td style="width:50%;text-align:right;">Signature of staff ____________________________<br>Name: ${staffName}<br>Designation: ${designation}</td>
+            <td style="width:50%;text-align:right;">Signature of staff _ _ _ _ _ _ _ _ _ _ _ _ _<br>Name: ${staffName}<br>Designation: ${designation}</td>
         </tr></table>`;
 
     /* ---------- DOC 2: PART B — FIXATION (BY HOI) ---------- */
@@ -3463,13 +3463,13 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;">I further state that my present Basic Pay is ${existing.payLabel} in the pay scale/level ${existing.scaleLabel}.</p>
         <p style="text-align:justify;">I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
         <table style="width:100%;margin-top:24px;"><tr>
-            <td style="width:50%;">With thanks,<br>Date: ________________<br>Station: ${schoolName}</td>
-            <td style="width:50%;text-align:right;">Yours faithfully,<br>____________________________<br>${sriSmt} ${staffName}<br>${designation}</td>
+            <td style="width:50%;">With thanks,<br>Date: _ _ _ _ _ _ _ _ _ _ _<br>Station: ${schoolName}</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br>_ _ _ _ _ _ _ _ _ _ _ _ _<br>${sriSmt} ${staffName}<br>${designation}</td>
         </tr></table>
         <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. 1st Approval of Appointment (copy)<br>2. Other related documents.</p>
         <table style="width:100%;margin-top:24px;"><tr>
-            <td style="width:50%;">Received / recommended by ${hoiStatus}<br><br>________________________<br>${hoiStatus}</td>
-            <td style="width:50%;text-align:right;">${govType === 'Administrator' ? 'Approved &amp; Passed' : 'Received / Placed before Managing Committee'}<br><br>________________________<br>${authorityShort}</td>
+            <td style="width:50%;">Received / recommended by ${hoiStatus}<br><br>_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}</td>
+            <td style="width:50%;text-align:right;">${govType === 'Administrator' ? 'Approved &amp; Passed' : 'Received / Placed before Managing Committee'}<br><br>_ _ _ _ _ _ _ _ _ _ _ _ _<br>${authorityShort}</td>
         </tr></table>`;
 
     /* ---------- DOC 4: HOI REPORT ---------- */
@@ -3478,7 +3478,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p>Proposal No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
         <p style="text-align:justify;">${staffName}, ${designation} of this school, has duly submitted an application for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}.</p>
         <p style="text-align:justify;">${hisHer[0].toUpperCase()+hisHer.slice(1)} application, along with all other necessary documents, is being placed for taking necessary steps in this regard.</p>
-        <p style="text-align:right;margin-top:40px;">________________________<br>${hoiStatus}</p>`;
+        <p style="text-align:right;margin-top:40px;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}</p>`;
 
     /* ---------- DOC 5: GOVERNANCE ORDER / MANAGING COMMITTEE RESOLUTION ---------- */
     const doc5 = govType === 'MC' ? `
@@ -3493,7 +3493,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
         </table>
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
-        <p style="text-align:right;margin-top:40px;">________________________<br>Secretary / President, Managing Committee</p>` : `
+        <p style="text-align:right;margin-top:40px;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Secretary / President, Managing Committee</p>` : `
         <p style="font-weight:bold;">Administrator Order</p>
         <p>Order No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
         <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and thereafter verifying related school documents, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
@@ -3505,7 +3505,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
         </table>
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
-        <p style="text-align:right;margin-top:40px;">________________________<br>Administrator</p>`;
+        <p style="text-align:right;margin-top:40px;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Administrator</p>`;
 
     /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
     const doc6 = `
@@ -3518,7 +3518,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;">I, therefore, as empowered by Resolution / Order No. ${resolutionNo}, request you to kindly accord approval in favour of ${staffName} regarding ${hisHer} prayer for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
         <table style="width:100%;margin-top:24px;"><tr>
             <td style="width:50%;">With thanks,</td>
-            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>${hoiStatus}</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}</td>
         </tr></table>
         <p style="margin-top:16px;"><strong>Enclosures (with Check List):</strong></p>
         <ol style="font-size:.88rem;line-height:1.5;">
@@ -3551,7 +3551,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
         <table style="width:100%;margin-top:24px;"><tr>
             <td style="width:50%;">With thanks,</td>
-            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>${hoiStatus}</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}</td>
         </tr></table>
         <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. Approval of ${milestoneWord} Fixation of ${staffName}</p>`;
 
@@ -3624,10 +3624,10 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <div class="memo-footer">
         <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
         <table style="width:100%;margin-top:16mm;"><tr>
-            <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
-            <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
+            <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
+            <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
-        <p style="margin-top:16mm;" class="cas-ref-line">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="margin-top:16mm;" class="cas-ref-line">Memo No.  _ _ _ _ _ _ _ _ _ _ _ _ _           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: _ _ _ _ _ _ _ _ _ _ _ _ _</p>
         <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
@@ -3645,7 +3645,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="text-align:justify;margin-top:16px;">This is to certify that there is no court case or any form of litigation pending against the post and appointment of ${staffName}, who was appointed to the post of ${designation} with effect from ${casFmt(dojCurrentSchool)} at ${schoolName}. Accordingly, the application for approval of the ${milestoneWord.toLowerCase()} Fixation benefit in ${hisHer} favour is being submitted.</p>
         <table style="width:100%;margin-top:40px;"><tr>
             <td style="width:50%;">Date: ________________</td>
-            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+            <td style="width:50%;text-align:right;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}<br>${schoolName}</td>
         </tr></table>`;
 
     /* ---------- DOC 10: FILE COVER SHEET ---------- */
@@ -3682,7 +3682,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         </ol>
         <table style="width:100%;margin-top:40px;"><tr>
             <td style="width:50%;">Date: ________________</td>
-            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+            <td style="width:50%;text-align:right;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}<br>${schoolName}</td>
         </tr></table>` : `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
@@ -3693,13 +3693,13 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         </ol>
         <table style="width:100%;margin-top:40px;"><tr>
             <td style="width:50%;">Date: ________________</td>
-            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+            <td style="width:50%;text-align:right;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}<br>${schoolName}</td>
         </tr></table>`;
 
     /* ---------- DOC 12: BENGALI M.C. RESOLUTION (only when Governance = Managing Committee) ---------- */
     const doc12 = `
         <p style="font-weight:bold;text-align:center;">পরিচালন সমিতির সভায় গৃহীত সিদ্ধান্ত</p>
-        <p>পরিচালন সমিতির সভাপতি মাননীয় ____________________ মহাশয় অদ্য সভায় সভাপতির আসন গ্রহণ করলে সভার কার্যক্রম শুরু হয়।</p>
+        <p>পরিচালন সমিতির সভাপতি মাননীয় _ _ _ _ _ _ _ _ _ _ _ _ _ মহাশয় অদ্য সভায় সভাপতির আসন গ্রহণ করলে সভার কার্যক্রম শুরু হয়।</p>
         <p style="text-align:justify;">সভায় অন্যতম আলোচ্য বিষয় ছিল এই স্কুলের ${designation}, মাননীয় ${staffName} মহাশয়/মহাশয়া কর্তৃক ${regimeName} এর অধীনে ${milestoneWordBn}ের একটানা চাকরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা মঞ্জুর করার জন্য জমা দেওয়া আবেদন ও বিদ্যালয়ের ${hoiStatus}-এর পেশ করা সংশ্লিষ্ট নথিপত্র যাচাই করে দেখা যায় যে ${staffName}, ${casFmt(doj)} তারিখ থেকে ${fullSchool} এ অনুমোদিত ${designation} হিসাবে নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি করে চলেছেন${approvalNo ? ' [অনুমোদন নম্বর ' + approvalNo + ']' : ''}।</p>
         <p style="text-align:justify;">ফলস্বরূপ, ${casFmt(doj)} তারিখ থেকে ধারাবাহিক চাকরির ভিত্তিতে ${casFmt(completionDate)} তারিখে তিনি পূর্ণ ${milestoneWordBn} নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি সম্পন্ন করেছেন।</p>
         <p style="text-align:justify;">এমতাবস্থায়, ${regimeName} এর অধীনে ${goRef} অনুসারে ও ${staffName} মহাশয়/মহাশয়ার আবেদনক্রমে তাঁর অনুকূলে ${milestoneWordBn}ের নিরবচ্ছিন্ন চাকুরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা ${casFmt(effectDate)} তারিখ থেকে কার্যকর হবে। ${fixed.scaleLabel} স্কেলে উন্নীতকরণ তথা ${milestoneWord} Fixation-এর অনুমোদনের আবেদন District Inspector of Schools (S.E.), ${district} মহাশয়ের নিকট প্রেরণের সর্বসম্মত সিদ্ধান্ত গৃহীত হলো। এছাড়া উল্লেখযোগ্য যে, তাঁর সার্ভিস রেকর্ডে কোনো মামলা-মোকদ্দমা বা আপত্তি নেই।</p>
@@ -3738,7 +3738,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             'Certificate of reason for delay (if applicable)'
           ].map((x,i)=>`<tr><td style="border:1px solid #000;padding:5px;text-align:center;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${x}</td><td style="border:1px solid #000;padding:5px;text-align:center;">☐</td></tr>`).join('')}
         </table>
-        <table style="width:100%;margin-top:30px;"><tr><td>Date: ________________</td><td style="text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td></tr></table>
+        <table style="width:100%;margin-top:30px;"><tr><td>Date: _ _ _ _ _ _ _ _ _ _ _ _ _</td><td style="text-align:right;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>${hoiStatus}<br>${schoolName}</td></tr></table>
         </div>`;
 
     const docs = [
