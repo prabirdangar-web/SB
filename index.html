@@ -2176,6 +2176,14 @@
             axData.ropa98Scale = ropa98Scale;
             axData.ropa98BasicPay = ropa98BasicPay;
             axData.multipliedBand = multipliedBand;
+            // As-on-date-of-option (1-1-2006) values, accounting for any ROPA-98
+            // promotion/increments between joining and 1-1-2006 — this is what the
+            // Mode-of-Fixation note and Annexure-III Sl.5/4(a) must actually show,
+            // not the raw joining-time scale/basic.
+            axData.ropa98AsOfBasic = snap98.basic;
+            axData.ropa98AsOfScaleKey = snap98.scaleKey;
+            axData.ropa98MinEntryApplied = minEntryApplied;
+            axData.ropa98MinBandForGp = minBandForGp;
 
             ropa09InitialGp = snap98.scaleKey;
 
@@ -2316,8 +2324,8 @@
             document.getElementById('ax09Status').textContent = status;
 
             if (ax.ropa98Enabled) {
-                document.getElementById('ax09ScaleA').textContent = ropa98ScaleLabel(ax.ropa98Scale);
-                document.getElementById('ax09ExistingBasic').textContent = rs(ax.ropa98BasicPay);
+                document.getElementById('ax09ScaleA').textContent = ropa98ScaleLabel(ax.ropa98AsOfScaleKey);
+                document.getElementById('ax09ExistingBasic').textContent = rs(ax.ropa98AsOfBasic);
                 document.getElementById('ax09Multiplied').textContent = rs(ax.multipliedBand);
                 document.getElementById('ax09Note').textContent = '';
             } else {
@@ -3093,21 +3101,32 @@ function casMofOptionOrJoiningLabel(statutoryDate, doj) {
 function casBuildModeOfFixation09Box(doj) {
     const ax = window.CAS_axData;
     if (!ax || !ax.ropa98Enabled) return '';
-    const scaleLabel = ropa98ScaleLabel(ax.ropa98Scale);
+    // Use the basic pay / scale as actually in force on the date of option (1-1-2006),
+    // i.e. after any ROPA-1998 promotion/increments since joining — not the raw
+    // joining-time scale/basic — so this note matches the carried-forward Band Pay
+    // actually used in the ROPA-09 fixation below.
+    const asOfBasic = ax.ropa98AsOfBasic;
+    const asOfScaleKey = ax.ropa98AsOfScaleKey;
+    const scaleLabel = ropa98ScaleLabel(asOfScaleKey);
     const pbLabel09 = (pbMap09[ax.ropa09Gp] || '') + '-GP-RS-' + ax.ropa09Gp;
-    const rawBand = ax.ropa98BasicPay * 1.86;
+    const rawBand = asOfBasic * 1.86;
+    const multipliedBand = ax.multipliedBand;
     const revisedBasic09 = ax.ropa09BandPay + ax.ropa09Gp;
     const optDate = formatDate(ax.ropa09OptionDate);
     const dateLabel09 = casMofOptionOrJoiningLabel(new Date(2006, 0, 1), doj);
     const nextInc09 = (window.CAS_ropa09Rows || []).find(r => r.date > ax.ropa09OptionDate && /INCREMENT/i.test(r.label));
     const nextIncDate = nextInc09 ? formatDate(nextInc09.date) : '&mdash;';
     const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel09} at ${casMofRs(revisedBasic09)} in terms of ${CAS_GO_REF['09']} w.e.f. ${optDate} [${dateLabel09}]. Pay &amp; Allowances admissible actually w.e.f. 1-4-2008.`;
-    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-09', [
-        [`Pay in the existing Scale of pay ${scaleLabel} on ${optDate}`, casMofRs(ax.ropa98BasicPay)],
-        [`Pay in Band ${ax.ropa98BasicPay.toLocaleString('en-IN')}&times;1.86:=${Math.round(rawBand).toLocaleString('en-IN')} i.e.=`, casMofRs(ax.ropa09BandPay)],
-        [`Applicable Grade Pay Rs.`, casMofRs(ax.ropa09Gp)],
-        [`Pay Fixed at`, casMofRs(revisedBasic09)]
-    ], note, optDate, nextIncDate);
+    const rows = [
+        [`Pay in the existing Scale of pay ${scaleLabel} on ${optDate}`, casMofRs(asOfBasic)],
+        [`Pay in Band ${asOfBasic.toLocaleString('en-IN')}&times;1.86:=${Math.round(rawBand).toLocaleString('en-IN')} rounded up to next Rs.10 i.e.=`, casMofRs(multipliedBand)]
+    ];
+    if (ax.ropa98MinEntryApplied) {
+        rows.push([`Below the prescribed Minimum Entry Pay in the Pay Band for GP ${ax.ropa09Gp.toLocaleString('en-IN')} &rarr; stepped up to i.e.=`, casMofRs(ax.ropa98MinBandForGp)]);
+    }
+    rows.push([`Applicable Grade Pay Rs.`, casMofRs(ax.ropa09Gp)]);
+    rows.push([`Pay Fixed at`, casMofRs(revisedBasic09)]);
+    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-09', rows, note, optDate, nextIncDate);
 }
 function casBuildModeOfFixation19Box(doj) {
     const ax = window.CAS_axData;
