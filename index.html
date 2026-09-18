@@ -1391,12 +1391,19 @@
         pushEvent(optionDate, { label: "DOA / PAY FIXATION", isInitial: true });
 
         const optionMonth = optionDate.getMonth();
-        const isEligible18Y = eligibleFor18YScaleChange98.includes(scaleKey);
 
         const promotionActive98 = (promotionDate instanceof Date && !isNaN(promotionDate) && promotionDate >= optionDate && promotionDate <= endDate);
         if (promotionActive98) {
             pushEvent(promotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp });
         }
+
+        // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
+        // 18-year milestone, not the joining-time scale: if a Promotion/Higher-Scale
+        // event lands before the 18-year date, check eligibility against the
+        // post-promotion GP instead (e.g. GP 4800 is never eligible for 18Y benefit).
+        const milestone18YDateRaw98 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
+        const effectiveScaleKeyAt18Y98 = (promotionActive98 && promotionDate <= milestone18YDateRaw98) ? promotionTargetGp : scaleKey;
+        const isEligible18Y = eligibleFor18YScaleChange98.includes(effectiveScaleKeyAt18Y98);
 
         let milestoneDefs = [
             { d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS - ADDL. INCREMENT", type: "10Y" },
@@ -1584,8 +1591,14 @@
             }
         }
 
-        const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
-        const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(gpInput);
+        // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
+        // 18-year milestone, not the joining-time GP: if a Promotion/Higher-Scale
+        // event lands before the 18-year date, check eligibility against the
+        // post-promotion GP instead (e.g. GP 4800 is never eligible for 18Y benefit).
+        const milestone18YDateRaw09 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
+        const effectiveGpAt18Y09 = (promotionActive && promotionDate <= milestone18YDateRaw09) ? promotionTargetGp : gpInput;
+        const isExcludedFrom18Y = [4700, 4800, 5400].includes(effectiveGpAt18Y09);
+        const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(effectiveGpAt18Y09);
 
         let milestoneDefs09 = [
             { d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS" },
@@ -1780,8 +1793,14 @@
             pushEvent(promotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
         }
 
-        const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
-        const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(gpInput);
+        // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
+        // 18-year milestone, not the joining-time GP: if a Promotion/Higher-Scale
+        // event lands before the 18-year date, check eligibility against the
+        // post-promotion GP instead (e.g. GP 4800 is never eligible for 18Y benefit).
+        const milestone18YDateRaw19 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
+        const effectiveGpAt18Y19 = (promotionActive && promotionDate <= milestone18YDateRaw19) ? promotionTargetGp : gpInput;
+        const isExcludedFrom18Y = [4700, 4800, 5400].includes(effectiveGpAt18Y19);
+        const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(effectiveGpAt18Y19);
 
         let milestoneDefs19 = [
             { d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS" },
