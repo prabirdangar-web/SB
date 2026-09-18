@@ -2182,8 +2182,6 @@
             // not the raw joining-time scale/basic.
             axData.ropa98AsOfBasic = snap98.basic;
             axData.ropa98AsOfScaleKey = snap98.scaleKey;
-            axData.ropa98MinEntryApplied = minEntryApplied;
-            axData.ropa98MinBandForGp = minBandForGp;
 
             ropa09InitialGp = snap98.scaleKey;
 
@@ -2191,6 +2189,8 @@
             const minEntryApplied = (minBandForGp !== undefined && multipliedBand < minBandForGp);
             ropa09InitialBand = minEntryApplied ? minBandForGp : multipliedBand;
             ropa09HasCarry = true;
+            axData.ropa98MinEntryApplied = minEntryApplied;
+            axData.ropa98MinBandForGp = minBandForGp;
 
             carryNote98 = `<strong>Carried Forward into ROPA-2009 (Rule II, WBS(ROPA) Rules 2009):</strong> Notional basic pay as on ${formatDate(snapAsOfDate)} under ROPA-1998 = Rs. ${snap98.basic.toLocaleString('en-IN')} &times; fitment factor 1.86 = Rs. ${rawBand.toFixed(2)} &rarr; rounded up to next Rs. 10 = Rs. ${multipliedBand.toLocaleString('en-IN')}` +
                 (minEntryApplied ? ` &rarr; below the prescribed Minimum Entry Pay in the Pay Band for GP ${ropa09InitialGp.toLocaleString('en-IN')} (Rs. ${minBandForGp.toLocaleString('en-IN')}) &rarr; stepped up to the minimum entry figure of Rs. ${ropa09InitialBand.toLocaleString('en-IN')}` : ``) +
