@@ -3851,7 +3851,7 @@ function setSyncStatus(text, color){
 
 /* ---- Admin login/logout (Firebase Authentication) ---- */
 let userRole = null;
-const EDIT_ROLES = ['admin','staff']; // must match the Firestore rules for /tfhs/ropaPayFixation
+const EDIT_ROLES = ['admin']; // must match the Firestore rules (/tfhs is admin-only)
 auth.onAuthStateChanged(async (user)=>{
   userRole = null;
   isAdmin = false;
@@ -3864,12 +3864,13 @@ auth.onAuthStateChanged(async (user)=>{
     isAdmin = EDIT_ROLES.includes(userRole);
   }
   document.body.classList.toggle('is-admin', isAdmin);
+  if(typeof startRopaSync === 'function') startRopaSync();
   document.getElementById('authLoggedOut').style.display = loggedIn ? 'none' : '';
   document.getElementById('authLoggedIn').style.display = loggedIn ? '' : 'none';
   const msg = document.getElementById('authRoleMsg');
   if(msg){
     if(isAdmin){ msg.style.color = '#065f46'; msg.textContent = '✅ Editing enabled (role: ' + userRole + ')'; }
-    else { msg.style.color = '#b45309'; msg.textContent = '⚠ Logged in, but role "' + (userRole || 'none') + '" cannot edit. Ask admin to set role to admin/staff in users/{uid}.'; }
+    else { msg.style.color = '#b45309'; msg.textContent = '⚠ Logged in, but role "' + (userRole || 'none') + '" cannot edit. Only role admin can view/save.'; }
   }
   const btn = document.getElementById('authToggleBtn');
   if(btn){
@@ -3900,7 +3901,7 @@ function snapshotSyncedState(records){
 }
 function describeSaveError(err){
   const c = err && err.code;
-  if(c === 'permission-denied') return 'Blocked by Firestore rules (your role: ' + (userRole || 'none') + '). Login with an admin/staff account.';
+  if(c === 'permission-denied') return 'Blocked by Firestore rules (your role: ' + (userRole || 'none') + '). Login with the admin account.';
   if(c === 'unavailable') return 'No internet / Firebase unreachable. Data kept locally.';
   if(c === 'unauthenticated') return 'Not logged in.';
   return (err && err.message) ? err.message : 'Unknown error';
@@ -3908,7 +3909,9 @@ function describeSaveError(err){
 const DOC_SIZE_LIMIT_CHARS = 900000; // Firestore hard limit is 1 MiB per document
 
 /* ---- Real-time cloud sync of all teacher records ---- */
-ropaDocRef.onSnapshot((docSnap)=>{
+function startRopaSync(){
+  if(ropaUnsub){ try{ropaUnsub();}catch(e){} ropaUnsub=null; }
+  ropaUnsub = ropaDocRef.onSnapshot((docSnap)=>{
   if(docSnap.exists && docSnap.data().records && typeof docSnap.data().records === 'object'){
     teacherRecordsCache = docSnap.data().records;
     try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(teacherRecordsCache)); }catch(e){}
@@ -3922,13 +3925,15 @@ ropaDocRef.onSnapshot((docSnap)=>{
   refreshTeacherRecordList();
 }, (err)=>{
   console.error('Firestore sync error, using local cache:', err);
-  setSyncStatus('⚠ Offline (local only)', '#b45309');
+  setSyncStatus(err && err.code === 'permission-denied' ? '🔒 Login as admin to view/save' : '⚠ Offline (local only)', '#b45309');
   try{
     const raw = localStorage.getItem(TEACHER_RECORDS_STORAGE_KEY);
     teacherRecordsCache = raw ? JSON.parse(raw) : {};
   }catch(e){ teacherRecordsCache = {}; }
   refreshTeacherRecordList();
 });
+}
+let ropaUnsub = null;
 
 function dashboardFieldState() {
     const state = {};
@@ -3974,7 +3979,7 @@ function setTeacherRecords(records) {
         if(status){ status.style.color = '#b91c1c'; status.textContent = '✗ NOT saved to cloud: ' + why; }
         return false;
     };
-    if(!isAdmin) return Promise.resolve(fail('Login with an admin/staff account first.'));
+    if(!isAdmin) return Promise.resolve(fail('Login with the admin account first.'));
 
     const changed = {}, deleted = [];
     let total = 0;
