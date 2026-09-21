@@ -399,23 +399,43 @@
 </script>
 
 <!-- ADMIN LOGIN PANEL (view-only for everyone unless logged in) -->
-<div id="authPanel" class="no-print" style="position:fixed;top:10px;right:10px;z-index:999;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px;width:210px;">
-  <div id="authLoggedOut">
-    <div style="font-weight:700;margin-bottom:6px;">🔒 View Only Mode</div>
-    <input type="email" id="authEmail" placeholder="Admin email" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;">
-    <input type="password" id="authPass" placeholder="Password" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;" onkeydown="if(event.key==='Enter')adminLogin();">
-    <button class="btn-add" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogin()">Login to Edit</button>
-    <div id="authError" style="color:#b91c1c;font-size:10.5px;margin-top:4px;"></div>
-  </div>
-  <div id="authLoggedIn" style="display:none;">
-    <div style="font-weight:700;margin-bottom:6px;color:#065f46;">✅ Admin Mode (editing enabled)</div>
-    <button class="btn-del" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogout()">Logout</button>
+<!-- Collapsed to a small round badge by default so it never overlaps page content;
+     tap/click it to open the login/logout dropdown. -->
+<div id="authPanel" class="no-print" style="position:fixed;top:8px;right:8px;z-index:99999;">
+  <button id="authToggleBtn" type="button" onclick="toggleAuthPanel(event)"
+    style="width:36px;height:36px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">🔒</button>
+  <div id="authDropdown" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:12px;width:190px;max-width:calc(100vw - 20px);box-sizing:border-box;">
+    <div id="authLoggedOut">
+      <div style="font-weight:700;margin-bottom:6px;">🔒 View Only Mode</div>
+      <input type="email" id="authEmail" placeholder="Admin email" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;box-sizing:border-box;">
+      <input type="password" id="authPass" placeholder="Password" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;box-sizing:border-box;" onkeydown="if(event.key==='Enter')adminLogin();">
+      <button class="btn-add" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogin()">Login to Edit</button>
+      <div id="authError" style="color:#b91c1c;font-size:10.5px;margin-top:4px;"></div>
+    </div>
+    <div id="authLoggedIn" style="display:none;">
+      <div style="font-weight:700;margin-bottom:6px;color:#065f46;">✅ Admin Mode (editing enabled)</div>
+      <button class="btn-del" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogout()">Logout</button>
+    </div>
   </div>
 </div>
 <style>
   .admin-only{display:none;}
   body.is-admin .admin-only{display:inline-block;}
 </style>
+<script>
+  function toggleAuthPanel(evt){
+    if(evt) evt.stopPropagation();
+    const dd = document.getElementById('authDropdown');
+    dd.style.display = (dd.style.display === 'none' || !dd.style.display) ? 'block' : 'none';
+  }
+  document.addEventListener('click', function(evt){
+    const panel = document.getElementById('authPanel');
+    const dd = document.getElementById('authDropdown');
+    if(dd && dd.style.display === 'block' && panel && !panel.contains(evt.target)){
+      dd.style.display = 'none';
+    }
+  });
+</script>
 
 <div class="container">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
@@ -3835,13 +3855,21 @@ auth.onAuthStateChanged((user)=>{
   document.body.classList.toggle('is-admin', isAdmin);
   document.getElementById('authLoggedOut').style.display = isAdmin ? 'none' : '';
   document.getElementById('authLoggedIn').style.display = isAdmin ? '' : 'none';
+  const btn = document.getElementById('authToggleBtn');
+  if(btn){
+    btn.textContent = isAdmin ? '✅' : '🔒';
+    btn.style.borderColor = isAdmin ? '#065f46' : '#cbd5e1';
+  }
 });
 function adminLogin(){
   const email = document.getElementById('authEmail').value.trim();
   const pass = document.getElementById('authPass').value;
   const errEl = document.getElementById('authError');
   errEl.textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch((err)=>{
+  auth.signInWithEmailAndPassword(email, pass).then(()=>{
+    const dd = document.getElementById('authDropdown');
+    if(dd) dd.style.display = 'none';
+  }).catch((err)=>{
     errEl.textContent = 'Login failed: incorrect email or password.';
   });
 }
