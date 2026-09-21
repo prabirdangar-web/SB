@@ -413,7 +413,7 @@
       <div id="authError" style="color:#b91c1c;font-size:10.5px;margin-top:4px;"></div>
     </div>
     <div id="authLoggedIn" style="display:none;">
-      <div style="font-weight:700;margin-bottom:6px;color:#065f46;">✅ Admin Mode (editing enabled)</div>
+      <div id="authRoleMsg" style="font-weight:700;margin-bottom:6px;color:#065f46;">✅ Admin Mode (editing enabled)</div>
       <button class="btn-del" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogout()">Logout</button>
     </div>
   </div>
@@ -3850,15 +3850,31 @@ function setSyncStatus(text, color){
 }
 
 /* ---- Admin login/logout (Firebase Authentication) ---- */
-auth.onAuthStateChanged((user)=>{
-  isAdmin = !!user;
+let userRole = null;
+const EDIT_ROLES = ['admin','staff']; // must match the Firestore rules for /tfhs/ropaPayFixation
+auth.onAuthStateChanged(async (user)=>{
+  userRole = null;
+  isAdmin = false;
+  const loggedIn = !!user && !user.isAnonymous;
+  if(loggedIn){
+    try{
+      const snap = await db.collection('users').doc(user.uid).get();
+      userRole = snap.exists ? (snap.data().role || null) : null;
+    }catch(e){ console.error('Role lookup failed:', e); }
+    isAdmin = EDIT_ROLES.includes(userRole);
+  }
   document.body.classList.toggle('is-admin', isAdmin);
-  document.getElementById('authLoggedOut').style.display = isAdmin ? 'none' : '';
-  document.getElementById('authLoggedIn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('authLoggedOut').style.display = loggedIn ? 'none' : '';
+  document.getElementById('authLoggedIn').style.display = loggedIn ? '' : 'none';
+  const msg = document.getElementById('authRoleMsg');
+  if(msg){
+    if(isAdmin){ msg.style.color = '#065f46'; msg.textContent = '✅ Editing enabled (role: ' + userRole + ')'; }
+    else { msg.style.color = '#b45309'; msg.textContent = '⚠ Logged in, but role "' + (userRole || 'none') + '" cannot edit. Ask admin to set role to admin/staff in users/{uid}.'; }
+  }
   const btn = document.getElementById('authToggleBtn');
   if(btn){
-    btn.textContent = isAdmin ? '✅' : '🔒';
-    btn.style.borderColor = isAdmin ? '#065f46' : '#cbd5e1';
+    btn.textContent = isAdmin ? '✅' : (loggedIn ? '⚠' : '🔒');
+    btn.style.borderColor = isAdmin ? '#065f46' : (loggedIn ? '#b45309' : '#cbd5e1');
   }
 });
 function adminLogin(){
@@ -3875,14 +3891,32 @@ function adminLogin(){
 }
 function adminLogout(){ auth.signOut(); }
 
+/* ---- Per-teacher diff saving (never overwrites other teachers' records) ---- */
+let lastSyncedJSON = {}; // teacher key -> JSON string as last known on the server
+function snapshotSyncedState(records){
+  const m = {};
+  Object.keys(records || {}).forEach(k=>{ try{ m[k] = JSON.stringify(records[k]); }catch(e){} });
+  lastSyncedJSON = m;
+}
+function describeSaveError(err){
+  const c = err && err.code;
+  if(c === 'permission-denied') return 'Blocked by Firestore rules (your role: ' + (userRole || 'none') + '). Login with an admin/staff account.';
+  if(c === 'unavailable') return 'No internet / Firebase unreachable. Data kept locally.';
+  if(c === 'unauthenticated') return 'Not logged in.';
+  return (err && err.message) ? err.message : 'Unknown error';
+}
+const DOC_SIZE_LIMIT_CHARS = 900000; // Firestore hard limit is 1 MiB per document
+
 /* ---- Real-time cloud sync of all teacher records ---- */
 ropaDocRef.onSnapshot((docSnap)=>{
   if(docSnap.exists && docSnap.data().records && typeof docSnap.data().records === 'object'){
     teacherRecordsCache = docSnap.data().records;
     try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(teacherRecordsCache)); }catch(e){}
-    setSyncStatus('☁ Synced', '#065f46');
+    snapshotSyncedState(teacherRecordsCache);
+    if(!docSnap.metadata.hasPendingWrites) setSyncStatus('☁ Synced', '#065f46');
   } else {
     teacherRecordsCache = {};
+    snapshotSyncedState({});
     setSyncStatus('☁ Synced', '#065f46');
   }
   refreshTeacherRecordList();
@@ -3933,14 +3967,55 @@ function getTeacherRecords() {
 function setTeacherRecords(records) {
     teacherRecordsCache = records;
     try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records)); }catch(e){}
+    const status = document.getElementById('dataSaveStatus');
+    const fail = (why)=>{
+        setSyncStatus('⚠ Save failed - tap to retry', '#b91c1c');
+        const el = document.getElementById('syncStatus'); if(el) el.title = why;
+        if(status){ status.style.color = '#b91c1c'; status.textContent = '✗ NOT saved to cloud: ' + why; }
+        return false;
+    };
+    if(!isAdmin) return Promise.resolve(fail('Login with an admin/staff account first.'));
+
+    const changed = {}, deleted = [];
+    let total = 0;
+    Object.keys(records).forEach(k=>{
+        const j = JSON.stringify(records[k]);
+        total += j.length;
+        if(lastSyncedJSON[k] !== j) changed[k] = records[k];
+    });
+    Object.keys(lastSyncedJSON).forEach(k=>{ if(!(k in records)) deleted.push(k); });
+    const changedKeys = Object.keys(changed);
+    if(!changedKeys.length && !deleted.length){ setSyncStatus('☁ Synced', '#065f46'); return Promise.resolve(true); }
+    if(total > DOC_SIZE_LIMIT_CHARS) return Promise.resolve(fail('Shared document is nearly 1 MB (Firestore limit). Export a backup and split the data.'));
+
     setSyncStatus('☁ Saving…', '#1e3a8a');
-    ropaDocRef.set({records: records, updatedAt: new Date().toISOString()})
-        .then(()=> setSyncStatus('☁ Synced', '#065f46'))
-        .catch((err)=>{
-            console.error('Firestore save failed:', err);
-            setSyncStatus('⚠ Save failed - check connection', '#b91c1c');
-        });
+    const now = new Date().toISOString();
+    let chain = Promise.resolve();
+    if(changedKeys.length) chain = chain.then(()=> ropaDocRef.set({records: changed, updatedAt: now}, {merge: true}));
+    if(deleted.length) chain = chain.then(()=>{
+        const args = [];
+        deleted.forEach(k=>{ args.push(new firebase.firestore.FieldPath('records', k), firebase.firestore.FieldValue.delete()); });
+        args.push('updatedAt', now);
+        return ropaDocRef.update(...args);
+    });
+    return chain.then(()=>{
+        changedKeys.forEach(k=>{ lastSyncedJSON[k] = JSON.stringify(changed[k]); });
+        deleted.forEach(k=>{ delete lastSyncedJSON[k]; });
+        setSyncStatus('☁ Synced', '#065f46');
+        const el = document.getElementById('syncStatus'); if(el) el.title = '';
+        return true;
+    }).catch((err)=>{
+        console.error('Firestore save failed:', err);
+        return fail(describeSaveError(err));
+    });
 }
+
+// Tap the red status pill to retry saving the teacher currently on screen
+(function(){
+    const el = document.getElementById('syncStatus');
+    if(el){ el.style.cursor = 'pointer'; el.addEventListener('click', ()=>{ if(/failed/i.test(el.textContent)) saveTeacherRecord(false); }); }
+    window.addEventListener('online', ()=>{ const e = document.getElementById('syncStatus'); if(e && /failed/i.test(e.textContent)) saveTeacherRecord(false); });
+})();
 
 function refreshTeacherRecordList(selectKey = '') {
     const selects = [document.getElementById('savedTeacherSelect'), document.getElementById('topSavedTeacherSelect')].filter(Boolean);
