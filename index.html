@@ -421,6 +421,11 @@
 <style>
   .admin-only{display:none;}
   body.is-admin .admin-only{display:inline-block;}
+  /* On-screen preview of the District Inspector's Office Memorandum: the preview
+     card wrapping each generated document sets font-family:'Times New Roman' on
+     itself, which the memorandum was inheriting. Force Lucida Bright here so the
+     memorandum shows the correct font on screen, not just in the print pop-up. */
+  .cas-di-office-memo, .cas-di-office-memo * { font-family: 'Lucida Bright', Georgia, 'Times New Roman', Times, serif !important; }
 </style>
 <script>
   function toggleAuthPanel(evt){
