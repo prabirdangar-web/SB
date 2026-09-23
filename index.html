@@ -2951,7 +2951,7 @@ function casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorScho
     const chainStr = priorSchools.map((s, i) => {
         const from = casFmt(s.doj || (i === 0 ? doj : null));
         const to = s.dol ? casFmt(s.dol) : 'till date';
-        return `${s.name} ${from} TO ${to}`;
+        return `${s.name} (served for the period from ${from} to ${to})`;
     }).join(' & ');
     const firstJoinDate = casFmt(priorSchools[0].doj || doj);
     return `${sriSmt} ${staffName} first joined on ${firstJoinDate} as an approved ${designation} at ${chainStr} now ${heShe} is acting as an approved ${designation} of ${fullSchool}${approvalNo ? ' [Approval No. ' + approvalNo + ']' : ''} since ${casFmt(dojCurrentSchool)}.`;
@@ -3649,16 +3649,23 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     const normalIncrementAmountForMemo = Math.max(0, normalPayNum - existingNum);
     const normalNextPayLabel = normalIncrementRow
         ? (() => {
-            const lvl = String(normalIncrementRow.scaleStr || '').replace(/.*Level-/i, 'LEVEL-');
+            const lvl = String(normalIncrementRow.scaleStr || '').replace(/.*Level-/i, 'Level-');
             const cell = casNormalizeCellLabel(normalIncrementRow.trackCol);
-            return `${lvl}${cell ? ', CELL-' + cell : ''}`;
+            return `${lvl}${cell ? ', Cell-' + cell : ''}`;
         })()
         : (() => {
-            const lvl = String(memoExisting.scaleLabel || '').replace(/.*Level-/i, 'LEVEL-');
+            const lvl = String(memoExisting.scaleLabel || '').replace(/.*Level-/i, 'Level-');
             const cell = memoExisting.cellLabel;
-            return `${lvl}${cell ? ', CELL-' + cell : ''}`;
+            return `${lvl}${cell ? ', Cell-' + cell : ''}`;
         })();
     const govOrderWord = govType === 'MC' ? 'Resolution' : 'Administrator Order';
+    // Point "1." and point "2.c" below show the existing/target scale label immediately
+    // next to a Rs.-prefixed amount. When the scale label itself is a Rs. range (as it
+    // is for ROPA-1998 pay-band rows), that produced "...Rs. 15,600-39,100...:: Rs. 25,940"
+    // i.e. the word "Rs." twice in the same printed line. Strip a leading "Rs." from the
+    // scale label here so it appears only once, next to the final figure.
+    const memoExistingScaleDisplay = String(memoExisting.scaleLabel || '').replace(/^Rs\.\s*/i, '');
+    const fixedScaleDisplay = String(fixed.scaleLabel || '').replace(/^Rs\.\s*/i, '');
 
     const doc8 = `
         <div class="cas-di-office-memo">
@@ -3673,10 +3680,10 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <div class="memo-body">
         <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
-        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
+        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExistingScaleDisplay}${memoExisting.cellLabel ? ' in Cell-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
         <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in ${normalNextPayLabel} ]</span></p>
-        <p style="margin:2px 0 2px;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;white-space:nowrap;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
-        <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
+        <p style="margin:2px 0 2px;">&nbsp;&nbsp;&nbsp;b) Allowed one Additional Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;white-space:nowrap;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
+        <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixedScaleDisplay}${fixed.cellLabel ? ' in Cell-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
         <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
         </div>
         <div class="memo-footer">
@@ -3685,14 +3692,15 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
             <td style="width:50%;text-align:center;">_ _ _ _ _ _ _ _ _ _ _ _ _<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
-        <p style="margin-top:16mm;" class="cas-ref-line">Memo No.                    _ _ _ _ _ _ _ _ _ _ _ _ _                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date:_ _ _ _ _ _ _ _ _ _ _ _ _                                         </p>
+        <p style="margin-top:20mm;">Memo No.                    _ _ _ _ _ _ _ _ _ _ _ _ _                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date:_ _ _ _ _ _ _ _ _ _ _ _ _                                         </p>
         <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
             <li>The ${hoiStatus} of ${fullSchool}</li>
             <li>${sriSmt} ${staffName}; ${designation}; ${fullSchool}</li>
         </ol>
-        <p style="text-align:right;margin-top:16px;">District Inspector of Schools (S.E.),<br>${district}</p>
+        <div style="border-top:1px dotted #000;width:70mm;margin:16px 0 2px auto;"></div>
+        <p style="text-align:right;margin-top:0;">District Inspector of Schools (S.E.),<br>${district}</p>
         </div>
         </div>`;
 
@@ -3719,7 +3727,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
 
             <div class="cover-middle">
                 <div class="cover-title">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</div>
-                <div class="cover-effective">w.e.f. :: ${casFmt(effectDate)}</div>
+                <div class="cover-effective">W.E.F. :: ${casFmt(effectDate)}</div>
                 <div class="cover-favour">IN FAVOUR OF</div>
                 <div class="cover-name">${staffName}</div>
                 <div class="cover-designation">DESIGNATION: ${designation}</div>
@@ -4470,7 +4478,7 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-file-cover .cover-school { display:block; max-width:100%; font-size:24pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
             .cas-file-cover .cover-address { max-width:100%; font-size:13pt !important; line-height:1.25; overflow-wrap:anywhere; }
             .cas-file-cover .cover-title { display:block; width:100%; max-width:190mm; font-size:30pt !important; line-height:1.18; font-weight:900; letter-spacing:1px; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-effective { font-size:18pt !important; font-weight:800; }
+            .cas-file-cover .cover-effective { font-size:38pt !important; font-weight:900; letter-spacing:1px; margin:4mm 0; }
             .cas-file-cover .cover-favour { font-size:17pt !important; font-weight:800; letter-spacing:2px; margin-top:3mm; }
             .cas-file-cover .cover-name { display:block; width:100%; max-width:190mm; font-size:32pt !important; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
             .cas-file-cover .cover-designation { display:block; width:100%; max-width:190mm; font-size:20pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
