@@ -53,9 +53,16 @@
         .ml-note{display:block;font-size:.66rem;color:#334155;text-align:left;margin-top:2px;font-style:italic;}
         .table-wrap{overflow-x:auto;}
 
-        /* Leave A/c: never print browser date placeholder text such as dd/mm/yyyy. */
+        /* Leave A/c: never show the browser's dd-mm-yyyy placeholder box for a blank date field
+           (Vacation From/To 3a/3b are rarely used and were showing as a grey "dd-mm-yyyy" box).
+           An empty, non-required date input is NOT :invalid in most browsers, so target the
+           value="" attribute instead — buildTableRows() always sets it on every re-render. */
+        #mainTable input[type="date"][value=""] { color: transparent; }
+        #mainTable input[type="date"]:not([value=""]) { color: inherit; }
         #mainTable input[type="date"]:invalid { color: transparent; }
-        #mainTable input[type="date"]:valid { color: inherit; }
+        #mainTable input[type="date"]:focus { color: inherit; }
+        #mainTable input[type="date"] { font-size:.74rem; padding:2px 1px; }
+        #mainTable input[type="date"]::-webkit-calendar-picker-indicator { padding:1px; margin-left:1px; width:11px; height:11px; }
         
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -812,6 +819,31 @@
     <h4>5.4 Leave Account Table</h4>
     <div class="table-wrap">
         <table id="mainTable">
+            <colgroup>
+                <col style="width:9%"><!-- 2a Period of Duty From -->
+                <col style="width:9%"><!-- 2b Period of Duty To -->
+                <col style="width:3%"><!-- 3a Vacation From (rarely used) -->
+                <col style="width:3%"><!-- 3b Vacation To (rarely used) -->
+                <col style="width:4%"><!-- 4a -->
+                <col style="width:4%"><!-- 4b -->
+                <col style="width:4%"><!-- 4c -->
+                <col style="width:4%"><!-- 5a -->
+                <col style="width:4%"><!-- 5b -->
+                <col style="width:4%"><!-- 6 -->
+                <col style="width:4%"><!-- 7 -->
+                <col style="width:4%"><!-- 8 -->
+                <col style="width:4%"><!-- 9 -->
+                <col style="width:4%"><!-- 9a -->
+                <col style="width:4%"><!-- 9b -->
+                <col style="width:3%"><!-- 10a -->
+                <col style="width:3%"><!-- 10b -->
+                <col style="width:3%"><!-- 11 -->
+                <col style="width:3%"><!-- 12a -->
+                <col style="width:3%"><!-- 12b -->
+                <col style="width:5%"><!-- 13 -->
+                <col style="width:5%"><!-- 14 -->
+                <col style="width:5%"><!-- 15 -->
+            </colgroup>
             <thead>
                 <tr>
                     <th colspan="2">Period of Duty</th>
