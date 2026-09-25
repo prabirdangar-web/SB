@@ -799,8 +799,9 @@
                 <select id="mlType">
                     <option value="lwp_effect">1. LWP — WITH effect on 10/18/20Y increment (shifts CAS/increment date)</option>
                     <option value="lwp_noeffect">2. LWP — NO effect on 10/18/20Y increment</option>
-                    <option value="avg">3. ML with Full Average Pay (commuted / EL on medical grounds)</option>
-                    <option value="half">4. HPL (Half Average Pay on M.C.)</option>
+                    <option value="avg">3. ML with Full Average Pay (EL on medical grounds)</option>
+                    <option value="half">4. HPL — Half Average Pay on M.C. (e.g. 30 days enjoyed = 30 days deducted from HPL a/c)</option>
+                    <option value="commuted">5. Commuted Leave — Full Average Pay on M.C. (e.g. 30 days enjoyed = 60 days deducted from HPL a/c)</option>
                 </select>
             </div>
             <div class="fg"><label>Leave Enjoyed From</label><input type="date" id="mlFrom"></div>
@@ -2653,13 +2654,13 @@ function addMlEntry(){
   document.getElementById('mlFrom').value='';
   document.getElementById('mlTo').value='';
   renderAll();
-  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'}[type] || type;
+  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', commuted:'Commuted Leave', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'}[type] || type;
   showStatus(`${typeLabel} entry added: ${fmt(from)} to ${fmt(to)}.`, false);
 }
 
 function annotateAllTablesWithLeave(tables){
   if(!tables || !Array.isArray(tables)) return;
-  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
+  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', commuted:'Commuted Leave', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
 
   tables.forEach(t=>{
     (t.rows||[]).forEach((row,idx)=>{ row._lineNum = idx+1; row._leaveNotes = []; });
@@ -2717,7 +2718,11 @@ function assignMlEntries(){
     const leaveFrom = new Date(entry.from+'T00:00:00');
     const leaveTo = new Date(entry.to+'T00:00:00');
     const totalDays = daysBetween(entry.from, entry.to);
-    const totalDebit = (entry.type==='half') ? (totalDays * 2) : (entry.type==='avg' ? totalDays : 0);
+    // Debit multiplier against the HPL a/c: HPL (half avg pay) = 1 day debited per day enjoyed;
+    // Commuted Leave (full avg pay on M.C.) = 2 days debited per day enjoyed (e.g. 30 enjoyed = 60 debited);
+    // ML (full avg pay) = 1 day debited from the ML a/c; LWP debits nothing.
+    const debitMultiplier = (entry.type==='half') ? 1 : (entry.type==='commuted') ? 2 : (entry.type==='avg') ? 1 : 0;
+    const totalDebit = totalDays * debitMultiplier;
     periods.forEach(p=>{
       if(!p.from || !p.to) return;
       const pFrom = new Date(p.from+'T00:00:00');
@@ -2729,7 +2734,7 @@ function assignMlEntries(){
         const segFrom = toISO(overlapStart);
         const segTo = toISO(overlapEnd);
         const segDays = daysBetween(segFrom, segTo);
-        const segDebit = (entry.type==='half') ? (segDays * 2) : ((segDays===totalDays) ? totalDebit : Math.round(totalDebit * segDays/totalDays));
+        const segDebit = segDays * debitMultiplier;
         p.mlEntries.push({id:entry.id, from:segFrom, to:segTo, type:entry.type, days:segDays, debitDays:segDebit});
         if(entry.type==='lwp_effect' || entry.type==='lwp_noeffect'){
           p.lwp = (p.lwp||0) + segDays;
@@ -2746,8 +2751,10 @@ function computeDerived(){
 
   return periods.map((p, i) => {
     const takenAvg = p.mlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+e.debitDays,0);
-    const takenHalf = p.mlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+e.debitDays,0);
-    const enjoyedAvg = p.mlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+e.days,0);
+    // Commuted Leave is debited from the HPL a/c (at double rate), so it counts toward takenHalf,
+    // but it is physically enjoyed on full average pay, so it counts toward enjoyedAvg, not enjoyedHalf.
+    const takenHalf = p.mlEntries.filter(e=>e.type==='half'||e.type==='commuted').reduce((s,e)=>s+e.debitDays,0);
+    const enjoyedAvg = p.mlEntries.filter(e=>e.type==='avg'||e.type==='commuted').reduce((s,e)=>s+e.days,0);
     const enjoyedHalf = p.mlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+e.days,0);
 
     const priorAvg = (i===0) ? (p.creditAvgManual!==null ? p.creditAvgManual : 0) : runningAvg;
@@ -2785,7 +2792,7 @@ function mlNotes(entries, type){
     return true;
   });
   if(list.length===0) return '-';
-  const verb = (type==='lwp_effect'||type==='lwp_noeffect') ? 'LWP enjoyed for' : 'ML enjoyed for';
+  const verb = (type==='lwp_effect'||type==='lwp_noeffect') ? 'LWP enjoyed for' : (type==='commuted' ? 'Commuted Leave enjoyed for' : 'ML enjoyed for');
   return list.map(e=>{
     let label = (e.from===e.to)
       ? `${verb} ${fmt(e.from)} [${e.days} day]`
@@ -2828,13 +2835,18 @@ function buildTableRows(derived, forPrint){
 }
 
 function buildTotalsRowHtml(){
-  const totalMlDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
   const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  // Commuted Leave is physically enjoyed on full average pay, so it is folded into the
+  // "Average pay on MC" enjoyed total, but it debits the HPL a/c at double the days enjoyed.
+  const totalMlDays = totalMlOnlyDays + totalCommutedDays;
+  const totalHplDebited = totalHplDays + (totalCommutedDays*2);
   return `<tr style="background:#dbeafe;font-weight:700;">
       <td colspan="13" style="text-align:right;padding-right:8px;">TOTAL DAYS ENJOYED (ENTIRE SERVICE) &rarr;</td>
       <td>${totalMlDays}</td>
       <td>${totalHplDays}</td>
-      <td colspan="8">Total ML (Avg Pay) Enjoyed: ${totalMlDays} day${totalMlDays===1?'':'s'} &nbsp;|&nbsp; Total HPL (Half Pay) Enjoyed: ${totalHplDays} day${totalHplDays===1?'':'s'}</td>
+      <td colspan="8">Total ML (Avg Pay) Enjoyed: ${totalMlOnlyDays} day${totalMlOnlyDays===1?'':'s'} &nbsp;|&nbsp; Total HPL (Half Pay) Enjoyed: ${totalHplDays} day${totalHplDays===1?'':'s'} &nbsp;|&nbsp; Total Commuted Leave Enjoyed (Full Pay): ${totalCommutedDays} day${totalCommutedDays===1?'':'s'} [${totalCommutedDays*2} debited from HPL a/c] &nbsp;|&nbsp; Total Debited from HPL a/c: ${totalHplDebited} day${totalHplDebited===1?'':'s'}</td>
     </tr>`;
 }
 
@@ -2850,7 +2862,7 @@ function renderAll(){
     '<div class="table-wrap"><table>'+document.getElementById('mainTable').querySelector('thead').outerHTML+
     '<tbody>'+buildTableRows(derived,true)+'</tbody><tfoot>'+totalsHtml+'</tfoot></table></div>';
 
-  const leaveTypeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'};
+  const leaveTypeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', commuted:'Commuted Leave', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'};
   const entriesListEl = document.getElementById('leaveEntriesList');
   if(entriesListEl){
     entriesListEl.innerHTML = masterMlEntries.length===0 ? '' : masterMlEntries.map(e=>
@@ -2877,22 +2889,25 @@ function renderAll(){
   document.getElementById('synopsisPanel').innerHTML = (periods.map((p,i)=>{
     const avgList = mlNotes(p.mlEntries,'avg');
     const halfList = mlNotes(p.mlEntries,'half');
+    const commutedList = mlNotes(p.mlEntries,'commuted');
     const lwpEffList = mlNotes(p.mlEntries,'lwp_effect');
     const lwpNoEffList = mlNotes(p.mlEntries,'lwp_noeffect');
-    if(avgList==='-' && halfList==='-' && lwpEffList==='-' && lwpNoEffList==='-') return '';
+    if(avgList==='-' && halfList==='-' && commutedList==='-' && lwpEffList==='-' && lwpNoEffList==='-') return '';
     return `<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #cbd5e1;">
       <b>Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}</b><br>
       <span style="color:#334155;">Full Pay (Avg): </span>${avgList}<br>
       <span style="color:#334155;">Half Pay (HPL): </span>${halfList}<br>
+      <span style="color:#334155;">Commuted Leave (Full Pay, 2x debit on HPL a/c): </span>${commutedList}<br>
       <span style="color:#334155;">LWP (with CAS effect): </span>${lwpEffList}<br>
       <span style="color:#334155;">LWP (no CAS effect): </span>${lwpNoEffList}
     </div>`;
   }).join('') || '<span style="color:#64748b;">No leave entries recorded yet.</span>') +
   (()=>{
-    const totalMlDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+    const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
     const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+    const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
     return `<div style="margin-top:6px;padding-top:8px;border-top:2px solid #1e3a8a;font-weight:700;color:#1e3a8a;">
-      Grand Total — ML (Avg Pay) Days Enjoyed: ${totalMlDays} &nbsp;|&nbsp; HPL (Half Pay) Days Enjoyed: ${totalHplDays}
+      Grand Total — ML (Avg Pay) Days Enjoyed: ${totalMlOnlyDays} &nbsp;|&nbsp; HPL (Half Pay) Days Enjoyed: ${totalHplDays} &nbsp;|&nbsp; Commuted Leave (Full Pay) Days Enjoyed: ${totalCommutedDays} [${totalCommutedDays*2} debited from HPL a/c]
     </div>`;
   })();
 
