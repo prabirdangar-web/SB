@@ -541,6 +541,22 @@
         </div>
     </div>
 
+    <div class="grid-inputs" style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:12px 15px;">
+        <div class="form-group">
+            <label>Cessation of Service Before Retirement (if applicable)</label>
+            <select id="cessationType" onchange="calculateDOR()">
+                <option value="none" selected>N.A. — continues up to normal Superannuation (DOR)</option>
+                <option value="death">Died in Harness (Death while in service)</option>
+                <option value="resignation">Resigned from Service</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Date of Death / Resignation</label>
+            <input type="date" id="cessationDate" onchange="calculateDOR()">
+        </div>
+    </div>
+    <p style="font-size:.75rem;color:#b91c1c;margin:4px 0 0;">If a Date of Death / Resignation is set here and it falls before the normal Superannuation date, all Pay Fixation tables and the Leave Account will be generated only up to that date, and the terminal entry's remarks column will note the Date of Death / Resignation instead of the normal retirement date.</p>
+
     <div class="output-box" id="dorOutput">
         <strong>Date of Retirement (DOR):</strong> Loading...
     </div>
@@ -1261,7 +1277,8 @@
         toggleRopa98Section();
     }
 
-    function getDOR() {
+    // Normal superannuation date, computed purely from Date of Birth (age 60), unaffected by death/resignation.
+    function getSuperannuationDOR() {
         const dobInput = document.getElementById('dob').value;
         if (!dobInput) return null;
         const dob = new Date(dobInput);
@@ -1269,9 +1286,46 @@
         return (dob.getDate() === 1) ? new Date(targetYear, dob.getMonth(), 0) : new Date(targetYear, dob.getMonth() + 1, 0);
     }
 
+    // Returns {type:'death'|'resignation', date, label} ONLY when a cessation date has been
+    // entered AND it falls strictly before the normal Superannuation date; otherwise null
+    // (i.e. normal superannuation governs, exactly as before this feature was added).
+    function getCessationInfo() {
+        const typeSel = document.getElementById('cessationType');
+        const dateInput = document.getElementById('cessationDate');
+        if (!typeSel || typeSel.value === 'none' || !dateInput || !dateInput.value) return null;
+        const cDate = new Date(dateInput.value + 'T00:00:00');
+        if (isNaN(cDate.getTime())) return null;
+        const supDor = getSuperannuationDOR();
+        if (supDor && cDate >= supDor) return null;
+        return {
+            type: typeSel.value,
+            date: cDate,
+            label: typeSel.value === 'death' ? 'Died in Harness' : 'Resigned from Service'
+        };
+    }
+
+    // Effective terminal date used to drive every generation routine (pay tables + leave account):
+    // the earlier of normal Superannuation and an applicable Date of Death / Resignation.
+    function getDOR() {
+        const supDor = getSuperannuationDOR();
+        if (!supDor) return null;
+        const cessation = getCessationInfo();
+        return cessation ? cessation.date : supDor;
+    }
+
     function calculateDOR() {
-        const dor = getDOR();
-        if (dor) document.getElementById('dorOutput').innerHTML = `<strong>Date of Retirement (DOR):</strong> ${formatDate(dor)}`;
+        const supDor = getSuperannuationDOR();
+        const cessation = getCessationInfo();
+        if (supDor) {
+            if (cessation) {
+                document.getElementById('dorOutput').innerHTML =
+                    `<strong>Date of Retirement (Superannuation):</strong> ${formatDate(supDor)} &nbsp;—&nbsp; ` +
+                    `<strong style="color:#b91c1c;">Service closed early: ${cessation.label} on ${formatDate(cessation.date)}.</strong> ` +
+                    `All figures below are generated only up to ${formatDate(cessation.date)}.`;
+            } else {
+                document.getElementById('dorOutput').innerHTML = `<strong>Date of Retirement (DOR):</strong> ${formatDate(supDor)}`;
+            }
+        }
         syncLeaveUpToDate();
     }
 
@@ -1411,6 +1465,23 @@
                 compiledRows[i].dot = endDate;
             }
         }
+    }
+
+    // If a Date of Death / Resignation is in effect AND this table's own end date actually
+    // lands on that date, mark the terminal row's Event/Reason column accordingly instead of
+    // leaving it looking like a normal ongoing/retirement entry.
+    function appendCessationNoteToLastRow(rows, tableEndDate) {
+        if (!rows || !rows.length || !tableEndDate) return;
+        const cessation = (typeof getCessationInfo === 'function') ? getCessationInfo() : null;
+        if (!cessation) return;
+        if (tableEndDate.getFullYear() !== cessation.date.getFullYear() ||
+            tableEndDate.getMonth() !== cessation.date.getMonth() ||
+            tableEndDate.getDate() !== cessation.date.getDate()) return;
+        const last = rows[rows.length - 1];
+        const noteText = cessation.type === 'death'
+            ? `DIED IN HARNESS on ${formatDate(cessation.date)} — service closed on this date`
+            : `RESIGNED FROM SERVICE w.e.f. ${formatDate(cessation.date)} — service closed on this date`;
+        last.label = `${last.label} <span style="color:#b91c1c;">(${noteText})</span>`;
     }
 
     const eligibleFor18YScaleChange98 = [1700, 2600, 3900, 4100];
@@ -2225,6 +2296,7 @@
 
             const result98 = computeRopa98Timeline(doj, ropa98OptionDate, ropa98Scale, ropa98BasicPay, ropa98EndDate, promotionDate98, promotionTargetGp98, evType);
             ropa98Rows = result98.rows;
+            appendCessationNoteToLastRow(ropa98Rows, ropa98EndDate);
 
             const ropa09OptionInputForSnap = document.getElementById('ropa09OptionDate').value;
             const snapAsOfDate = ropa09OptionInputForSnap ? new Date(ropa09OptionInputForSnap) : ropa98EndDate;
@@ -2269,6 +2341,7 @@
 
             const result09 = computeRopa09Timeline(doj, ropa09OptionDate, ropa09Gp, ropa09BandPay, ropa09EndDate, promotionDate, promotionTargetGp, evType);
             ropa09Rows = result09.rows;
+            appendCessationNoteToLastRow(ropa09Rows, ropa09EndDate);
 
             axData.ropa09Gp = ropa09Gp;
             axData.ropa09BandPay = ropa09BandPay;
@@ -2300,6 +2373,7 @@
         const promotionTargetGp19 = parseInt(document.getElementById('promotionTargetGp').value, 10);
 
         const result19 = computeRopa19Timeline(doj, ropa19OptionDate, carryGp, carryLevel, carryBasic, dor, promotionDate19, promotionTargetGp19, evType);
+        appendCessationNoteToLastRow(result19.rows, dor);
         window._lastResult19Rows = result19.rows;
 
         axData.carryGp = carryGp;
@@ -2338,7 +2412,10 @@
         const dobVal = document.getElementById('dob').value;
         document.getElementById('sbDob').innerText = dobVal ? formatDate(new Date(dobVal)) : '';
         document.getElementById('sbDoj').innerText = formatDate(doj);
-        document.getElementById('sbDor').innerText = formatDate(dor);
+        {
+            const cessationForSb = (typeof getCessationInfo === 'function') ? getCessationInfo() : null;
+            document.getElementById('sbDor').innerText = formatDate(dor) + (cessationForSb ? ` (${cessationForSb.label})` : '');
+        }
 
         annotateAllTablesWithLeave([
           {key:'ROPA-98', rows: ropa98Rows},
@@ -2805,10 +2882,14 @@ function mlNotes(entries, type){
 }
 
 function buildTableRows(derived, forPrint){
+  const cessationForLeave = (typeof getCessationInfo === 'function') ? getCessationInfo() : null;
   return derived.map((p, i) => {
+    const isLastRow = i === derived.length - 1;
+    const cessationNoteHtml = (isLastRow && cessationForLeave && p.to === toISO(cessationForLeave.date))
+      ? `<span class="ml-note" style="color:#b91c1c;">${cessationForLeave.label} on ${fmt(p.to)} — service closed on this date</span>` : '';
     return `<tr>
       <td>${forPrint?'':'<input type="date" value="'+p.from+'" onchange="updatePeriodField('+i+',\'from\',this.value)" style="width:100%;font-size:.65rem;">'}${forPrint?fmt(p.from):''}</td>
-      <td>${forPrint?fmt(p.to):'<input type="date" value="'+p.to+'" onchange="updatePeriodField('+i+',\'to\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${forPrint?fmt(p.to):'<input type="date" value="'+p.to+'" onchange="updatePeriodField('+i+',\'to\',this.value)" style="width:100%;font-size:.65rem;">'}${cessationNoteHtml}</td>
       <td>${forPrint?fmt(p.vacFrom):'<input type="date" value="'+(p.vacFrom||'')+'" onchange="updatePeriodField('+i+',\'vacFrom\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
       <td>${forPrint?fmt(p.vacTo):'<input type="date" value="'+(p.vacTo||'')+'" onchange="updatePeriodField('+i+',\'vacTo\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
       <td>${forPrint?(p.effectiveEarnedAvg||'-'):'<input type="number" step="1" value="'+p.effectiveEarnedAvg+'" onchange="updatePeriodField('+i+',\'earnedAvg\',Math.round(parseFloat(this.value))||0)" style="width:100%;font-size:.65rem;">'}</td>
