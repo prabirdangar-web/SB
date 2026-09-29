@@ -50,6 +50,12 @@
         .taken-cell{background:var(--pink);}
         .vacdet-cell{background:var(--blue);}
         .balance-num{color:var(--red);font-weight:700;}
+        #mainTable td.balance-neg, #sbLeaveBlock td.balance-neg{background:#fecaca;color:#7f1d1d;outline:2px solid #dc2626;outline-offset:-2px;font-weight:800;}
+        .neg-flag{font-size:.85rem;font-weight:800;color:#b91c1c;}
+        .neg-tag{display:block;font-size:.55rem;font-weight:800;letter-spacing:.5px;color:#fff;background:#dc2626;border-radius:3px;padding:1px 2px;margin-top:2px;}
+        #leaveNegAlert{margin:8px 0;padding:10px 14px;background:#fef2f2;border:2px solid #dc2626;border-left-width:8px;border-radius:6px;color:#7f1d1d;font-size:.8rem;}
+        #leaveNegAlert .neg-alert-title{font-weight:800;font-size:.9rem;color:#b91c1c;margin-bottom:4px;}
+        #leaveNegAlert ul{margin:4px 0 0 18px;padding:0;}
         .ml-note{display:block;font-size:.66rem;color:#334155;text-align:left;margin-top:2px;font-style:italic;}
         .table-wrap{overflow-x:auto;}
 
@@ -380,6 +386,10 @@
             #sbLeaveBlock .taken-cell { background: var(--pink) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #sbLeaveBlock .code-row td { background: #e2e8f0 !important; font-weight: 700; font-size: 0.58rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #sbLeaveBlock .balance-num { color: #000 !important; font-weight: 700; }
+            #sbLeaveBlock td.balance-neg { background: #fecaca !important; color: #7f1d1d !important; border: 2px solid #dc2626 !important; font-weight: 800; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #sbLeaveBlock .neg-flag { color: #b91c1c !important; font-weight: 800; }
+            #sbLeaveBlock .neg-tag { display:block; font-size:0.5rem; font-weight:800; color:#fff !important; background:#dc2626 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #leaveNegAlert { display:none !important; }
         }
     </style>
 </head>
@@ -834,6 +844,7 @@
     <div id="leaveEntriesList" style="margin-top:6px;font-size:.78rem;"></div>
 
     <h4>5.4 Leave Account Table</h4>
+    <div id="leaveNegAlert" style="display:none;"></div>
     <div class="table-wrap">
         <table id="mainTable">
             <colgroup>
@@ -2849,8 +2860,8 @@ function computeDerived(){
     let creditAvg = Math.min(EL_CAP, priorAvg + effectiveEarnedAvg);
     let creditHalf = Math.min(HPL_CAP, priorHalf + effectiveEarnedHalf);
 
-    const balanceAvg = Math.max(0, creditAvg - takenAvg);
-    const balanceHalf = Math.max(0, creditHalf - takenHalf);
+    const balanceAvg = creditAvg - takenAvg; // may go NEGATIVE if leave taken exceeds credit
+    const balanceHalf = creditHalf - takenHalf; // may go NEGATIVE if leave taken exceeds credit
 
     runningAvg = balanceAvg;
     runningHalf = balanceHalf;
@@ -2881,6 +2892,23 @@ function mlNotes(entries, type){
   }).join('<br>');
 }
 
+function balCellHtml(v){
+  return v<0 ? '<span class="neg-flag">&#9888; '+v+'</span><span class="neg-tag">NEGATIVE</span>' : String(v);
+}
+
+function renderNegAlert(derived){
+  const el = document.getElementById('leaveNegAlert');
+  if(!el) return;
+  const items = [];
+  derived.forEach((p,i)=>{
+    if(p.balanceAvg<0) items.push(`Row ${i+1} (${fmt(p.from)} to ${fmt(p.to)}): Average pay on MC balance = <b>${p.balanceAvg}</b> day${Math.abs(p.balanceAvg)===1?'':'s'} &mdash; leave taken exceeds leave at credit`);
+    if(p.balanceHalf<0) items.push(`Row ${i+1} (${fmt(p.from)} to ${fmt(p.to)}): Half average pay on MC balance = <b>${p.balanceHalf}</b> day${Math.abs(p.balanceHalf)===1?'':'s'} &mdash; leave taken exceeds leave at credit`);
+  });
+  if(!items.length){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='block';
+  el.innerHTML = '<div class="neg-alert-title">&#9888; ALERT: NEGATIVE LEAVE BALANCE &mdash; leave taken without sufficient credit</div><ul>'+items.map(t=>'<li>'+t+'</li>').join('')+'</ul>';
+}
+
 function buildTableRows(derived, forPrint){
   const cessationForLeave = (typeof getCessationInfo === 'function') ? getCessationInfo() : null;
   return derived.map((p, i) => {
@@ -2908,8 +2936,8 @@ function buildTableRows(derived, forPrint){
       <td>${p.lwp||'-'}</td>
       <td>${p.specialFull||'-'}</td>
       <td>${p.specialHalf||'-'}</td>
-      <td class="balance-num">${p.balanceAvg}</td>
-      <td class="balance-num">${p.balanceHalf}</td>
+      <td class="balance-num${p.balanceAvg<0?' balance-neg':''}">${balCellHtml(p.balanceAvg)}</td>
+      <td class="balance-num${p.balanceHalf<0?' balance-neg':''}">${balCellHtml(p.balanceHalf)}</td>
       <td>-</td>
     </tr>`;
   }).join('');
@@ -2933,6 +2961,7 @@ function buildTotalsRowHtml(){
 
 function renderAll(){
   const derived = computeDerived();
+  renderNegAlert(derived);
 
   const tableBodyEl = document.getElementById('tableBody');
   if(!tableBodyEl) return;
