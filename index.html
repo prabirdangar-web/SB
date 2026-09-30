@@ -726,7 +726,8 @@
     <div class="btn-group">
         <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
         <button type="button" class="btn-print" onclick="printPayFixation()">Print Pay Fixation (A4 Portrait)</button>
-        <label class="inline-check" style="margin-left:10px;"><input type="checkbox" id="ropa19FullTable"> ROPA-2019: show full year-by-year table (default = only pay as on option date + next increment date)</label>
+        <label class="inline-check" style="margin-left:10px;"><input type="checkbox" id="ropa19FullTable" checked> ROPA-2019 PAY: generate year-by-year (untick = only pay as on option date + next increment date)</label>
+        <label class="inline-check" style="margin-left:10px;">Generate ROPA-2019 up to (blank = up to DOR): <input type="date" id="ropa19UptoDate"></label>
     </div>
 
     <div class="output-box" id="carryForwardOutput" style="display:none;"></div>
@@ -2463,6 +2464,13 @@
             const nxt = later.find(r => r.label === 'INCREMENT') || later[0];
             first.slipHTML = (first.slipHTML || '') + `<div style="margin-top:6px;padding:4px 6px;border:1px solid #1d4ed8;background:#eff6ff;font-weight:700;color:#1e3a8a;">Date of Next Increment (on the basis of above fixation): ${nxt ? formatDate(nxt.date) + ' &nbsp;&rarr;&nbsp; Basic Pay Rs. ' + nxt.basicDisplay : 'N.A. (up to date of retirement)'}</div>`;
             rows19Disp = [first];
+        }
+        else {
+            const upto = document.getElementById('ropa19UptoDate')?.value;
+            if (upto) {
+                const u = new Date(upto + 'T00:00:00'), k = d => d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+                rows19Disp = result19.rows.filter((r, i) => i === 0 || k(r.date) <= k(u));
+            }
         }
         renderRows('payTableBody19', 'sbPrintTableBody19', rows19Disp);
 
