@@ -189,8 +189,7 @@
         #printArea { display: none; }
 
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
+            body > *:not(#printArea) { display: none !important; }
             #printArea {
                 display: block !important;
                 position: absolute;
@@ -200,7 +199,7 @@
                 font-family: 'Times New Roman', Times, serif;
                 color: #000;
             }
-            @page { size: A4 landscape; margin: 8mm; }
+            @page { size: A4 portrait; margin: 10mm; }
             .sb-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 4px; }
             .sb-header h1 { font-size: 1.4rem; margin: 0; font-weight: bold; }
             .sb-meta-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
@@ -390,6 +389,22 @@
             #sbLeaveBlock .neg-flag { color: #b91c1c !important; font-weight: 800; }
             #sbLeaveBlock .neg-tag { display:block; font-size:0.5rem; font-weight:800; color:#fff !important; background:#dc2626 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #leaveNegAlert { display:none !important; }
+
+            /* Print modes: Pay Fixation = A4 portrait, Leave A/c = A4 landscape (page size injected by JS) */
+            #printArea { position: static !important; }
+            body.print-leave #printArea > :not(#sbLeaveBlock) { display: none !important; }
+            body.print-pay #sbLeaveBlock { display: none !important; }
+            body.print-leave #sbLeaveBlock .sb-section-title,
+            body.print-pay .sb-section-title { page-break-before: auto !important; }
+            body.print-pay .sb-section-title { margin-top: 6mm; }
+            body.print-pay .sb-main-table th, body.print-pay .sb-main-table td { font-size: 0.72rem; padding: 4px; }
+
+            /* Table headings: RED font on YELLOW fill (readable, prints in colour) */
+            .sb-main-table thead th, #sbLeaveBlock thead th, table.annex-increment th {
+                background: #ffff00 !important; color: #c00000 !important; font-weight: 800 !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #sbLeaveBlock .code-row td { background: #fff59d !important; color: #c00000 !important; font-weight: 800 !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -710,7 +725,8 @@
 
     <div class="btn-group">
         <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
-        <button type="button" class="btn-print" onclick="window.print()">Print Service Book Sheet</button>
+        <button type="button" class="btn-print" onclick="printPayFixation()">Print Pay Fixation (A4 Portrait)</button>
+        <label class="inline-check" style="margin-left:10px;"><input type="checkbox" id="ropa19FullTable"> ROPA-2019: show full year-by-year table (default = only pay as on option date + next increment date)</label>
     </div>
 
     <div class="output-box" id="carryForwardOutput" style="display:none;"></div>
@@ -830,8 +846,17 @@
                     <option value="commuted">5. Commuted Leave — Full Average Pay on M.C. (e.g. 30 days enjoyed = 60 days deducted from HPL a/c)</option>
                 </select>
             </div>
-            <div class="fg"><label>Leave Enjoyed From</label><input type="date" id="mlFrom"></div>
-            <div class="fg"><label>Leave Enjoyed To</label><input type="date" id="mlTo"></div>
+            <div class="fg"><label>Entry Mode</label>
+                <select id="mlMode" onchange="mlModeChange()">
+                    <option value="range">A. Date range (From - To)</option>
+                    <option value="list">B. Comma-separated dates</option>
+                    <option value="qty">C. Quick check: number of days only</option>
+                </select></div>
+            <div class="fg" id="mlFromWrap"><label>Leave Enjoyed From</label><input type="date" id="mlFrom"></div>
+            <div class="fg" id="mlToWrap"><label>Leave Enjoyed To</label><input type="date" id="mlTo"></div>
+            <div class="fg" id="mlListWrap" style="display:none;grid-column:span 2;"><label>Dates (comma separated; dd/mm/yyyy, ranges as "a to b")</label><input type="text" id="mlDatesText" placeholder="05/03/2020, 06/03/2020, 10/03/2020 to 15/03/2020"></div>
+            <div class="fg" id="mlQtyWrap" style="display:none;"><label>No. of leave days enjoyed</label><input type="number" id="mlQty" min="1" step="1"></div>
+            <div class="fg" id="mlQtyRowWrap" style="display:none;"><label>Post into Period Row</label><select id="mlQtyRow"></select></div>
         </div>
         <p style="font-size:.75rem;color:#555;margin:8px 0 0;">
             Posted into the Leave Account (split across period rows if it crosses a year-end) and noted in the "Event / Reason" column of every ROPA-1998/2009/2019 row whose Effective Date&ndash;Date of Termination window overlaps these dates.
@@ -861,8 +886,8 @@
                 <col style="width:4%"><!-- 7 -->
                 <col style="width:4%"><!-- 8 -->
                 <col style="width:4%"><!-- 9 -->
-                <col style="width:4%"><!-- 9a -->
-                <col style="width:4%"><!-- 9b -->
+                <col style="width:7%"><!-- 9a -->
+                <col style="width:7%"><!-- 9b -->
                 <col style="width:3%"><!-- 10a -->
                 <col style="width:3%"><!-- 10b -->
                 <col style="width:3%"><!-- 11 -->
@@ -879,7 +904,7 @@
                     <th colspan="3">Leave earned on</th>
                     <th colspan="3">Leave at Credit on</th>
                     <th colspan="3">Leave taken (debited)</th>
-                    <th colspan="2">Leave Enjoyed (Physical Days)</th>
+                    <th colspan="2">Leave Enjoyed (Physical Days &amp; Period)</th>
                     <th colspan="2">Maternity Leave</th>
                     <th>LWP</th>
                     <th colspan="2">Special Leave</th>
@@ -913,7 +938,7 @@
     <div class="panel" id="synopsisPanel" style="font-size:.8rem;"></div>
 
     <div class="btn-group">
-        <button class="btn-print" onclick="doPrint()">Print / Generate Leave A/c Page</button>
+        <button class="btn-print" onclick="printLeaveAc()">Print Leave A/c (A4 Landscape)</button>
     </div>
 
     <h3 id="tab-cas" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">6. CAS / Milestone Benefit Documents (10 / 18 / 20 Years)</h3>
@@ -2436,7 +2461,15 @@
 
         renderRows98('payTableBody98', 'sbPrintTableBody98', ropa98Rows);
         renderRows('payTableBody09', 'sbPrintTableBody09', ropa09Rows);
-        renderRows('payTableBody19', 'sbPrintTableBody19', result19.rows);
+        let rows19Disp = result19.rows;
+        if (!document.getElementById('ropa19FullTable')?.checked && result19.rows.length) {
+            const first = Object.assign({}, result19.rows[0]);
+            const later = result19.rows.slice(1);
+            const nxt = later.find(r => r.label === 'INCREMENT') || later[0];
+            first.slipHTML = (first.slipHTML || '') + `<div style="margin-top:6px;padding:4px 6px;border:1px solid #1d4ed8;background:#eff6ff;font-weight:700;color:#1e3a8a;">Date of Next Increment (on the basis of above fixation): ${nxt ? formatDate(nxt.date) + ' &nbsp;&rarr;&nbsp; Basic Pay Rs. ' + nxt.basicDisplay : 'N.A. (up to date of retirement)'}</div>`;
+            rows19Disp = [first];
+        }
+        renderRows('payTableBody19', 'sbPrintTableBody19', rows19Disp);
 
         renderAnnexureForms(axData, doj, dor, ropa09Rows, result19.rows);
 
@@ -2516,7 +2549,9 @@
         document.getElementById('ax19RevisedBasic').textContent = rs(ax.carryBasic);
 
         const MAX_ROWS = 12;
-        const incRows = (ropa19Rows || []).filter(r => r.date > ax.ropa19OptionDate);
+        const incRowsAll = (ropa19Rows || []).filter(r => r.date > ax.ropa19OptionDate);
+        const limited19 = !document.getElementById('ropa19FullTable')?.checked;
+        const incRows = limited19 ? [] : incRowsAll;
         let runningBasic = ax.carryBasic;
         let bodyHTML = '';
         incRows.slice(0, MAX_ROWS).forEach(r => {
@@ -2527,7 +2562,7 @@
             bodyHTML += `<tr><td>${formatDate(r.date)}</td><td>${r.label}</td><td>LEVEL-${String(lvl).padStart(2, '0')}</td><td class="a-incamt">${incAmt > 0 ? incAmt.toLocaleString('en-IN') : '-'}</td><td class="a-incamt">${basicNum.toLocaleString('en-IN')}</td></tr>`;
             runningBasic = basicNum;
         });
-        document.getElementById('ax19IncrementBody').innerHTML = bodyHTML || '<tr><td colspan="5" style="color:#666;">No further increments before superannuation / date of retirement.</td></tr>';
+        document.getElementById('ax19IncrementBody').innerHTML = bodyHTML || (limited19 ? '<tr><td colspan="5" style="color:#666;">Only fixation as on date of option shown &mdash; see item 12 for the date of next increment.</td></tr>' : '<tr><td colspan="5" style="color:#666;">No further increments before superannuation / date of retirement.</td></tr>');
 
         const shown = incRows.slice(0, MAX_ROWS);
         const lastRow = shown[shown.length - 1];
@@ -2536,7 +2571,7 @@
         document.getElementById('ax19FinalLabel').textContent = `11. Revised Basic Pay ( as on ${formatDate(finalDate)} )`;
         document.getElementById('ax19FinalBasic').textContent = rs(finalBasic);
 
-        const nextAfter = incRows[MAX_ROWS];
+        const nextAfter = limited19 ? incRowsAll[0] : incRows[MAX_ROWS];
         document.getElementById('ax19NextIncrement').textContent = nextAfter ? formatDate(nextAfter.date) : (incRows.length > MAX_ROWS ? '—' : 'N.A. (up to date of retirement)');
 
         if (incRows.length > MAX_ROWS) {
@@ -2723,8 +2758,75 @@ function autoGenerateRows(){
   showStatus(`Generated ${newPeriods.length} Period of Duty rows from ${fmt(toISO(dojDate))} to ${fmt(toISO(dorDate))}.`, false);
 }
 
+function entryDays(e){ return e.qty ? e.qty : daysBetween(e.from,e.to); }
+
+function mlModeChange(){
+  const m = document.getElementById('mlMode').value;
+  const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on?'':'none'; };
+  show('mlFromWrap', m==='range'); show('mlToWrap', m==='range');
+  show('mlListWrap', m==='list');
+  show('mlQtyWrap', m==='qty'); show('mlQtyRowWrap', m==='qty');
+}
+
+function _mkUTC(y,mo,d){ const dt=new Date(Date.UTC(y,mo-1,d)); return (dt.getUTCFullYear()===y && dt.getUTCMonth()===mo-1 && dt.getUTCDate()===d) ? dt : null; }
+function parseFlexDate(str){
+  str=(str||'').trim(); let m;
+  if((m=str.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))) return _mkUTC(+m[1],+m[2],+m[3]);
+  if((m=str.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2}|\d{4})$/))){ let y=+m[3]; if(y<100) y+=2000; return _mkUTC(y,+m[2],+m[1]); }
+  return null;
+}
+
+function addMlEntriesFromList(type){
+  const txt = document.getElementById('mlDatesText').value;
+  const tokens = txt.split(/[,;\n]+/).map(t=>t.trim()).filter(Boolean);
+  if(!tokens.length){ showStatus('Please type the leave dates separated by commas.', true); return; }
+  const days = new Set();
+  for(const t of tokens){
+    const parts = t.split(/\s+to\s+/i);
+    const a = parseFlexDate(parts[0]); const b = parts.length>1 ? parseFlexDate(parts[1]) : a;
+    if(!a || !b || b<a || parts.length>2){ showStatus('Cannot read "'+t+'". Use dd/mm/yyyy, e.g. 05/03/2020 or 05/03/2020 to 09/03/2020.', true); return; }
+    for(let d=a.getTime(); d<=b.getTime(); d+=86400000) days.add(new Date(d).toISOString().slice(0,10));
+  }
+  const sorted=[...days].sort();
+  const ranges=[]; let start=sorted[0], prev=sorted[0];
+  for(let i=1;i<=sorted.length;i++){
+    const cur=sorted[i];
+    if(cur && (new Date(cur)-new Date(prev))===86400000){ prev=cur; continue; }
+    ranges.push([start,prev]); start=cur; prev=cur;
+  }
+  const added=[], bad=[];
+  ranges.forEach(([from,to])=>{
+    const id=idCounter++;
+    masterMlEntries.push({id,from,to,type});
+    if(!assignMlEntries().has(id)){ masterMlEntries.pop(); bad.push(fmt(from)+(from===to?'':' to '+fmt(to))); }
+    else added.push(id);
+  });
+  assignMlEntries();
+  document.getElementById('mlDatesText').value='';
+  renderAll();
+  if(bad.length) showStatus(added.length+' range(s) added. Not inside any Period of Duty row: '+bad.join('; '), true);
+  else showStatus(sorted.length+' day(s) added as '+ranges.length+' entr'+(ranges.length===1?'y':'ies')+'.', false);
+}
+
+function addMlQtyEntry(type){
+  const n = Math.round(parseFloat(document.getElementById('mlQty').value));
+  if(!(n>0)){ showStatus('Enter the number of leave days enjoyed.', true); return; }
+  if(type==='lwp_effect' || type==='lwp_noeffect'){ showStatus('Days-only quick entry is for ML / HPL / Commuted leave. Use date entry for LWP.', true); return; }
+  const idx = parseInt(document.getElementById('mlQtyRow').value,10);
+  const per = periods[idx];
+  if(!per || !per.from){ showStatus('Select a Period of Duty row first.', true); return; }
+  masterMlEntries.push({id:idCounter++, from:per.from, to:per.from, type, qty:n});
+  assignMlEntries();
+  document.getElementById('mlQty').value='';
+  renderAll();
+  showStatus(n+' day(s) posted to Row '+(idx+1)+' (days only, no dates).', false);
+}
+
 function addMlEntry(){
   const type = document.getElementById('mlType').value;
+  const _mode = document.getElementById('mlMode') ? document.getElementById('mlMode').value : 'range';
+  if(_mode==='list') return addMlEntriesFromList(type);
+  if(_mode==='qty') return addMlQtyEntry(type);
   const from = document.getElementById('mlFrom').value;
   const to = document.getElementById('mlTo').value;
   if(!from || !to){ showStatus('Please enter both From and To dates.', true); return; }
@@ -2756,6 +2858,7 @@ function annotateAllTablesWithLeave(tables){
 
   const firstSeen = {};
   masterMlEntries.forEach(entry=>{
+    if(entry.qty) return;
     const eFrom = new Date(entry.from+'T00:00:00');
     const eTo = new Date(entry.to+'T00:00:00');
     tables.forEach(t=>{
@@ -2815,6 +2918,13 @@ function assignMlEntries(){
       if(!p.from || !p.to) return;
       const pFrom = new Date(p.from+'T00:00:00');
       const pTo = new Date(p.to+'T00:00:00');
+      if(entry.qty){
+        if(leaveFrom>=pFrom && leaveFrom<=pTo){
+          matchedIds.add(entry.id);
+          p.mlEntries.push({id:entry.id, from:entry.from, to:entry.to, type:entry.type, days:entry.qty, debitDays:entry.qty*debitMultiplier, qty:true});
+        }
+        return;
+      }
       const overlapStart = leaveFrom > pFrom ? leaveFrom : pFrom;
       const overlapEnd = leaveTo < pTo ? leaveTo : pTo;
       if(overlapStart <= overlapEnd){
@@ -2882,7 +2992,7 @@ function mlNotes(entries, type){
   if(list.length===0) return '-';
   const verb = (type==='lwp_effect'||type==='lwp_noeffect') ? 'LWP enjoyed for' : (type==='commuted' ? 'Commuted Leave enjoyed for' : 'ML enjoyed for');
   return list.map(e=>{
-    let label = (e.from===e.to)
+    let label = e.qty ? `${verb} [${e.days} day${e.days===1?'':'s'} \u2014 days only, no dates]` : (e.from===e.to)
       ? `${verb} ${fmt(e.from)} [${e.days} day]`
       : `${verb} ${fmt(e.from)}, ${fmt(e.to)} [${e.days} days]`;
     if(e.debitDays!==e.days && e.debitDays>0){
@@ -2890,6 +3000,15 @@ function mlNotes(entries, type){
     }
     return `${label} <button class="btn-del" style="padding:1px 5px;font-size:.6rem;margin-left:4px;" onclick="deleteMlEntry(${e.id})">remove</button>`;
   }).join('<br>');
+}
+
+function enjCell(p, col){
+  const list = (p.mlEntries||[]).filter(e => col==='avg' ? (e.type==='avg'||e.type==='commuted') : e.type==='half');
+  if(!list.length) return '-';
+  return list.map(e=>{
+    const per = e.qty ? 'no dates' : (e.from===e.to ? fmt(e.from) : fmt(e.from)+'<br>to '+fmt(e.to));
+    return `<b>${e.days}d</b>${e.type==='commuted'?' (CL)':''}<span class="ml-note" style="text-align:center;">${per}</span>`;
+  }).join('<hr style="margin:2px 0;border:0;border-top:1px dashed #64748b;">');
 }
 
 function balCellHtml(v){
@@ -2929,8 +3048,8 @@ function buildTableRows(derived, forPrint){
       <td class="taken-cell">${p.takenAvg||0}</td>
       <td class="taken-cell">${p.takenHalf||0}</td>
       <td class="vacdet-cell">-</td>
-      <td>${p.enjoyedAvg||0}</td>
-      <td>${p.enjoyedHalf||0}</td>
+      <td>${enjCell(p,'avg')}</td>
+      <td>${enjCell(p,'half')}</td>
       <td>${p.maternityFull||'-'}</td>
       <td>${p.maternityHalf||'-'}</td>
       <td>${p.lwp||'-'}</td>
@@ -2944,9 +3063,9 @@ function buildTableRows(derived, forPrint){
 }
 
 function buildTotalsRowHtml(){
-  const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
-  const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
-  const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+entryDays(e),0);
+  const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+entryDays(e),0);
+  const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+entryDays(e),0);
   // Commuted Leave is physically enjoyed on full average pay, so it is folded into the
   // "Average pay on MC" enjoyed total, but it debits the HPL a/c at double the days enjoyed.
   const totalMlDays = totalMlOnlyDays + totalCommutedDays;
@@ -2962,6 +3081,10 @@ function buildTotalsRowHtml(){
 function renderAll(){
   const derived = computeDerived();
   renderNegAlert(derived);
+  { const sel=document.getElementById('mlQtyRow');
+    if(sel){ const cur=sel.value;
+      sel.innerHTML = periods.map((p,i)=>`<option value="${i}">Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}</option>`).join('');
+      sel.value = (cur!=='' && +cur<periods.length) ? cur : String(Math.max(0,periods.length-1)); } }
 
   const tableBodyEl = document.getElementById('tableBody');
   if(!tableBodyEl) return;
@@ -2977,7 +3100,7 @@ function renderAll(){
   if(entriesListEl){
     entriesListEl.innerHTML = masterMlEntries.length===0 ? '' : masterMlEntries.map(e=>
       `<span style="display:inline-flex;align-items:center;gap:6px;background:#e2e8f0;border-radius:4px;padding:3px 8px;margin:2px;">
-         ${leaveTypeLabel[e.type]||e.type}: ${fmt(e.from)} to ${fmt(e.to)}
+         ${leaveTypeLabel[e.type]||e.type}: ${e.qty ? e.qty+' day(s), days only (row starting '+fmt(e.from)+')' : fmt(e.from)+' to '+fmt(e.to)}
          <button class="btn-del" onclick="deleteMlEntry(${e.id})">Delete</button>
        </span>`).join('');
   }
@@ -3013,9 +3136,9 @@ function renderAll(){
     </div>`;
   }).join('') || '<span style="color:#64748b;">No leave entries recorded yet.</span>') +
   (()=>{
-    const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
-    const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
-    const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+    const totalMlOnlyDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+entryDays(e),0);
+    const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+entryDays(e),0);
+    const totalCommutedDays = masterMlEntries.filter(e=>e.type==='commuted').reduce((s,e)=>s+entryDays(e),0);
     return `<div style="margin-top:6px;padding-top:8px;border-top:2px solid #1e3a8a;font-weight:700;color:#1e3a8a;">
       Grand Total — ML (Avg Pay) Days Enjoyed: ${totalMlOnlyDays} &nbsp;|&nbsp; HPL (Half Pay) Days Enjoyed: ${totalHplDays} &nbsp;|&nbsp; Commuted Leave (Full Pay) Days Enjoyed: ${totalCommutedDays} [${totalCommutedDays*2} debited from HPL a/c]
     </div>`;
@@ -3027,8 +3150,19 @@ function renderAll(){
   document.getElementById('pDor').innerText = fmt(document.getElementById('leaveUpToDate').value);
 }
 
-function doPrint(){
+function _printMode(mode){
+  const st=document.createElement('style'); st.id='dynPageStyle';
+  st.textContent = mode==='leave' ? '@page{size:A4 landscape;margin:8mm;}' : '@page{size:A4 portrait;margin:10mm;}';
+  document.head.appendChild(st);
+  document.body.classList.add('print-'+mode);
+  const clean=()=>{document.body.classList.remove('print-leave','print-pay'); st.remove(); window.removeEventListener('afterprint',clean);};
+  window.addEventListener('afterprint',clean);
   window.print();
+}
+function printLeaveAc(){ _printMode('leave'); }
+function printPayFixation(){ _printMode('pay'); }
+function doPrint(){
+  printLeaveAc();
 }
 
 document.getElementById('leaveUpToDate') && document.getElementById('leaveUpToDate').addEventListener('input', function(){
