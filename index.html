@@ -886,9 +886,7 @@
                 <col style="width:4%"><!-- 7 -->
                 <col style="width:4%"><!-- 8 -->
                 <col style="width:4%"><!-- 9 -->
-                <col style="width:7%"><!-- 9a -->
-                <col style="width:7%"><!-- 9b -->
-                <col style="width:3%"><!-- 10a -->
+                                                <col style="width:3%"><!-- 10a -->
                 <col style="width:3%"><!-- 10b -->
                 <col style="width:3%"><!-- 11 -->
                 <col style="width:3%"><!-- 12a -->
@@ -904,7 +902,6 @@
                     <th colspan="3">Leave earned on</th>
                     <th colspan="3">Leave at Credit on</th>
                     <th colspan="3">Leave taken (debited)</th>
-                    <th colspan="2">Leave Enjoyed (Physical Days &amp; Period)</th>
                     <th colspan="2">Maternity Leave</th>
                     <th>LWP</th>
                     <th colspan="2">Special Leave</th>
@@ -916,7 +913,6 @@
                     <th>Average pay on MC</th><th>Half Average pay on MC</th><th>Vacation Detention</th>
                     <th>Average pay on MC</th><th>Half Average pay on MC</th><th>Vacation Detention</th>
                     <th>Average pay on MC</th><th>Half Average pay on MC</th><th>Vacation Detention</th>
-                    <th>Average pay on MC</th><th>Half Average pay on MC</th>
                     <th>Full</th><th>Half</th>
                     <th>Extra Ordinary</th>
                     <th>Full</th><th>Half</th>
@@ -925,7 +921,6 @@
                 <tr class="code-row">
                     <td>2a</td><td>2b</td><td>3a</td><td>3b</td><td>4a</td><td>4b</td><td>4c</td>
                     <td>5a</td><td>5b</td><td>6</td><td>7</td><td>8</td><td>9</td>
-                    <td>9a</td><td>9b</td>
                     <td>10a</td><td>10b</td><td>11</td><td>12a</td><td>12b</td><td>13</td><td>14</td><td>15</td>
                 </tr>
             </thead>
@@ -1095,7 +1090,7 @@
     </table>
 
     <div id="sbRopa98Block" style="display:none;">
-        <h2 class="sb-section-title">ROPA-1998 Notional Fixation (Up to 31-03-2009)</h2>
+        <h2 class="sb-section-title">ROPA-1998 PAY (Up to 31-03-2009)</h2>
         <table class="sb-main-table" id="sbTable98">
             <thead>
                 <tr>
@@ -1107,7 +1102,7 @@
     </div>
 
     <div id="sbRopa09Block">
-        <h2 class="sb-section-title">ROPA-2009  Fixation (Up to 31-12-2019)</h2>
+        <h2 class="sb-section-title">ROPA-2009 PAY (Up to 31-12-2019)</h2>
         <table class="sb-main-table" id="sbTable09">
             <thead>
                 <tr>
@@ -1118,7 +1113,7 @@
         </table>
     </div>
 
-    <h2 class="sb-section-title">ROPA-2019 Matrix Fixation (From Option Date)</h2>
+    <h2 class="sb-section-title">ROPA-2019 PAY (From Option Date /DOA)</h2>
     <table class="sb-main-table" id="sbTable19">
         <thead>
             <tr>
@@ -2549,9 +2544,13 @@
         document.getElementById('ax19RevisedBasic').textContent = rs(ax.carryBasic);
 
         const MAX_ROWS = 12;
-        const incRowsAll = (ropa19Rows || []).filter(r => r.date > ax.ropa19OptionDate);
-        const limited19 = !document.getElementById('ropa19FullTable')?.checked;
-        const incRows = limited19 ? [] : incRowsAll;
+        const dkey = d => d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+        const optKey = dkey(ax.ropa19OptionDate);
+        // Pay up to 31-12-2019 is notional; actual ROPA-2019 pay starts 01-01-2020 (or the option date if later).
+        const cutKey = Math.max(optKey, 20200101);
+        const cutDate = (cutKey === optKey) ? ax.ropa19OptionDate : new Date(2020, 0, 1);
+        const allAfter = (ropa19Rows || []).filter(r => dkey(r.date) > optKey);
+        const incRows = allAfter.filter(r => dkey(r.date) <= cutKey);
         let runningBasic = ax.carryBasic;
         let bodyHTML = '';
         incRows.slice(0, MAX_ROWS).forEach(r => {
@@ -2562,21 +2561,20 @@
             bodyHTML += `<tr><td>${formatDate(r.date)}</td><td>${r.label}</td><td>LEVEL-${String(lvl).padStart(2, '0')}</td><td class="a-incamt">${incAmt > 0 ? incAmt.toLocaleString('en-IN') : '-'}</td><td class="a-incamt">${basicNum.toLocaleString('en-IN')}</td></tr>`;
             runningBasic = basicNum;
         });
-        document.getElementById('ax19IncrementBody').innerHTML = bodyHTML || (limited19 ? '<tr><td colspan="5" style="color:#666;">Only fixation as on date of option shown &mdash; see item 12 for the date of next increment.</td></tr>' : '<tr><td colspan="5" style="color:#666;">No further increments before superannuation / date of retirement.</td></tr>');
+        document.getElementById('ax19IncrementBody').innerHTML = bodyHTML || '<tr><td colspan="5" style="color:#666;">No increment between the date of option and the date of actual fixation.</td></tr>';
 
         const shown = incRows.slice(0, MAX_ROWS);
         const lastRow = shown[shown.length - 1];
         const finalBasic = lastRow ? parseInt(String(lastRow.basicDisplay).replace(/,/g, ''), 10) : ax.carryBasic;
-        const finalDate = lastRow ? lastRow.date : ax.ropa19OptionDate;
-        document.getElementById('ax19FinalLabel').textContent = `11. Revised Basic Pay ( as on ${formatDate(finalDate)} )`;
+        document.getElementById('ax19FinalLabel').textContent = `11. Revised Basic Pay ( as on ${formatDate(cutDate)} )`;
         document.getElementById('ax19FinalBasic').textContent = rs(finalBasic);
 
-        const nextAfter = limited19 ? incRowsAll[0] : incRows[MAX_ROWS];
-        document.getElementById('ax19NextIncrement').textContent = nextAfter ? formatDate(nextAfter.date) : (incRows.length > MAX_ROWS ? '—' : 'N.A. (up to date of retirement)');
+        const nextAfter = allAfter.find(r => dkey(r.date) > cutKey);
+        document.getElementById('ax19NextIncrement').textContent = nextAfter ? formatDate(nextAfter.date) : 'N.A. (up to date of retirement)';
 
-        if (incRows.length > MAX_ROWS) {
-            document.getElementById('ax19Note').textContent = `Note: Showing first ${MAX_ROWS} entries after fixation — see the ROPA-2019 Matrix Fixation table above for the complete history through retirement.`;
-        }
+        let noteTxt = (cutKey > optKey) ? 'Note: pay up to 31-12-2019 is notional; actual pay in the revised structure is drawn from 01-01-2020.' : '';
+        if (allAfter.filter(r => dkey(r.date) <= cutKey).length > MAX_ROWS) noteTxt += ' Showing first ' + MAX_ROWS + ' entries only.';
+        if (noteTxt) { const nEl = document.getElementById('ax19Note'); nEl.textContent = (nEl.textContent ? nEl.textContent + ' ' : '') + noteTxt.trim(); }
     }
 
     window.addEventListener('DOMContentLoaded', function () {
@@ -3048,8 +3046,6 @@ function buildTableRows(derived, forPrint){
       <td class="taken-cell">${p.takenAvg||0}</td>
       <td class="taken-cell">${p.takenHalf||0}</td>
       <td class="vacdet-cell">-</td>
-      <td>${enjCell(p,'avg')}</td>
-      <td>${enjCell(p,'half')}</td>
       <td>${p.maternityFull||'-'}</td>
       <td>${p.maternityHalf||'-'}</td>
       <td>${p.lwp||'-'}</td>
@@ -3072,8 +3068,6 @@ function buildTotalsRowHtml(){
   const totalHplDebited = totalHplDays + (totalCommutedDays*2);
   return `<tr style="background:#dbeafe;font-weight:700;">
       <td colspan="13" style="text-align:right;padding-right:8px;">TOTAL DAYS ENJOYED (ENTIRE SERVICE) &rarr;</td>
-      <td>${totalMlDays}</td>
-      <td>${totalHplDays}</td>
       <td colspan="8">Total ML (Avg Pay) Enjoyed: ${totalMlOnlyDays} day${totalMlOnlyDays===1?'':'s'} &nbsp;|&nbsp; Total HPL (Half Pay) Enjoyed: ${totalHplDays} day${totalHplDays===1?'':'s'} &nbsp;|&nbsp; Total Commuted Leave Enjoyed (Full Pay): ${totalCommutedDays} day${totalCommutedDays===1?'':'s'} [${totalCommutedDays*2} debited from HPL a/c] &nbsp;|&nbsp; Total Debited from HPL a/c: ${totalHplDebited} day${totalHplDebited===1?'':'s'}</td>
     </tr>`;
 }
