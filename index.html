@@ -497,6 +497,7 @@
 .nsb-wrap .fx{font-size:7.5pt;font-weight:normal;text-align:left;margin-top:1px;line-height:1.25}
 .nsb-wrap .fxh{font-size:7.5pt;font-weight:bold;font-style:italic;text-align:left;margin-top:5px;border-top:1px dashed #777;padding-top:2px}
 .nsb-wrap td.c2{text-align:left}
+.nsb-wrap .mofbox{margin-top:4px}.nsb-wrap .mofbox>div{font-size:8pt!important;margin-top:0!important;border-color:#000!important}.nsb-wrap .mofbox div,.nsb-wrap .mofbox td{font-size:8pt!important;text-align:left;line-height:1.25;border-color:#555!important}.nsb-wrap .mofbox>div>div:first-child{text-align:center!important}.nsb-wrap .mofbox td:nth-child(2){text-align:right}.nsb-wrap .mofbox table{width:100%;table-layout:auto}
 </style>
 </head>
 <body>
@@ -5106,6 +5107,7 @@ function fixHtml(g,r){
    const s=x.querySelectorAll('span'), a=(s[0]?s[0].textContent:'').replace(/\s+/g,' ').trim(), b=(s[1]?s[1].textContent:'').replace(/\s+/g,' ').trim();
    if(a||b) out+='<div class="fx">'+E(a)+(b&&b!=='\u2014'?' : <b>'+E(b)+'</b>':'')+'</div>';
   });
+  const bx=d.querySelector('div[style*="94a3b8"]'); if(bx){ out='<div class="mofbox">'+bx.outerHTML+'</div>'; }
   const nx=d.querySelector('div[style*="1d4ed8"]'); if(nx) out+='<div class="fx"><b>'+E(nx.textContent.replace(/\s+/g,' ').trim())+'</b></div>';
  }catch(e){}
  if(!out){
@@ -5168,7 +5170,8 @@ function model(){
    seg='<b>'+E(sc)+'</b>';
    if(regStart) seg+='<br>'+E(GO[g]);
    if(top&&narr) seg+='<hr>'+R(narr);
-   seg+='<div class="fxh">Mode of pay fixation ('+E(reasonTitle(r,top&&dk(r.date)===dojK))+' w.e.f. '+formatDate(r.date)+') :</div>'+fixHtml(g,r);
+   const fh=fixHtml(g,r);
+   seg+=(fh.indexOf('mofbox')>-1?'':'<div class="fxh">Mode of pay fixation ('+E(reasonTitle(r,top&&dk(r.date)===dojK))+' w.e.f. '+formatDate(r.date)+') :</div>')+fh;
    curSegc='<b>'+E(sc)+'</b> <i>(Contd.)</i>';
   }
   const basic=String(r.basicDisplay).replace(/,/g,''), gp=String(r.gpDisplay).replace(/,/g,'');
