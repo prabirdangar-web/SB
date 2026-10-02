@@ -1416,6 +1416,24 @@
         return d;
     }
 
+    // Remarks wording for 10 / 18 / 20-Year CAS rows (ROPA-2009 / ROPA-2019).
+    // Completion date = day before the anniversary of joining; the benefit is normally
+    // effective on the anniversary, or 01-07 when the completion date is 02.01 - 30.06.
+    function milestoneRemarkText(ev, scaleChanged, ropaName) {
+        if (!ev || !ev.isMilestone) return '';
+        const m = String(ev.label || '').match(/\d+/);
+        if (!m) return '';
+        const anniv = new Date(ev.lwpShiftedDate || ev.exactMilestoneDate || ev.date);
+        const completion = new Date(anniv); completion.setDate(completion.getDate() - 1);
+        const eff = new Date(ev.date);
+        const what = scaleChanged ? 'Placed in next higher scale / Level (Grade Pay change)' : 'One additional increment';
+        const instead = (eff.getMonth() === 6 && eff.getDate() === 1 && eff.getTime() !== anniv.getTime())
+            ? ' instead of ' + formatDate(anniv) : '';
+        let t = `${what} w.e.f. ${formatDate(eff)}${instead} for completion of ${m[0]} years' continuous and satisfactory service on ${formatDate(completion)} as per ${ropaName} rules and granted by MCR / Administrator Order No. ____________ dated ____________`;
+        if (ev.isLwpDeferred) t += `; financial benefit deferred due to LWP`;
+        return t + '.';
+    }
+
     function resolveDateNoWindow(originalDate, entries) {
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
@@ -1931,6 +1949,7 @@
                 gpDisplay: runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
+                casRemark: ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : '',
                 snapBandPay: runningBandPay,
                 snapGp: runningGp
             });
@@ -2204,6 +2223,7 @@
                 gpDisplay: runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
+                casRemark: ev.isMilestone ? milestoneRemarkText(ev, existingLevel !== runningLevel, 'ROPA-2019') : '',
                 promoDetail: promoDetail
             });
         });
@@ -2257,7 +2277,7 @@
                 <td><strong>${trDot}</strong></td>
                 <td style="font-size:0.8rem;">${row.scaleStr}</td>
                 <td><strong>₹ ${row.basicDisplay}</strong></td>
-                <td><strong>${row.label}</strong>${row.slipHTML}</td>`;
+                <td><strong>${row.label}</strong>${row.casRemark ? '<div style="font-size:.78em;font-weight:400;margin-top:3px;text-align:justify;">' + row.casRemark + '</div>' : ''}${row.slipHTML}</td>`;
             let dRow = document.createElement('tr'); dRow.innerHTML = rowHTML; tbody.appendChild(dRow);
             let pRow = document.createElement('tr'); pRow.innerHTML = rowHTML; sbTbody.appendChild(pRow);
         });
@@ -2283,7 +2303,7 @@
                 <td style="text-align:center;">${row.trackCol}</td>
                 <td style="text-align:center;">₹ ${row.gpDisplay}</td>
                 <td><strong>₹ ${row.basicDisplay}</strong></td>
-                <td><strong>${row.label}</strong>${row.slipHTML}</td>`;
+                <td><strong>${row.label}</strong>${row.casRemark ? '<div style="font-size:.78em;font-weight:400;margin-top:3px;text-align:justify;">' + row.casRemark + '</div>' : ''}${row.slipHTML}</td>`;
 
             let dRow = document.createElement('tr'); dRow.innerHTML = rowHTML; tbody.appendChild(dRow);
             let pRow = document.createElement('tr'); pRow.innerHTML = rowHTML; sbTbody.appendChild(pRow);
@@ -3499,7 +3519,9 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
         // append to row.label — strip that trailing note before display.
         let remarks = (r.label || '').replace(/<br>\s*<span style="font-weight:400;font-size:\.78em;color:#334155;">.*?<\/span>\s*$/, '');
         const upper = remarks.toUpperCase();
-        if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
+        const casYrs = (upper.match(/(10|18|20) YEARS/) || [])[1];
+        if (r.casRemark && casYrs) remarks = '<strong>' + casYrs + ' YEARS</strong><div style="font-weight:400;font-size:.85em;text-align:justify;">' + r.casRemark + '</div>';
+        else if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
         else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
         else if (upper.includes('20 YEARS')) remarks = '<strong>20 YEARS</strong>';
         else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>';
