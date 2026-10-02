@@ -406,6 +406,74 @@
             #sbLeaveBlock .code-row td { background: #fff59d !important; color: #c00000 !important; font-weight: 800 !important;
                 -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
+
+        /* ================= COMPACT DASHBOARD (screen only; print untouched) ================= */
+        @media screen {
+            body { padding: 6px; font-size: 14px; }
+            .container { padding: 8px 10px; border-radius: 8px; }
+            .container > h2 { font-size: 1rem; padding-bottom: 4px; margin: 0 0 6px; }
+            /* icon tab bar: one scrolling line */
+            .top-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 4px; margin: 0 0 6px; border-radius: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+            .top-tabs::-webkit-scrollbar { display: none; }
+            .top-tabs a { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; font-size: .72rem; border-radius: 6px; flex: 0 0 auto; }
+            .top-tabs a i { font-style: normal; font-size: .95rem; line-height: 1; }
+            [id] { scroll-margin-top: 48px; }
+            /* quick action bar */
+            .qbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 5px 6px; margin-bottom: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; position: relative; }
+            .qbar select { flex: 1 1 170px; min-width: 0; padding: 5px 6px; font-size: .78rem; border-radius: 5px; }
+            .ibtn, .chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; font-size: .72rem; font-weight: 700; border-radius: 6px; border: none; color: #fff; background: #1e3a8a; cursor: pointer; white-space: nowrap; }
+            .ibtn i { font-style: normal; font-size: .9rem; line-height: 1; }
+            body.is-admin .admin-only.ibtn { display: inline-flex; }
+            .chip { background: #1d4ed8; padding: 5px 9px; letter-spacing: .3px; }
+            .qsep { width: 1px; height: 18px; background: #cbd5e1; margin: 0 2px; }
+            .qcount { flex: 1 0 100%; font-size: .68rem; color: #64748b; }
+            .qcount:empty { display: none; }
+            .qmore { position: relative; }
+            .qmore summary { list-style: none; cursor: pointer; padding: 2px 9px; font-size: 1.1rem; font-weight: 800; background: #e2e8f0; border-radius: 6px; line-height: 1.3; }
+            .qmore summary::-webkit-details-marker { display: none; }
+            .qmenu { position: absolute; right: 0; top: 110%; z-index: 1100; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: #fff; border: 1px solid #94a3b8; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.18); min-width: 210px; }
+            .qmenu .ibtn { justify-content: flex-start; padding: 7px 10px; }
+            /* collapsible section headers */
+            .container h3[id^="tab-"] { margin: 8px 0 6px !important; padding: 6px 10px !important; font-size: .88rem; background: #eef2ff; color: #1e3a8a; border: 1px solid #c7d2fe !important; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+            .container h3[id^="tab-"]::after { content: "\25BE"; font-size: .9rem; transition: transform .15s; }
+            .container h3[id^="tab-"].closed::after { transform: rotate(-90deg); }
+            .container h3[id^="tab-"].closed { background: #f1f5f9; color: #334155; }
+            .container h3:not([id^="tab-"]) { font-size: .85rem; margin: 8px 0 4px; }
+            .container h4 { font-size: .82rem; margin: 8px 0 4px; }
+            /* compact form grid: more columns, 2 on phones */
+            .grid-inputs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; margin-bottom: 8px; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 10px; }
+            .form-group label, .fg label, .container label { font-size: .68rem; margin-bottom: 2px; }
+            input, select, .fg input, .fg select { padding: 4px 6px; font-size: .8rem; border-radius: 5px; }
+            textarea { font-size: .8rem; }
+            .panel { padding: 6px 8px; margin-bottom: 8px; }
+            .output-box { padding: 6px 9px; margin-bottom: 8px; font-size: .78rem; }
+            .btn-group { margin: 8px 0; gap: 6px; flex-wrap: wrap; }
+            button, .btn-add, .btn-generate, .btn-print { padding: 6px 12px; font-size: .78rem; border-radius: 6px; }
+            .btn-del { padding: 3px 8px; }
+            .btn-row { gap: 6px; margin-top: 6px; }
+            table { font-size: .74rem; margin-top: 6px; }
+            th { padding: 5px 6px; }
+            td { padding: 4px 6px; }
+            .slip-box { font-size: .72rem; padding: 4px 6px; }
+            .table-responsive, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .sec-body { padding: 0 1px; }
+        }
+        @media screen and (max-width: 640px) {
+            body { padding: 3px; }
+            .container { padding: 6px; }
+            .top-tabs a b { display: none; }
+            .top-tabs a.active b { display: inline; }
+            .top-tabs a { padding: 6px 11px; }
+            .ibtn b { display: none; }
+            .ibtn { padding: 6px 10px; }
+            .ibtn i { font-size: 1rem; }
+            .qmenu .ibtn b { display: inline; }
+            .grid-inputs, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 8px; }
+            .grid-inputs > [style*="grid-column"], .grid > [style*="grid-column"] { grid-column: 1 / -1 !important; }
+            .table-responsive table, .table-wrap table { min-width: 560px; }
+            #mainTable { min-width: 860px; }
+        }
     </style>
 </head>
 <body>
@@ -477,46 +545,42 @@
 <div class="container">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
     <nav class="top-tabs" aria-label="All sections">
-        <a href="#tab-staff">1. Staff & Service</a>
-        <a href="#tab-promotion">1A. Promotion</a>
-        <a href="#tab-ropa98">2. ROPA-1998</a>
-        <a href="#tab-ropa09">3. ROPA-2009</a>
-        <a href="#tab-ropa19">4. ROPA-2019</a>
-        <a href="#tab-leave">5. Leave Account</a>
-        <a href="#tab-cas">6. CAS Documents</a>
-        <a href="#tab-servicebook">Service Book</a>
+        <a href="#tab-staff" title="Staff & Service"><i>&#128100;</i><b>1 Staff</b></a>
+        <a href="#tab-promotion" title="Promotion / Higher Scale"><i>&#127941;</i><b>1A Promo</b></a>
+        <a href="#tab-ropa98" title="ROPA-1998"><i>&#128220;</i><b>R-98</b></a>
+        <a href="#tab-ropa09" title="ROPA-2009"><i>&#128216;</i><b>R-09</b></a>
+        <a href="#tab-ropa19" title="ROPA-2019"><i>&#128215;</i><b>R-19</b></a>
+        <a href="#tab-leave" title="Leave Account"><i>&#128467;</i><b>Leave</b></a>
+        <a href="#tab-cas" title="CAS Documents (10/18/20 Years)"><i>&#127894;</i><b>CAS</b></a>
+        <a href="#tab-servicebook" title="Service Book"><i>&#128214;</i><b>S.Book</b></a>
     </nav>
 
-    <div class="panel" style="margin-top:10px;background:#f8fafc;border:1px solid #94a3b8;position:sticky;top:54px;z-index:900;">
-        <div style="font-weight:800;margin-bottom:7px;">Teacher List & Quick Actions</div>
-        <div style="display:flex;flex-wrap:wrap;align-items:end;gap:6px;margin-bottom:7px;">
-            <div style="min-width:280px;flex:1;">
-                <label style="display:block;font-size:.75rem;font-weight:700;margin-bottom:3px;">Saved Teacher List</label>
-                <select id="topSavedTeacherSelect" onchange="loadTeacherRecordByTopSelect()" style="width:100%;padding:7px;border:1px solid #94a3b8;border-radius:5px;background:#fff;">
-                    <option value="">-- Select Saved Teacher --</option>
-                </select>
+    <div class="qbar">
+        <select id="topSavedTeacherSelect" onchange="loadTeacherRecordByTopSelect()" title="Saved Teacher List">
+            <option value="">-- Select Saved Teacher --</option>
+        </select>
+        <button type="button" class="ibtn" title="Load selected teacher" onclick="loadTeacherRecordFromTop()"><i>&#128194;</i><b>Load</b></button>
+        <button type="button" class="ibtn" title="New Teacher" onclick="newTeacherRecord()"><i>&#10133;</i><b>New</b></button>
+        <button type="button" class="ibtn admin-only" style="background:#059669;" title="Save Teacher" onclick="saveTeacherRecord()"><i>&#128190;</i><b>Save</b></button>
+        <button type="button" class="ibtn" style="background:#7c3aed;" title="Export Teacher JSON" onclick="exportDashboardJSON()"><i>&#11015;</i><b>Export</b></button>
+        <span class="qsep"></span>
+        <button type="button" class="chip" title="Generate 10-Year CAS documents" onclick="generateCasDocuments('10')">10Y</button>
+        <button type="button" class="chip" title="Generate 18-Year CAS documents" onclick="generateCasDocuments('18')">18Y</button>
+        <button type="button" class="chip" title="Generate 20-Year CAS documents" onclick="generateCasDocuments('20')">20Y</button>
+        <details class="qmore">
+            <summary title="More actions">&#8943;</summary>
+            <div class="qmenu">
+                <button type="button" class="ibtn" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()"><i>&#11014;</i><b>Upload Teacher JSON</b></button>
+                <button type="button" class="ibtn" onclick="loadTeacherRecord()"><i>&#128194;</i><b>Load Teacher (local)</b></button>
+                <button type="button" class="ibtn" style="background:#0891b2;" onclick="exportAllTeachersJSON()"><i>&#128101;</i><b>Export All Teachers</b></button>
+                <button type="button" class="ibtn admin-only" style="background:#0f766e;" onclick="document.getElementById('bulkStaffImport').click()"><i>&#128101;</i><b>Bulk Import All Staff</b></button>
+                <button type="button" class="ibtn admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()"><i>&#128101;</i><b>Import All Teachers</b></button>
+                <button type="button" class="ibtn" style="background:#64748b;" onclick="secAll(true)"><i>&#9662;</i><b>Expand all sections</b></button>
+                <button type="button" class="ibtn" style="background:#64748b;" onclick="secAll(false)"><i>&#9652;</i><b>Collapse all sections</b></button>
             </div>
-            <button type="button" class="btn-add" onclick="loadTeacherRecordFromTop()">↻ Load</button>
-            <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload Teacher</button>
-            <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('bulkStaffImport').click()">⇧ Bulk Import All Staff</button>
-            <input type="file" id="bulkStaffImport" accept="application/json,.json" style="display:none;" onchange="bulkImportStaffJSON(event)">
-            <button type="button" class="btn-add" style="background:#0891b2;" onclick="exportAllTeachersJSON()">⇩ Export All Teachers</button>
-            <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()">⇧ Import All Teachers</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
-        </div>
-        <div id="topTeacherRecordCount" style="font-size:.73rem;color:#475569;margin-bottom:7px;"></div>
-        <div class="btn-row" style="margin:0;display:flex;flex-wrap:wrap;gap:6px;">
-            <button type="button" class="btn-add" onclick="newTeacherRecord()">＋ New Teacher</button>
-            <button type="button" class="btn-add" onclick="loadTeacherRecord()">↻ Load Teacher</button>
-            <button type="button" class="btn-print admin-only" onclick="saveTeacherRecord()">💾 Save Teacher</button>
-            <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export Teacher JSON</button>
-            <button type="button" class="btn-add admin-only" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload / Import Teacher JSON</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
-            <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
-        </div>
+        </details>
+        <input type="file" id="bulkStaffImport" accept="application/json,.json" style="display:none;" onchange="bulkImportStaffJSON(event)">
+        <span id="topTeacherRecordCount" class="qcount"></span>
     </div>
 
     <h3 id="tab-staff">1. Staff & Service Details</h3>
@@ -4886,5 +4950,35 @@ armDashboardAutoSave();
 </script>
 
 <script>document.addEventListener('DOMContentLoaded', casInitDefaultStaffData);</script>
+
+<script>
+/* Compact dashboard: collapsible sections + nav */
+function secAll(open){ document.querySelectorAll('.container h3[id^="tab-"]').forEach(function(h){ if(h._setOpen) h._setOpen(open); }); }
+(function(){
+  function init(){
+    var c=document.querySelector('.container'); if(!c||c.dataset.compact) return; c.dataset.compact='1';
+    var heads=[].slice.call(c.children).filter(function(e){return e.tagName==='H3'&&/^tab-/.test(e.id);});
+    heads.forEach(function(h,i){
+      var body=document.createElement('div'); body.className='sec-body';
+      var n=h.nextSibling, next=heads[i+1];
+      while(n&&n!==next){ var nx=n.nextSibling; body.appendChild(n); n=nx; }
+      h.parentNode.insertBefore(body,h.nextSibling);
+      h._setOpen=function(o){ body.style.display=o?'':'none'; h.classList.toggle('closed',!o); };
+      h.addEventListener('click',function(){ h._setOpen(body.style.display==='none'); });
+      h._setOpen(i===0);
+    });
+    var links=[].slice.call(document.querySelectorAll('.top-tabs a'));
+    links.forEach(function(a){
+      a.addEventListener('click',function(e){
+        var t=document.querySelector(a.getAttribute('href'));
+        links.forEach(function(x){x.classList.remove('active');}); a.classList.add('active');
+        if(t&&t._setOpen){ e.preventDefault(); t._setOpen(true); t.scrollIntoView({behavior:'smooth',block:'start'}); }
+      });
+    });
+    document.addEventListener('click',function(e){ var d=document.querySelector('.qmore[open]'); if(d&&!d.contains(e.target)) d.removeAttribute('open'); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
 </body>
 </html>
