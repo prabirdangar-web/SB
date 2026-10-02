@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified ROPA Pay Fixation System</title>
+    <title>New Service Book (A4 Landscape)</title>
     <style>
         :root {
             --primary-color: #0f172a;
@@ -494,34 +494,27 @@
 .nsb-wrap hr{border:0;border-top:1px dashed #000;margin:6px 0}
 .nsb-wrap .sm{font-size:7.5pt;font-weight:normal;margin-top:2px}
 .nsb-wrap .sg{border-top:1px solid #000;font-size:7.5pt;text-align:center;margin:55px 4px 0}
+#nsbPage{max-width:1300px;margin:0 auto;background:#fff;padding:14px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+#nsbPage h2{font-size:1.1rem;margin:0 0 8px}
 </style>
 </head>
 <body>
 
-<div id="syncStatus" style="position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.2);" class="no-print">Connecting…</div>
+<div id="syncStatus" hidden style="position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.2);" class="no-print">Connecting…</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
-    authDomain: "tfhs-portal.firebaseapp.com",
-    projectId: "tfhs-portal",
-    storageBucket: "tfhs-portal.firebasestorage.app",
-    messagingSenderId: "316041012204",
-    appId: "1:316041012204:web:c0b52bc796c5ac173716c9"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-  const ropaDocRef = db.collection('tfhs').doc('ropaPayFixation');
+/* Standalone: no cloud. Harmless stubs so the shared pay engine loads unchanged. */
+const firebase={initializeApp(){},firestore:{FieldPath:function(){},FieldValue:{delete(){return null;}}}};
+const _dr={onSnapshot(){return function(){};},set(){return Promise.resolve();},update(){return Promise.resolve();},get(){return Promise.resolve({exists:false});}};
+const db={collection(){return {doc(){return _dr;}};}};
+const auth={onAuthStateChanged(){},signInWithEmailAndPassword(){return Promise.resolve();},signOut(){}};
+const ropaDocRef=_dr;
 </script>
 
 <!-- ADMIN LOGIN PANEL (view-only for everyone unless logged in) -->
 <!-- Collapsed to a small round badge by default so it never overlaps page content;
      tap/click it to open the login/logout dropdown. -->
-<div id="authPanel" class="no-print" style="position:fixed;top:8px;right:8px;z-index:99999;">
+<div id="authPanel" hidden class="no-print" style="position:fixed;top:8px;right:8px;z-index:99999;">
   <button id="authToggleBtn" type="button" onclick="toggleAuthPanel(event)"
     style="width:36px;height:36px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">🔒</button>
   <div id="authDropdown" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:12px;width:190px;max-width:calc(100vw - 20px);box-sizing:border-box;">
@@ -562,7 +555,7 @@
   });
 </script>
 
-<div class="container">
+<div class="container" id="engineInputs" style="display:none;margin-top:10px;">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
     <nav class="top-tabs" aria-label="All sections">
         <a href="#tab-staff" title="Staff & Service"><i>&#128100;</i><b>1 Staff</b></a>
@@ -573,7 +566,6 @@
         <a href="#tab-leave" title="Leave Account"><i>&#128467;</i><b>Leave</b></a>
         <a href="#tab-cas" title="CAS Documents (10/18/20 Years)"><i>&#127894;</i><b>CAS</b></a>
         <a href="#tab-servicebook" title="Service Book"><i>&#128214;</i><b>S.Book</b></a>
-        <a href="#tab-newsb" title="New Service Book Generation"><i>&#128196;</i><b>New SB</b></a>
     </nav>
 
     <div class="qbar">
@@ -588,7 +580,6 @@
         <button type="button" class="chip" title="Generate 10-Year CAS documents" onclick="generateCasDocuments('10')">10Y</button>
         <button type="button" class="chip" title="Generate 18-Year CAS documents" onclick="generateCasDocuments('18')">18Y</button>
         <button type="button" class="chip" title="Generate 20-Year CAS documents" onclick="generateCasDocuments('20')">20Y</button>
-        <button type="button" class="chip" title="Generate New Service Book page" onclick="nsbOpenAndGenerate()">New SB</button>
         <details class="qmore">
             <summary title="More actions">&#8943;</summary>
             <div class="qmenu">
@@ -1155,15 +1146,21 @@
     </div>
     <div id="casDocStatus" style="margin-top:8px;font-size:.85rem;font-weight:600;"></div>
     <div id="casDocPreview" style="margin-top:16px;"></div>
+</div>
 
-    <h3 id="tab-newsb" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">7. New SB &mdash; Service Book Page (auto from Pay Tables)</h3>
-    <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
-        For a new service entry: school defaults (address, recognition VIII+ / X+ / H.S. / extension, financial status) are pre-filled below. Pay rows are fetched from the ROPA pay tables exactly. <b>Any row left completely blank is skipped</b> and the numbering closes up automatically.
+<div id="nsbPage">
+    <h2>New Service Book &mdash; A4 Landscape</h2>
+    <div class="btn-group" style="margin:6px 0 10px;flex-wrap:wrap;">
+        <button type="button" class="btn-generate" style="background:#7c3aed;" onclick="document.getElementById('sbJsonFile').click()">Load Teacher JSON (from main)</button>
+        <input type="file" id="sbJsonFile" accept="application/json,.json" style="display:none;" onchange="sbLoadJson(event)">
+        <select id="sbTeacherPick" style="display:none;padding:6px;" onchange="sbPickTeacher()"></select>
+        <button type="button" class="btn-generate" style="background:#475569;" onclick="var e=document.getElementById('engineInputs');e.style.display=e.style.display==='none'?'':'none';">Show / Hide pay data inputs</button>
     </div>
+    <div id="sbLoadMsg" style="font-size:.8rem;font-weight:600;margin-bottom:6px;"></div>
     <input type="hidden" id="nsbSeeded" value="">
     <div class="grid-inputs">
         <div class="form-group"><label>Institution name (Col 1) &mdash; blank = from main</label><input type="text" id="nsbSchoolDisp"></div>
-        <div class="form-group"><label>Address lines (Col 1) &mdash; blank = from main (Section 6)</label><textarea id="nsbAddress" rows="2"></textarea></div>
+        <div class="form-group"><label>Address lines (Col 1) &mdash; blank = from main</label><textarea id="nsbAddress" rows="2"></textarea></div>
         <div class="form-group"><label>Permanent / Temporary (Col 3)</label><select id="nsbPermTemp"><option value="">Auto from main</option><option>Permanent</option><option>Temporary</option></select></div>
         <div class="form-group"><label>Nature of Appointment (Col 4)</label><input type="text" id="nsbNature" placeholder="blank = from main status"></div>
     </div>
@@ -1180,12 +1177,12 @@
         <div class="form-group"><label>Post details</label><input type="text" id="nsbPostDetail" placeholder="[Subject- Physics ; Group- Language Group , Academic Level- Upper Primary Level in Bengali Medium]"></div>
         <div class="form-group"><label>Vacancy</label><input type="text" id="nsbVacancy" placeholder="against a permanent post in place of ..."></div>
         <div class="form-group"><label>Joining time</label><input type="text" id="nsbJoinTime"></div>
-        <div class="form-group"><label>D.I. approval Memo No. &amp; date</label><input type="text" id="nsbApprovalMemo" placeholder="blank = Approval No. from Section 6"></div>
+        <div class="form-group"><label>D.I. approval Memo No. &amp; date</label><input type="text" id="nsbApprovalMemo" placeholder="blank = Approval No. from main"></div>
     </div>
-    <div class="form-group"><label>Narrative text (leave blank to auto-build from the fields above; use **text** for bold)</label><textarea id="nsbNarrative" rows="4"></textarea></div>
-    <div class="btn-group" style="margin-top:12px;">
+    <div class="form-group"><label>Narrative text (blank = auto-build from the fields above; **text** = bold)</label><textarea id="nsbNarrative" rows="4"></textarea></div>
+    <div class="btn-group" style="margin-top:12px;flex-wrap:wrap;">
         <button type="button" class="btn-generate" onclick="nsbGenerate()">Generate New SB</button>
-        <button type="button" class="btn-generate" style="background:#059669;" onclick="nsbPrint()">Print / Save PDF</button>
+        <button type="button" class="btn-generate" style="background:#059669;" onclick="nsbPrint()">Print / Save PDF (A4 Landscape)</button>
         <button type="button" class="btn-generate" style="background:#475569;" onclick="document.getElementById('nsbNarrative').value=nsbCompose()">Auto-fill narrative</button>
         <button type="button" class="btn-generate" style="background:#7c3aed;" onclick="nsbSeed(true)">Reset school defaults</button>
     </div>
@@ -5058,8 +5055,6 @@ $('nsbRecRows').innerHTML=rowsHtml(REC); $('nsbFinRows').innerHTML=rowsHtml(FIN)
 window.nsbClr=function(k){['d','w','v'].forEach(x=>{const e=$('nsb'+k+x); if(e){e.value='';e.dispatchEvent(new Event('change',{bubbles:true}));}});};
 window.nsbSeed=function(force){ if(!force&&V('nsbSeeded')==='1') return; Object.keys(D).forEach(id=>{const e=$(id); if(e) e.value=D[id];}); $('nsbSeeded').value='1'; };
 nsbSeed(false);
-const _nt=window.newTeacherRecord;
-if(typeof _nt==='function') window.newTeacherRecord=function(){ _nt.apply(this,arguments); if(!V('staffName')) nsbSeed(true); };
 
 function entries(keys){const o=[];keys.forEach(a=>{const d=V('nsb'+a[0]+'d'),w=V('nsb'+a[0]+'w'),v=V('nsb'+a[0]+'v'); if(d||w||v) o.push({d,w,v});});return o;}
 function mainStatus(){const e=$('empStatus'); const t=e&&e.options[e.selectedIndex]?e.options[e.selectedIndex].text:''; return /tempor|officiat|adhoc|ad-hoc|contract/i.test(t)?'Temporary':'Permanent';}
@@ -5119,7 +5114,7 @@ function build(){
 }
 window.nsbGenerate=function(){
  const h=build(), st=$('nsbStatus');
- if(!h){st.style.color='#b91c1c';st.textContent='Enter DOB, DOJ and ROPA option details in Section 1-4 first, then try again.';return null;}
+ if(!h){st.style.color='#b91c1c';st.textContent='Load a teacher JSON (or open "pay data inputs" and enter DOB, DOJ, ROPA option details) first, then try again.';return null;}
  $('nsbPreview').innerHTML='<div class="nsb-wrap">'+h+'</div>'; st.style.color='#065f46'; st.textContent='\u2713 New SB generated from the pay tables.'; return h;
 };
 window.nsbPrint=function(){
@@ -5130,7 +5125,31 @@ window.nsbPrint=function(){
  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>New Service Book</title><style>'+css+'</style></head><body><div id="pg"><div class="nsb-wrap">'+h+'</div></div><script>window.onload=function(){'+fit+'setTimeout(function(){window.print()},300)};<\/script></body></html>');
  w.document.close();
 };
-window.nsbOpenAndGenerate=function(){const h=$('tab-newsb'); if(h&&h._setOpen) h._setOpen(true); nsbGenerate(); if(h) h.scrollIntoView({behavior:'smooth',block:'start'});};
+
+/* ---- Load teacher data exported from the main dashboard ("Export Current JSON" / "Export All Teachers") ---- */
+let _sbRecs=null;
+function sbMsg(t,ok){const m=$('sbLoadMsg'); m.style.color=ok?'#065f46':'#b91c1c'; m.textContent=t;}
+function sbApply(rec){
+ try{ applyDashboardState(rec); sbMsg('\u2713 Loaded: '+(rec.staffName||V('staffName')),true); nsbGenerate(); }
+ catch(e){ sbMsg('Load failed: '+e.message,false); }
+}
+window.sbLoadJson=function(ev){
+ const f=ev.target.files&&ev.target.files[0]; if(!f) return;
+ const r=new FileReader();
+ r.onload=function(e){
+  try{
+   const d=JSON.parse(e.target.result), pick=$('sbTeacherPick');
+   if(d&&d.records&&typeof d.records==='object'){
+    _sbRecs=d.records; const ks=Object.keys(_sbRecs).sort();
+    pick.innerHTML='<option value="">-- choose teacher --</option>'+ks.map(k=>'<option value="'+E(k)+'">'+E(_sbRecs[k].staffName||k)+'</option>').join('');
+    pick.style.display=''; sbMsg(ks.length+' teachers found \u2014 choose one.',true);
+   } else { _sbRecs=null; pick.style.display='none'; sbApply(d); }
+  }catch(err){ sbMsg('Invalid JSON: '+err.message,false); }
+  ev.target.value='';
+ };
+ r.readAsText(f);
+};
+window.sbPickTeacher=function(){ const k=$('sbTeacherPick').value; if(k&&_sbRecs&&_sbRecs[k]) sbApply(_sbRecs[k]); };
 })();
 </script>
 </body>
