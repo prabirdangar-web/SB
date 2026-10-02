@@ -494,6 +494,9 @@
 .nsb-wrap hr{border:0;border-top:1px dashed #000;margin:6px 0}
 .nsb-wrap .sm{font-size:7.5pt;font-weight:normal;margin-top:2px}
 .nsb-wrap .sg{border-top:1px solid #000;font-size:7.5pt;text-align:center;margin:55px 4px 0}
+.nsb-wrap .fx{font-size:7.5pt;font-weight:normal;text-align:left;margin-top:1px;line-height:1.25}
+.nsb-wrap .fxh{font-size:7.5pt;font-weight:bold;font-style:italic;text-align:left;margin-top:5px;border-top:1px dashed #777;padding-top:2px}
+.nsb-wrap td.c2{text-align:left}
 </style>
 </head>
 <body>
@@ -5085,11 +5088,33 @@ function scaleOf(g,r){
  if(g==='09') return String(r.scaleStr||'').replace(':','-').replace(/-GP-(?!RS)/,'-GP-RS-');
  return String(r.scaleStr||'');
 }
-function reason(r,first){
- const p=String(r.label||'').split(/<br\s*\/?>/i), m=p[0].replace(/<[^>]+>/g,'').trim(), note=p.slice(1).join(' ').replace(/<[^>]+>/g,'').trim();
- let t,k; if(/^INCREMENT/i.test(m)) t='Annual Increment'; else if((k=/(\d+)\s*YEARS/i.exec(m))) t=k[1]+'-Year CAS Benefit'; else if(/PROMOTION/i.test(m)) t='Promotion'; else t=first?'Joining Entry Pay':m;
- let h=E(t); if(note) h+='<div class="sm">'+E(note)+'</div>'; if(r.casRemark) h+='<div class="sm">'+E(r.casRemark)+'</div>'; return h;
+function reasonTitle(r,first){
+ const p=String(r.label||'').split(/<br\s*\/?>/i), m=p[0].replace(/<[^>]+>/g,'').trim(); let t,k;
+ if(/^INCREMENT/i.test(m)) t='Annual Increment'; else if((k=/(\d+)\s*YEARS/i.exec(m))) t=k[1]+'-Year CAS Benefit'; else if(/PROMOTION/i.test(m)) t='Promotion'; else t=first?'Joining Entry Pay':m;
+ return t;
 }
+function reason(r,first){
+ const p=String(r.label||'').split(/<br\s*\/?>/i), note=p.slice(1).join(' ').replace(/<[^>]+>/g,'').trim();
+ let h=E(reasonTitle(r,first)); if(note) h+='<div class="sm">'+E(note)+'</div>'; if(r.casRemark) h+='<div class="sm">'+E(r.casRemark)+'</div>'; return h;
+}
+/* Mode of pay fixation text for Col 2 - fetched from the slip generated in the main Pay Tables */
+function fixHtml(g,r){
+ let out='';
+ try{
+  const d=new DOMParser().parseFromString('<div>'+(r.slipHTML||'')+'</div>','text/html');
+  d.querySelectorAll('.slip-row').forEach(x=>{
+   const s=x.querySelectorAll('span'), a=(s[0]?s[0].textContent:'').replace(/\s+/g,' ').trim(), b=(s[1]?s[1].textContent:'').replace(/\s+/g,' ').trim();
+   if(a||b) out+='<div class="fx">'+E(a)+(b&&b!=='\u2014'?' : <b>'+E(b)+'</b>':'')+'</div>';
+  });
+  const nx=d.querySelector('div[style*="1d4ed8"]'); if(nx) out+='<div class="fx"><b>'+E(nx.textContent.replace(/\s+/g,' ').trim())+'</b></div>';
+ }catch(e){}
+ if(!out){
+  const basic=String(r.basicDisplay).replace(/,/g,''), gp=String(r.gpDisplay).replace(/,/g,'');
+  out='<div class="fx">Pay fixed w.e.f. '+formatDate(r.date)+' at <b>Rs. '+E(basic)+'</b>'+(g==='09'&&gp?' (B.P. '+E(String(r.trackCol).replace(/,/g,''))+' + G.P. '+E(gp)+')':'')+' as per Pay Table.</div>';
+ }
+ return out;
+}
+function isEv(r){const m=String(r.label||'').replace(/<[^>]+>/g,''); return /(\d+)\s*YEARS|PROMOTION|HIGHER SCALE|OPTION|FITMENT|DOA|REVISION|FIXATION/i.test(m);}
 function payRows(){
  window.CAS_dataReady=false; window.NSB_rows19=null;
  try{processFixationTimeline();}catch(e){}
@@ -5100,34 +5125,81 @@ function payRows(){
  (window.NSB_rows19||window.CAS_ropa19Rows||[]).forEach(r=>l.push(['19',r]));
  return l;
 }
-function build(){
+/* Self-contained (also executed inside the print window) - builds one table for items[a..b) */
+function tableFn(M,a,b,first){
+ var n=b-a,h='',i,j,cnt,it,tr;
+ for(i=a;i<b;i++){
+  it=M.items[i]; tr='<tr>';
+  if(i===a) tr+='<td class="c1" rowspan="'+n+'">'+(first?M.col1:M.col1c)+'</td>';
+  if(it.seg!==null||i===a){cnt=1; for(j=i+1;j<b&&M.items[j].seg===null;j++) cnt++; tr+='<td class="c2" rowspan="'+cnt+'">'+(it.seg!==null?it.seg:it.segc)+'</td>';}
+  if(i===a) tr+='<td class="c3" rowspan="'+n+'">'+M.perm+'</td><td class="c4" rowspan="'+n+'">'+M.nature+'</td>';
+  tr+=it.cells;
+  if(i===a) tr+='<td class="c9" rowspan="'+n+'">'+M.sig+'</td>';
+  h+=tr+'</tr>';
+ }
+ return '<table class="nsb-table">'+M.head+'<tbody>'+h+'</tbody></table>';
+}
+/* Runs inside the print window: fills A4-landscape sheets with as many rows as really fit (no shrinking) */
+function pagerFn(M,tableFn){
+ var n=M.items.length,pages=[],start=0;
+ function mk(){var s=document.createElement('div');s.className='sheet';s.innerHTML='<div class="frame nsb-wrap"><div class="nsb-title">'+M.title+'</div><div class="tb"></div><div class="pn"></div></div>';document.body.appendChild(s);return s;}
+ while(start<n){
+  var s=mk(),tb=s.querySelector('.tb'),first=pages.length===0,end=start+1;
+  tb.innerHTML=tableFn(M,start,end,first);
+  while(end<n){
+   tb.innerHTML=tableFn(M,start,end+1,first);
+   if(tb.scrollHeight>tb.clientHeight+1){tb.innerHTML=tableFn(M,start,end,first);break;}
+   end++;
+  }
+  pages.push(s);start=end;
+ }
+ pages.forEach(function(s,i){s.querySelector('.pn').textContent='Page '+(i+1)+' of '+pages.length;});
+}
+function model(){
  const list=payRows(); if(!list||!list.length) return null;
- const segs=[]; list.forEach(x=>{const sc=scaleOf(x[0],x[1]),k=x[0]+'|'+sc; let s=segs[segs.length-1]; if(!s||s.k!==k){s={k:k,g:x[0],sc:sc,rows:[]};segs.push(s);} s.rows.push(x);});
- const dojK=$('doj').value?dk(new Date($('doj').value+'T00:00:00')):0, N=list.length;
- const narr=V('nsbNarrative')||window.nsbCompose();
- let b='';
- segs.forEach((s,si)=>{s.rows.forEach((x,ri)=>{const g=x[0],r=x[1],top=si===0&&ri===0; let tr='<tr>';
-  if(top) tr+='<td class="c1" rowspan="'+N+'">'+col1()+'</td>';
-  if(ri===0) tr+='<td class="c2" rowspan="'+s.rows.length+'"><b>'+E(s.sc)+'</b><br>'+E(GO[s.g])+(si===0&&narr?'<hr>'+R(narr):'')+'</td>';
-  if(top) tr+='<td class="c3" rowspan="'+N+'">'+E(V('nsbPermTemp')||mainStatus())+'</td><td class="c4" rowspan="'+N+'">'+E(V('nsbNature')||V('nsbPermTemp')||mainStatus())+'</td>';
+ const dojK=$('doj').value?dk(new Date($('doj').value+'T00:00:00')):0, narr=V('nsbNarrative')||window.nsbCompose();
+ const head='<colgroup><col style="width:18%"><col style="width:26%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:10%"><col style="width:8%"></colgroup><thead><tr><th>NAME OF POST WITH FULL ADDRESS OF THE INSTITUTION<br>1</th><th>Scale of Pay with stages of increment<br>2</th><th>Permanent /Temporary<br>3</th><th>Nature of Appointment<br>4</th><th>Date of Appointment<br>5</th><th>Pay<br>6</th><th>Date of termination of Appointment<br>7</th><th>Reason<br>8</th><th>Signatures &amp; Cert.<br>9-12</th></tr></thead>';
+ const items=[]; let prevG=null, prevSc=null, curSegc='';
+ list.forEach((x,idx)=>{
+  const g=x[0], r=x[1], sc=scaleOf(g,r), top=idx===0, regStart=(g!==prevG);
+  const startSeg=top||regStart||sc!==prevSc||isEv(r);
+  let seg=null;
+  if(startSeg){
+   seg='<b>'+E(sc)+'</b>';
+   if(regStart) seg+='<br>'+E(GO[g]);
+   if(top&&narr) seg+='<hr>'+R(narr);
+   seg+='<div class="fxh">Mode of pay fixation ('+E(reasonTitle(r,top&&dk(r.date)===dojK))+' w.e.f. '+formatDate(r.date)+') :</div>'+fixHtml(g,r);
+   curSegc='<b>'+E(sc)+'</b> <i>(Contd.)</i>';
+  }
   const basic=String(r.basicDisplay).replace(/,/g,''), gp=String(r.gpDisplay).replace(/,/g,'');
   const bp=g==='09'?'<div class="sm">B.P. '+E(String(r.trackCol).replace(/,/g,''))+' + G.P. '+E(gp)+'</div>':'';
-  tr+='<td class="p">'+formatDate(r.date)+'</td><td class="p">'+E(basic)+bp+'</td><td class="p">'+formatDate(r.dot)+'</td><td class="rs">'+reason(r,top&&dk(r.date)===dojK)+'</td>';
-  if(top) tr+='<td class="c9" rowspan="'+N+'"><div class="sg">Signature of Teacher</div><div class="sg">Signature of HOO/HM</div></td>';
-  b+=tr+'</tr>';});});
- return '<div class="nsb-title">SERVICE BOOK PAGE FORMAT</div><table class="nsb-table"><colgroup><col style="width:19%"><col style="width:22%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:9%"><col style="width:8%"><col style="width:9%"></colgroup><thead><tr><th>NAME OF POST WITH FULL ADDRESS OF THE INSTITUTION<br>1</th><th>Scale of Pay with stages of increment<br>2</th><th>Permanent /Temporary<br>3</th><th>Nature of Appointment<br>4</th><th>Date of Appointment<br>5</th><th>Pay<br>6</th><th>Date of termination of Appointment<br>7</th><th>Reason<br>8</th><th>Signatures &amp; Cert.<br>9-12</th></tr></thead><tbody>'+b+'</tbody></table>';
+  items.push({seg:seg,segc:curSegc,cells:'<td class="p">'+formatDate(r.date)+'</td><td class="p">'+E(basic)+bp+'</td><td class="p">'+formatDate(r.dot)+'</td><td class="rs">'+reason(r,top&&dk(r.date)===dojK)+'</td>'});
+  prevG=g; prevSc=sc;
+ });
+ const c1=col1(), who='<b>'+E(V('designation'))+'<br>'+E(V('nsbSchoolDisp')||V('schoolName'))+'</b>';
+ return {title:'SERVICE BOOK PAGE FORMAT',head:head,items:items,col1:c1,col1c:who+'<br><i>(Contd. from previous page)</i>',
+  perm:E(V('nsbPermTemp')||mainStatus()),nature:E(V('nsbNature')||V('nsbPermTemp')||mainStatus()),
+  sig:'<div class="sg">Signature of Teacher</div><div class="sg">Signature of HOO/HM</div>'};
 }
 window.nsbGenerate=function(){
- const h=build(), st=$('nsbStatus');
- if(!h){st.style.color='#b91c1c';st.textContent='Enter DOB, DOJ and ROPA option details in Section 1-4 first, then try again.';return null;}
- $('nsbPreview').innerHTML='<div class="nsb-wrap">'+h+'</div>'; st.style.color='#065f46'; st.textContent='\u2713 New SB generated from the pay tables.'; return h;
+ const M=model(), st=$('nsbStatus');
+ if(!M){st.style.color='#b91c1c';st.textContent='Enter DOB, DOJ and ROPA option details in Section 1-4 first, then try again.';return null;}
+ $('nsbPreview').innerHTML='<div class="nsb-wrap"><div class="nsb-title">'+M.title+'</div>'+tableFn(M,0,M.items.length,true)+'</div>';
+ st.style.color='#065f46'; st.textContent='\u2713 New SB generated from the pay tables. Print gives A4 landscape bordered pages (1, 2, 3 or more as needed).'; return M;
 };
 window.nsbPrint=function(){
- const h=nsbGenerate(); if(!h) return;
+ const M=nsbGenerate(); if(!M) return;
  const w=window.open('','_blank'); if(!w){alert('Please allow pop-ups to print.');return;}
- const css='@page{size:A4 landscape;margin:6mm}html,body{margin:0;padding:0;background:#fff}#pg{width:285mm;height:195mm;overflow:hidden;page-break-after:avoid;break-after:avoid}'+document.getElementById('nsbStyle').textContent+'.nsb-wrap{overflow:visible}.nsb-wrap table.nsb-table{min-width:0!important}.nsb-wrap table.nsb-table th,.nsb-wrap table.nsb-table td{font-size:8.5pt;padding:2px 3px}.nsb-wrap .nsb-table tr{page-break-inside:auto}.nsb-wrap .sg{margin-top:34px}.nsb-title{margin:0 0 3px}';
- const fit='(function(){var el=document.querySelector(".nsb-wrap"),PX=96/25.4,aw=285*PX,ah=188*PX,s=1,i,hh;function m(){el.style.zoom=1;el.style.width=(aw/s)+"px";return el.offsetHeight;}for(i=0;i<25;i++){hh=m();var n=Math.min(1,ah/hh);if(Math.abs(n-s)<0.003){s=n;break;}s=n;}while(s>0.3){hh=m();if(hh*s<=ah)break;s-=0.01;}el.style.zoom=s;el.style.width=(aw/s)+"px";})();';
- w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>New Service Book</title><style>'+css+'</style></head><body><div id="pg"><div class="nsb-wrap">'+h+'</div></div><script>window.onload=function(){'+fit+'setTimeout(function(){window.print()},300)};<\/script></body></html>');
+ const css='@page{size:A4 landscape;margin:0}html,body{margin:0;padding:0;background:#fff}'
+  +'.sheet{width:297mm;height:209mm;box-sizing:border-box;padding:7mm;page-break-after:always;break-after:page;overflow:hidden}'
+  +'.sheet:last-child{page-break-after:auto;break-after:auto}'
+  +'.frame{box-sizing:border-box;height:100%;border:3px double #000;padding:3mm 3mm 2mm;display:flex;flex-direction:column}'
+  +'.tb{flex:1 1 auto;min-height:0;overflow:hidden}.pn{text-align:right;font:bold 8pt "Times New Roman",serif;padding-top:1mm}'
+  +'@media screen{body{background:#777}.sheet{background:#fff;margin:8px auto}}'
+  +document.getElementById('nsbStyle').textContent
+  +'.nsb-wrap{overflow:hidden}.nsb-wrap table.nsb-table{min-width:0!important}.nsb-wrap table.nsb-table th,.nsb-wrap table.nsb-table td{font-size:9pt;padding:2px 4px}.nsb-wrap .sg{margin-top:48px}.nsb-title{margin:0 0 3px}';
+ const js='(function(){var M='+JSON.stringify(M).replace(/</g,'\\u003c')+';var tableFn='+tableFn.toString()+';var pagerFn='+pagerFn.toString()+';window.onload=function(){pagerFn(M,tableFn);setTimeout(function(){window.print()},400)};})();';
+ w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>New Service Book</title><style>'+css+'</style></head><body><script>'+js+'<\/script></body></html>');
  w.document.close();
 };
 window.nsbOpenAndGenerate=function(){const h=$('tab-newsb'); if(h&&h._setOpen) h._setOpen(true); nsbGenerate(); if(h) h.scrollIntoView({behavior:'smooth',block:'start'});};
