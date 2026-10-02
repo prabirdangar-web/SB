@@ -3584,10 +3584,7 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
         let remarks = (r.label || '').replace(/<br>\s*<span style="font-weight:400;font-size:\.78em;color:#334155;">.*?<\/span>\s*$/, '');
         const upper = remarks.toUpperCase();
         const casYrs = (upper.match(/(10|18|20) YEARS/) || [])[1];
-        if (r.casRemark && casYrs) remarks = '<strong>' + casYrs + ' YEARS</strong><div style="font-weight:400;font-size:.85em;text-align:justify;">' + r.casRemark + '</div>';
-        else if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
-        else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
-        else if (upper.includes('20 YEARS')) remarks = '<strong>20 YEARS</strong>';
+        if (casYrs) remarks = '<strong>' + casYrs + 'Y Benefit</strong>';
         else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>';
         else if (upper.includes('PAY REVISION')) remarks = '<strong>PAY REVISION</strong>';
         else if (regimeLabel === 'ROPA-2019' && upper.includes('FITMENT')) remarks = '<strong>' + (r.label || '') + '</strong>';
