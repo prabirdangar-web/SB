@@ -394,6 +394,7 @@
             #printArea { position: static !important; }
             body.print-leave #printArea > :not(#sbLeaveBlock) { display: none !important; }
             body.print-pay #sbLeaveBlock { display: none !important; }
+            body.print-pay #sbPageFormat, body.print-sb #sbPageFormat { display: none !important; }
             body.print-leave #sbLeaveBlock .sb-section-title,
             body.print-pay .sb-section-title { page-break-before: auto !important; }
             body.print-pay .sb-section-title { margin-top: 6mm; }
@@ -410,6 +411,28 @@
             body.print-sb #printArea > *:last-child { page-break-after:avoid !important; break-after:avoid; }
             .sb-ref { border:1px solid #000; padding:1.5mm 3mm; margin:0 0 3mm; font-size:.8rem; font-weight:bold; text-align:center; }
             .sb-ref-inline { float:right; max-width:62%; font-size:.62rem; font-weight:normal; text-align:right; line-height:1.25; }
+
+
+            /* ===== ADDITIONAL: Service Book Page Format (landscape) ===== */
+            body.print-sbpf { background:#fff !important; padding:0 !important; margin:0 !important; height:auto !important; }
+            body.print-sbpf #printArea { position:static !important; width:100% !important; }
+            body.print-sbpf #printArea > :not(#sbPageFormat) { display:none !important; }
+            body.print-sbpf #sbPageFormat { display:block !important; }
+            #sbPageFormat { font-family:'Times New Roman',Times,serif; color:#000; }
+            #sbPageFormat .pf-title { text-align:center; font-weight:bold; font-size:12pt; color:#1e3a8a; margin:0 0 2mm; }
+            #sbPageFormat table { width:100%; border-collapse:collapse; table-layout:fixed; }
+            #sbPageFormat th, #sbPageFormat td { border:1px solid #000 !important; padding:1.2mm 1.5mm; font-size:8pt; vertical-align:top; line-height:1.25; }
+            #sbPageFormat thead { display:table-header-group; }
+            #sbPageFormat thead th { text-align:center; font-size:8.5pt; background:#fff !important; color:#000 !important; }
+            #sbPageFormat tr { page-break-inside:auto; break-inside:auto; }
+            #sbPageFormat td.c { page-break-inside:avoid; }
+            #sbPageFormat td.e { border-top:none !important; border-bottom:none !important; }
+            #sbPageFormat td.c { text-align:center; vertical-align:middle; font-weight:bold; }
+            #sbPageFormat td.big { font-size:8pt; }
+            #sbPageFormat .pf-inst { white-space:pre-line; font-weight:normal; }
+            #sbPageFormat .pf-scale { font-weight:bold; }
+            #sbPageFormat .pf-ref { border-top:1px dashed #000; margin-top:1.5mm; padding-top:1.5mm; text-align:justify; }
+            #sbPageFormat .pf-sig { margin-top:12mm; border-top:1px solid #000; font-size:7pt; text-align:center; }
 
             /* Table headings: RED font on YELLOW fill (readable, prints in colour) */
             .sb-main-table thead th, #sbLeaveBlock thead th, table.annex-increment th {
@@ -1159,6 +1182,20 @@
     <div class="btn-group">
         <button type="button" class="btn-print" onclick="printNewServiceBook()">Print New Service Book</button>
     </div>
+    <h4 style="margin:14px 0 6px;">Service Book Page Format (9-column entry, A4 Landscape)</h4>
+    <div class="grid-inputs">
+        <div class="form-group"><label>Column 1 &mdash; Post &amp; full address / history of institution</label>
+            <textarea id="sbpfInst" rows="7" style="font-size:.8rem;padding:6px;border:1px solid var(--border-color);border-radius:6px;"></textarea></div>
+        <div class="form-group"><label>Column 2 &mdash; Appointment narrative (blank = auto-generated)</label>
+            <textarea id="sbpfNarr" rows="7" style="font-size:.8rem;padding:6px;border:1px solid var(--border-color);border-radius:6px;" placeholder="e.g. Subject- Physics ; Group- Language Group ; Level- Upper Primary ; against a permanent post in place of ..."></textarea></div>
+        <div class="form-group"><label>Scale line (blank = auto: LEVEL-x ... GP)</label><input type="text" id="sbpfScale" placeholder="LEVEL-15-PB-4-9000-40500-GP-RS-4800"></div>
+        <div class="form-group"><label>Nature of Appointment</label><input type="text" id="sbpfNature" value="Permanent"></div>
+        <div class="form-group"><label>Permanent / Temporary</label><input type="text" id="sbpfPerm" value="Permanent"></div>
+        <div class="form-group"><label>DI(SE) Approval Memo No. &amp; Date</label><input type="text" id="sbpfDiMemo" placeholder="1711/S dated ..."></div>
+    </div>
+    <div class="btn-group">
+        <button type="button" class="btn-print" onclick="printServiceBookPageFormat()">Print Service Book Page Format (A4 Landscape)</button>
+    </div>
 </div>
 
 <div id="printArea">
@@ -1279,6 +1316,8 @@
         <div class="annex-note" id="ax19Note"></div>
         <div class="annex-sig"><div class="annex-sig-line">Signature of the Head of the Institution with Designation</div></div>
     </div>
+
+    <div id="sbPageFormat" style="display:none;"></div>
 
     <div id="sbLeaveBlock">
         <h2 class="sb-section-title">Leave Account (Register)</h2>
@@ -3303,6 +3342,59 @@ function printNewServiceBook(){
     document.querySelectorAll('#printArea .sb-ref-inline').forEach(e=>e.remove());
     window.removeEventListener('afterprint',clean);
   };
+  window.addEventListener('afterprint',clean);
+  window.print();
+}
+
+function _sbpfEsc(t){ return String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function buildServiceBookPageFormat(){
+  const body=document.getElementById('sbPrintTableBody19');
+  const trs=body?Array.from(body.querySelectorAll('tr')).filter(tr=>tr.children.length>=7&&/^\d{2}-\d{2}-\d{4}$/.test(tr.children[0].textContent.trim())):[];
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const name=g('staffName'), desig=g('designation'), school=g('schoolName');
+  const doj=g('doj')?_sbFmtDate(g('doj')):'__ / __ / ______';
+  // Column 1
+  const inst=g('sbpfInst').trim()||(desig+'\n'+school);
+  // Column 2: scale + reference + narrative
+  const first=trs[0]?Array.from(trs[0].children):[];
+  const clean=i=>first[i]?first[i].textContent.replace(/[\u20B9,]/g,'').trim():'';
+  const scale=g('sbpfScale').trim()||(first.length?(clean(2).toUpperCase()+' ('+clean(3)+') GP-RS-'+clean(4)):'');
+  const ref=buildSbReference();
+  let narr=g('sbpfNarr').trim();
+  const di=g('sbpfDiMemo').trim()||'____/S dated ________';
+  const auto=_sbpfEsc(name)+' has joined in this school to the post of <b>'+_sbpfEsc(desig)+'</b> on <b>'+_sbpfEsc(doj)+'</b>'+(narr?' ('+_sbpfEsc(narr)+')':'')+'.<br><br>Appointment has been duly approved w.e.f. <b>'+_sbpfEsc(doj)+'</b> by the D.I./S(S.E.) vide Memo No. <b>'+_sbpfEsc(di)+'</b>.';
+  // Merge the left-hand columns over the first K rows only (browsers cannot split a cell merged over a whole multi-page table);
+  // the remaining rows keep empty bordered cells so the table continues cleanly on following pages.
+  const K=Math.min(trs.length,8);
+  const emptyL='<td class="e"></td><td class="e"></td><td class="e"></td><td class="e"></td>';
+  const rows=trs.map((tr,i)=>{
+    const c=Array.from(tr.children);
+    const txt=k=>c[k]?c[k].textContent.replace(/[\u20B9,]/g,'').trim():'';
+    const strong=c[6]&&c[6].querySelector('strong');
+    let reason=txt(6);
+    if(strong){ const sc=strong.cloneNode(true); sc.querySelectorAll('span').forEach(x=>x.remove()); sc.querySelectorAll('br').forEach(x=>x.replaceWith(' ')); reason=sc.textContent.replace(/\s+/g,' ').trim(); }
+    const col1=i===0?'<td rowspan="'+K+'" class="big"><b>'+_sbpfEsc(desig)+'</b><div class="pf-inst">'+_sbpfEsc(inst)+'</div></td>'
+                    +'<td rowspan="'+K+'" class="big"><div class="pf-scale">'+_sbpfEsc(scale)+'</div><div class="pf-ref">'+_sbpfEsc(ref)+'</div><div class="pf-ref">'+auto+'</div></td>'
+                    +'<td rowspan="'+K+'" class="c" style="font-weight:normal;">'+_sbpfEsc(g('sbpfPerm'))+'</td>'
+                    +'<td rowspan="'+K+'" class="c" style="font-weight:normal;">'+_sbpfEsc(g('sbpfNature'))+'</td>'
+                    :(i<K?'':emptyL);
+    const sig=i===0?'<td rowspan="'+K+'"><div class="pf-sig" style="margin-top:20mm;">Signature of Teacher</div><div class="pf-sig" style="margin-top:20mm;">Signature of HOO/HM</div></td>'
+                    :(i<K?'':'<td class="e"></td>');
+    return '<tr>'+col1+'<td class="c">'+_sbpfEsc(txt(0))+'</td><td class="c">'+_sbpfEsc(txt(5))+'</td><td class="c" style="font-weight:normal;">'+_sbpfEsc(txt(1))+'</td><td class="c" style="font-weight:normal;">'+_sbpfEsc(reason)+'</td>'+sig+'</tr>';
+  }).join('');
+  return '<div class="pf-title">SERVICE BOOK PAGE FORMAT</div><table><colgroup><col style="width:17%"><col style="width:26%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:8%"><col style="width:10%"><col style="width:10%"></colgroup>'+
+    '<thead><tr><th>NAME OF POST WITH FULL ADDRESS OF THE INSTITUTION<br>1</th><th>Scale of Pay with stages of increment<br>2</th><th>Permanent /Temporary<br>3</th><th>Nature of Appointment<br>4</th><th>Date of Appointment<br>5</th><th>Pay<br>6</th><th>Date of termination of Appointment<br>7</th><th>Reason<br>8</th><th>Signatures &amp; Cert.<br>9-12</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function printServiceBookPageFormat(){
+  try{ const b=document.getElementById('sbPrintTableBody19'); if(!b||!b.children.length) processFixationTimeline(); }catch(e){console.warn(e);}
+  try{ renderAll(); }catch(e){console.warn(e);}
+  const box=document.getElementById('sbPageFormat');
+  box.innerHTML=buildServiceBookPageFormat(); box.style.display='';
+  const st=document.createElement('style');
+  st.textContent='@page{size:A4 landscape;margin:8mm;}';
+  document.head.appendChild(st);
+  document.body.classList.add('print-sbpf');
+  const clean=()=>{ document.body.classList.remove('print-sbpf'); st.remove(); box.style.display='none'; box.innerHTML=''; window.removeEventListener('afterprint',clean); };
   window.addEventListener('afterprint',clean);
   window.print();
 }
