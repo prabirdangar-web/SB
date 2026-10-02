@@ -399,6 +399,31 @@
             body.print-pay .sb-section-title { margin-top: 6mm; }
             body.print-pay .sb-main-table th, body.print-pay .sb-main-table td { font-size: 0.72rem; padding: 4px; }
 
+
+            /* ===== NEW SERVICE BOOK: A4 LANDSCAPE, no blank pages ===== */
+            html { background:#fff !important; height:auto !important; }
+            body.print-sb { padding:0 !important; margin:0 !important; background:#fff !important; height:auto !important; }
+            body.print-sb #printArea { width:100% !important; position:static !important; overflow:visible; }
+            body.print-sb .sb-header { margin-bottom:2mm; padding-bottom:2mm; }
+            body.print-sb .sb-header h1 { font-size:1.25rem; }
+            body.print-sb .sb-header h2 { font-size:1rem; margin:2px 0 0; border:none; padding:0; color:#000; }
+            body.print-sb .sb-meta-table td { font-size:.85rem; }
+            body.print-sb .sb-section-title { page-break-before:auto !important; margin:3mm 0 2mm; overflow:hidden; }
+            body.print-sb .sb-main-table th, body.print-sb .sb-main-table td { font-size:.74rem; padding:3px 4px; }
+            body.print-sb .annex-page { page-break-before:always !important; break-before:page; page-break-inside:avoid; padding-top:0; }
+            body.print-sb .annex-title { font-size:13pt; margin-bottom:1.5mm; }
+            body.print-sb .annex-desc { font-size:8pt; line-height:1.2; margin-bottom:1mm; }
+            body.print-sb .annex-rule, body.print-sb .annex-seepara, body.print-sb .annex-memo { margin:1mm 0 2mm; font-size:9pt; }
+            body.print-sb table.annex-table td { padding:.7mm 1.5mm; font-size:9pt; }
+            body.print-sb table.annex-table .a-value { font-size:9.5pt; }
+            body.print-sb table.annex-table .a-gap td { padding-top:1mm; }
+            body.print-sb .annex-sig { margin-top:4mm; }
+            body.print-sb #sbLeaveBlock { page-break-before:always !important; break-before:page; display:block !important; }
+            body.print-sb #sbLeaveBlock .sb-section-title { margin-top:0; }
+            body.print-sb #printArea > *:last-child { page-break-after:avoid !important; break-after:avoid; }
+            .sb-ref { border:1px solid #000; padding:1.5mm 3mm; margin:0 0 3mm; font-size:.8rem; font-weight:bold; text-align:center; }
+            .sb-ref-inline { float:right; max-width:62%; font-size:.62rem; font-weight:normal; text-align:right; line-height:1.25; }
+
             /* Table headings: RED font on YELLOW fill (readable, prints in colour) */
             .sb-main-table thead th, #sbLeaveBlock thead th, table.annex-increment th {
                 background: #ffff00 !important; color: #c00000 !important; font-weight: 800 !important;
@@ -475,26 +500,6 @@
             #mainTable { min-width: 860px; }
         }
     </style>
-<style id="nsbStyle">
-.nsb-r{display:grid;grid-template-columns:150px 1fr 140px 1.4fr 34px;gap:6px;align-items:start;margin-bottom:6px}
-.nsb-r b{font-size:.78rem;color:#1e3a8a;padding-top:6px}
-.nsb-r input,.nsb-r textarea{width:100%;box-sizing:border-box;padding:6px;border:1px solid #cbd5e1;border-radius:5px;font-size:.82rem;font-family:inherit}
-.nsb-r button{padding:5px 0;border:0;border-radius:5px;background:#dc2626;color:#fff;cursor:pointer}
-@media(max-width:760px){.nsb-r{grid-template-columns:1fr}}
-.nsb-wrap{font-family:'Times New Roman',Times,serif;color:#000;overflow-x:auto}
-.nsb-title{text-align:center;font-weight:bold;color:#1e3a8a;font-size:13pt;margin:4px 0 8px}
-.nsb-wrap table.nsb-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0;min-width:760px}
-.nsb-wrap table.nsb-table th,.nsb-wrap table.nsb-table td{border:1px solid #777;padding:3px 4px;font-size:9pt;vertical-align:top;text-align:left;background:#fff;color:#000;line-height:1.3}
-.nsb-wrap table.nsb-table th{text-align:center;font-weight:bold}
-.nsb-wrap table.nsb-table td.c3,.nsb-wrap table.nsb-table td.c4{text-align:center}
-.nsb-wrap table.nsb-table td.p{text-align:center;vertical-align:middle;font-weight:bold}
-.nsb-wrap table.nsb-table td.rs{text-align:center;vertical-align:middle;font-weight:normal}
-.nsb-wrap .nsb-table tr{page-break-inside:avoid}
-.nsb-wrap .nsb-table thead{display:table-header-group}
-.nsb-wrap hr{border:0;border-top:1px dashed #000;margin:6px 0}
-.nsb-wrap .sm{font-size:7.5pt;font-weight:normal;margin-top:2px}
-.nsb-wrap .sg{border-top:1px solid #000;font-size:7.5pt;text-align:center;margin:55px 4px 0}
-</style>
 </head>
 <body>
 
@@ -572,8 +577,7 @@
         <a href="#tab-ropa19" title="ROPA-2019"><i>&#128215;</i><b>R-19</b></a>
         <a href="#tab-leave" title="Leave Account"><i>&#128467;</i><b>Leave</b></a>
         <a href="#tab-cas" title="CAS Documents (10/18/20 Years)"><i>&#127894;</i><b>CAS</b></a>
-        <a href="#tab-servicebook" title="Service Book"><i>&#128214;</i><b>S.Book</b></a>
-        <a href="#tab-newsb" title="New Service Book Generation"><i>&#128196;</i><b>New SB</b></a>
+        <a href="#tab-newsb" title="New Service Book (Landscape)"><i>&#128214;</i><b>S.Book</b></a>
     </nav>
 
     <div class="qbar">
@@ -588,7 +592,6 @@
         <button type="button" class="chip" title="Generate 10-Year CAS documents" onclick="generateCasDocuments('10')">10Y</button>
         <button type="button" class="chip" title="Generate 18-Year CAS documents" onclick="generateCasDocuments('18')">18Y</button>
         <button type="button" class="chip" title="Generate 20-Year CAS documents" onclick="generateCasDocuments('20')">20Y</button>
-        <button type="button" class="chip" title="Generate New Service Book page" onclick="nsbOpenAndGenerate()">New SB</button>
         <details class="qmore">
             <summary title="More actions">&#8943;</summary>
             <div class="qmenu">
@@ -1155,39 +1158,20 @@
     </div>
     <div id="casDocStatus" style="margin-top:8px;font-size:.85rem;font-weight:600;"></div>
     <div id="casDocPreview" style="margin-top:16px;"></div>
+</div>
 
-    <h3 id="tab-newsb" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">7. New SB &mdash; Service Book Page (auto from Pay Tables)</h3>
-    <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
-        For a new service entry: school defaults (address, recognition VIII+ / X+ / H.S. / extension, financial status) are pre-filled below. Pay rows are fetched from the ROPA pay tables exactly. <b>Any row left completely blank is skipped</b> and the numbering closes up automatically.
-    </div>
-    <input type="hidden" id="nsbSeeded" value="">
+<div class="container" id="tab-newsb" style="margin-top:16px;">
+    <h3 style="margin-top:0;">7. New Service Book (A4 Landscape)</h3>
     <div class="grid-inputs">
-        <div class="form-group"><label>Institution name (Col 1)</label><input type="text" id="nsbSchoolDisp"></div>
-        <div class="form-group"><label>Address lines (Col 1)</label><textarea id="nsbAddress" rows="2"></textarea></div>
-        <div class="form-group"><label>Permanent / Temporary (Col 3)</label><select id="nsbPermTemp"><option>Permanent</option><option>Temporary</option></select></div>
-        <div class="form-group"><label>Nature of Appointment (Col 4)</label><input type="text" id="nsbNature"></div>
+        <div class="form-group"><label>WBBSE Order Memo No.</label><input type="text" id="sbWbbseMemo" value="WBBSE/APP/2026-27/01"></div>
+        <div class="form-group"><label>WBBSE Order Dated</label><input type="date" id="sbWbbseDate"></div>
+        <div class="form-group"><label>Recommendation Letter Memo No.</label><input type="text" id="sbRecMemo" placeholder="Memo No."></div>
+        <div class="form-group"><label>Recommendation Letter Date</label><input type="date" id="sbRecDate"></div>
     </div>
-    <h4 style="margin:12px 0 6px;">Recognition of the school (Col 1) &mdash; Description | w.e.f. | Vide memo / authority</h4>
-    <div id="nsbRecRows"></div>
-    <h4 style="margin:12px 0 6px;">5th &mdash; Financial status (Col 1)</h4>
-    <div id="nsbFinRows"></div>
-    <h4 style="margin:12px 0 6px;">Appointment / approval entry (Col 2, below the scale of pay)</h4>
-    <div class="grid-inputs">
-        <div class="form-group"><label>In reference with the Order of ...</label><input type="text" id="nsbOrderRef" placeholder="e.g. WBBSE vide Memo No ... dated ... against Recommendation of WBCSSC vide Memo No ... dated ..."></div>
-        <div class="form-group"><label>Post details</label><input type="text" id="nsbPostDetail" placeholder="[Subject- Physics ; Group- Language Group , Academic Level- Upper Primary Level in Bengali Medium]"></div>
-        <div class="form-group"><label>Vacancy</label><input type="text" id="nsbVacancy" placeholder="against a permanent post in place of ..."></div>
-        <div class="form-group"><label>Joining time</label><input type="text" id="nsbJoinTime"></div>
-        <div class="form-group"><label>D.I. approval Memo No. &amp; date</label><input type="text" id="nsbApprovalMemo" placeholder="blank = Approval No. from Section 6"></div>
+    <div class="btn-group">
+        <button type="button" class="btn-print" onclick="printNewServiceBook()">Print New Service Book (A4 Landscape)</button>
     </div>
-    <div class="form-group"><label>Narrative text (leave blank to auto-build from the fields above; use **text** for bold)</label><textarea id="nsbNarrative" rows="4"></textarea></div>
-    <div class="btn-group" style="margin-top:12px;">
-        <button type="button" class="btn-generate" onclick="nsbGenerate()">Generate New SB</button>
-        <button type="button" class="btn-generate" style="background:#059669;" onclick="nsbPrint()">Print / Save PDF</button>
-        <button type="button" class="btn-generate" style="background:#475569;" onclick="document.getElementById('nsbNarrative').value=nsbCompose()">Auto-fill narrative</button>
-        <button type="button" class="btn-generate" style="background:#7c3aed;" onclick="nsbSeed(true)">Reset school defaults</button>
-    </div>
-    <div id="nsbStatus" style="margin-top:8px;font-size:.85rem;font-weight:600;"></div>
-    <div id="nsbPreview" style="margin-top:12px;"></div>
+    <p style="font-size:.8rem;color:#555;margin:0;">Pay tables (ROPA-1998/2009/2019), Annexure-III forms and the Leave Account are fetched live from the main sections above.</p>
 </div>
 
 <div id="printArea">
@@ -1195,6 +1179,7 @@
         <h1 id="sbSchoolName">TALDANGRA FULMATI HIGH SCHOOL [H.S.]</h1>
         <h2 id="tab-servicebook">Service Book Verification Entry</h2>
     </div>
+    <div class="sb-ref" id="sbRefBlock"></div>
     <table class="sb-meta-table">
         <tr>
             <td style="width: 50%;"><strong>Name of Employee:</strong> <span id="sbStaffName"></span></td>
@@ -2612,7 +2597,6 @@
             }
         }
         renderRows('payTableBody19', 'sbPrintTableBody19', rows19Disp);
-        window.NSB_rows19 = rows19Disp;
 
         renderAnnexureForms(axData, doj, dor, ropa09Rows, result19.rows);
 
@@ -3294,12 +3278,44 @@ function renderAll(){
 
 function _printMode(mode){
   const st=document.createElement('style'); st.id='dynPageStyle';
-  st.textContent = mode==='leave' ? '@page{size:A4 landscape;margin:8mm;}' : '@page{size:A4 portrait;margin:10mm;}';
+  st.textContent = (mode==='leave'||mode==='sb') ? '@page{size:A4 landscape;margin:8mm;}' : '@page{size:A4 portrait;margin:10mm;}';
   document.head.appendChild(st);
   document.body.classList.add('print-'+mode);
-  const clean=()=>{document.body.classList.remove('print-leave','print-pay'); st.remove(); window.removeEventListener('afterprint',clean);};
+  const clean=()=>{document.body.classList.remove('print-leave','print-pay','print-sb'); st.remove(); window.removeEventListener('afterprint',clean);};
   window.addEventListener('afterprint',clean);
   window.print();
+}
+function _sbFmtDate(v){
+  if(!v) return '__ / __ / ______';
+  const d=new Date(v); if(isNaN(d)) return v;
+  return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
+}
+function buildSbReference(){
+  const memo=(document.getElementById('sbWbbseMemo').value||'').trim()||'WBBSE/APP/2026-27/01';
+  const od=_sbFmtDate(document.getElementById('sbWbbseDate').value);
+  const rm=(document.getElementById('sbRecMemo').value||'').trim()||'__________';
+  const rd=_sbFmtDate(document.getElementById('sbRecDate').value);
+  return 'In reference with the Order of WBBSE vide Memo No. '+memo+' dated '+od+
+         ' in respect of Recommendation Letter Memo No. '+rm+' Date '+rd;
+}
+function applySbReference(){
+  const txt=buildSbReference();
+  const blk=document.getElementById('sbRefBlock'); if(blk) blk.textContent=txt;
+  document.querySelectorAll('#printArea .sb-section-title').forEach(h=>{
+    let sp=h.querySelector('.sb-ref-inline');
+    if(!sp){ sp=document.createElement('span'); sp.className='sb-ref-inline'; h.appendChild(sp); }
+    sp.textContent=txt;
+  });
+}
+function printNewServiceBook(){
+  // Re-fetch everything from the main sections so the book is always current
+  try{
+    const b=document.getElementById('sbPrintTableBody19');
+    if(!b || !b.children.length){ if(typeof processFixationTimeline==='function') processFixationTimeline(); }
+  }catch(e){ console.warn(e); }
+  try{ if(typeof renderAll==='function') renderAll(); }catch(e){ console.warn(e); }
+  applySbReference();
+  _printMode('sb');
 }
 function printLeaveAc(){ _printMode('leave'); }
 function printPayFixation(){ _printMode('pay'); }
@@ -5031,99 +5047,6 @@ function secAll(open){ document.querySelectorAll('.container h3[id^="tab-"]').fo
     document.addEventListener('click',function(e){ var d=document.querySelector('.qmore[open]'); if(d&&!d.contains(e.target)) d.removeAttribute('open'); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
-})();
-</script>
-<script>
-(function(){
-const $=id=>document.getElementById(id), V=id=>(($(id)||{}).value||'').trim();
-const E=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const R=s=>E(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
-const tc=s=>String(s).toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
-const dk=d=>d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
-const REC=[['R1','1. Recognition'],['R2','2. Upgraded VIII+'],['R3','3. Upgraded X+'],['R4','4. Upgraded H.S.'],['R5','Extension of recognition']];
-const FIN=[['F1','Salary deficit scheme'],['F2','Grant-in-Aid scheme']];
-const D={nsbSchoolDisp:'Taldangra Fulmati High School[H.S.]',nsbAddress:'P.O. Taldangra\nDist.Bankura',nsbPermTemp:'Permanent',nsbNature:'Permanent',nsbJoinTime:'11:00 A.M.',
-nsbR1d:'The school Recognised as 2-Class Jr. High School',nsbR1w:'03.01.1956',nsbR1v:'Memo No.1733 dated 27th March 1956 of D.I./S(S.E.),Bankura',
-nsbR2d:'Upgraded as 4-Class Jr. High School',nsbR2w:'01.04.1959',nsbR2v:'Memo No. 940-SC/S / 6R-156 S/59 dated Calcutta 19.01.1960 of D.P.I.,West Bengal',
-nsbR3d:'Upgraded as X-Class High School',nsbR3w:'01.01.1963',nsbR3v:'Memo No.6744/G dated 03.04.1963 of West Bengal Board of Secondary Education',
-nsbR4d:'Upgraded as Higher Secondary Education Institution with general stream courses with science and arts',nsbR4w:'1994-95',nsbR4v:'Secretary ,WBCHSE Memo No.181/D.S.(A),Recog/94 dt.08.08.1994 and D.S.(A) S.D./1526/96 dated 20.09.1996',
-nsbF1d:'The School Came under salary deficit scheme',nsbF1w:'01.05.1972',nsbF1v:'Memo No 343-Edn(S) dated 03.03.1973',
-nsbF2d:'The School Came under Grant-In-Aid scheme',nsbF2w:'01.01.1980',nsbF2v:'Memo No 197-Edn(S) dated 14.03.1980'};
-const GO={'98':'[ROPA-98 Pay Scale in terms of U/M No. 25-SE(B) dt. 12.02.1999 ]','09':'[ROPA-09 Pay Scale in terms of G.O. No. 46-SE(B) dated 27.02.2009 ]','19':'[ROPA-19 Pay Scale in terms of G.O.No.437-SE(P&B)/SL/5S-408/19 dt.13.12.19 ]'};
-function rowsHtml(list){return list.map(a=>`<div class="nsb-r"><b>${a[1]}</b><input type="text" id="nsb${a[0]}d" placeholder="Description"><input type="text" id="nsb${a[0]}w" placeholder="w.e.f. (date / session)"><textarea id="nsb${a[0]}v" rows="2" placeholder="Memo no., date, authority"></textarea><button type="button" title="Clear row (skipped in generation)" onclick="nsbClr('${a[0]}')">&#10005;</button></div>`).join('');}
-$('nsbRecRows').innerHTML=rowsHtml(REC); $('nsbFinRows').innerHTML=rowsHtml(FIN);
-window.nsbClr=function(k){['d','w','v'].forEach(x=>{const e=$('nsb'+k+x); if(e){e.value='';e.dispatchEvent(new Event('change',{bubbles:true}));}});};
-window.nsbSeed=function(force){ if(!force&&V('nsbSeeded')==='1') return; Object.keys(D).forEach(id=>{const e=$(id); if(e) e.value=D[id];}); $('nsbSeeded').value='1'; };
-nsbSeed(false);
-const _nt=window.newTeacherRecord;
-if(typeof _nt==='function') window.newTeacherRecord=function(){ _nt.apply(this,arguments); if(!V('staffName')) nsbSeed(true); };
-
-function entries(keys){const o=[];keys.forEach(a=>{const d=V('nsb'+a[0]+'d'),w=V('nsb'+a[0]+'w'),v=V('nsb'+a[0]+'v'); if(d||w||v) o.push({d,w,v});});return o;}
-const dot=s=>/[.]$/.test(s)?s:s+'.';
-function col1(){
- let h='<b>'+E(V('designation'))+'<br>'+E(V('nsbSchoolDisp')||V('schoolName'))+'</b>';
- const ad=V('nsbAddress'); if(ad) h+='<br>'+E(ad).replace(/\n/g,'<br>');
- entries(REC).forEach((x,i)=>{h+='<br>'+E(dot((i+1)+'. '+x.d+(x.w?' w.e.f '+x.w:'')+(x.v?' vide '+x.v:'')));});
- entries(FIN).forEach((x,i)=>{h+='<br>'+E(dot('*'.repeat(i+1)+x.d+(x.w?' w.e.f.'+x.w:'')+(x.v?' in terms of '+x.v:'')));});
- return h;
-}
-window.nsbCompose=function(){
- if(!V('nsbOrderRef')&&!V('nsbPostDetail')&&!V('nsbVacancy')&&!V('nsbApprovalMemo')) return '';
- const F=V('casSex')==='F', her=F?'Her':'His', dj=$('doj').value?formatDate(new Date($('doj').value+'T00:00:00')):'', memo=V('nsbApprovalMemo')||V('casApprovalNo'), tm=V('nsbJoinTime');
- const a=(V('nsbOrderRef')?'In reference with the Order of '+V('nsbOrderRef')+' ':'')+'**'+tc(V('staffName'))+'** has joined in this school to the post of **'+V('designation')+'**'+(V('nsbPostDetail')?' '+V('nsbPostDetail'):'')+' on **'+dj+'**'+(tm?' at **'+tm+'**':'')+(V('nsbVacancy')?' '+V('nsbVacancy'):'')+'.';
- const b=memo?her+' appointment has been duly approved w.e.f. **'+dj+'** by the D.I./S(S.E.),'+V('casDistrict')+'; vide Memo No. **'+memo+'**.':'';
- return b?a+'\n\n'+b:a;
-};
-function scaleOf(g,r){
- const gp=parseInt(String(r.gpDisplay).replace(/,/g,''),10)||0;
- if(g==='19'){const m=/Level-(\d+)/i.exec(r.scaleStr||''),pb=(pbMap09[gp]||'').replace(':','-');return 'LEVEL-'+(m?m[1]:(levelMap19[gp]||''))+(pb?'-'+pb:'')+'-GP-RS-'+gp;}
- if(g==='09') return String(r.scaleStr||'').replace(':','-').replace(/-GP-(?!RS)/,'-GP-RS-');
- return String(r.scaleStr||'');
-}
-function reason(r,first){
- const p=String(r.label||'').split(/<br\s*\/?>/i), m=p[0].replace(/<[^>]+>/g,'').trim(), note=p.slice(1).join(' ').replace(/<[^>]+>/g,'').trim();
- let t,k; if(/^INCREMENT/i.test(m)) t='Annual Increment'; else if((k=/(\d+)\s*YEARS/i.exec(m))) t=k[1]+'-Year CAS Benefit'; else if(/PROMOTION/i.test(m)) t='Promotion'; else t=first?'Joining Entry Pay':m;
- let h=E(t); if(note&&!/^NO LEAVE$/i.test(note)) h+='<div class="sm">'+E(note)+'</div>'; if(r.casRemark) h+='<div class="sm">'+E(r.casRemark)+'</div>'; return h;
-}
-function payRows(){
- window.CAS_dataReady=false; window.NSB_rows19=null;
- try{processFixationTimeline();}catch(e){}
- if(!window.CAS_dataReady) return null;
- const l=[];
- if($('enableRopa98').checked) (window.CAS_ropa98Rows||[]).forEach(r=>l.push(['98',r]));
- if($('enableRopa09').checked) (window.CAS_ropa09Rows||[]).forEach(r=>l.push(['09',r]));
- (window.NSB_rows19||window.CAS_ropa19Rows||[]).forEach(r=>l.push(['19',r]));
- return l;
-}
-function build(){
- const list=payRows(); if(!list||!list.length) return null;
- const segs=[]; list.forEach(x=>{const sc=scaleOf(x[0],x[1]),k=x[0]+'|'+sc; let s=segs[segs.length-1]; if(!s||s.k!==k){s={k:k,g:x[0],sc:sc,rows:[]};segs.push(s);} s.rows.push(x);});
- const dojK=$('doj').value?dk(new Date($('doj').value+'T00:00:00')):0, N=list.length;
- const narr=V('nsbNarrative')||window.nsbCompose();
- let b='';
- segs.forEach((s,si)=>{s.rows.forEach((x,ri)=>{const g=x[0],r=x[1],top=si===0&&ri===0; let tr='<tr>';
-  if(top) tr+='<td class="c1" rowspan="'+N+'">'+col1()+'</td>';
-  if(ri===0) tr+='<td class="c2" rowspan="'+s.rows.length+'"><b>'+E(s.sc)+'</b><br>'+E(GO[s.g])+(si===0&&narr?'<hr>'+R(narr):'')+'</td>';
-  if(top) tr+='<td class="c3" rowspan="'+N+'">'+E(V('nsbPermTemp'))+'</td><td class="c4" rowspan="'+N+'">'+E(V('nsbNature'))+'</td>';
-  const basic=String(r.basicDisplay).replace(/,/g,''), gp=String(r.gpDisplay).replace(/,/g,'');
-  const bp=g==='09'?'<div class="sm">B.P. '+E(String(r.trackCol).replace(/,/g,''))+' + G.P. '+E(gp)+'</div>':'';
-  tr+='<td class="p">'+formatDate(r.date)+'</td><td class="p">'+E(basic)+bp+'</td><td class="p">'+formatDate(r.dot)+'</td><td class="rs">'+reason(r,top&&dk(r.date)===dojK)+'</td>';
-  if(top) tr+='<td class="c9" rowspan="'+N+'"><div class="sg">Signature of Teacher</div><div class="sg">Signature of HOO/HM</div></td>';
-  b+=tr+'</tr>';});});
- return '<div class="nsb-title">SERVICE BOOK PAGE FORMAT</div><table class="nsb-table"><colgroup><col style="width:19%"><col style="width:22%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:9%"><col style="width:8%"><col style="width:9%"></colgroup><thead><tr><th>NAME OF POST WITH FULL ADDRESS OF THE INSTITUTION<br>1</th><th>Scale of Pay with stages of increment<br>2</th><th>Permanent /Temporary<br>3</th><th>Nature of Appointment<br>4</th><th>Date of Appointment<br>5</th><th>Pay<br>6</th><th>Date of termination of Appointment<br>7</th><th>Reason<br>8</th><th>Signatures &amp; Cert.<br>9-12</th></tr></thead><tbody>'+b+'</tbody></table>';
-}
-window.nsbGenerate=function(){
- const h=build(), st=$('nsbStatus');
- if(!h){st.style.color='#b91c1c';st.textContent='Enter DOB, DOJ and ROPA option details in Section 1-4 first, then try again.';return null;}
- $('nsbPreview').innerHTML='<div class="nsb-wrap">'+h+'</div>'; st.style.color='#065f46'; st.textContent='\u2713 New SB generated from the pay tables.'; return h;
-};
-window.nsbPrint=function(){
- const h=nsbGenerate(); if(!h) return;
- const w=window.open('','_blank'); if(!w){alert('Please allow pop-ups to print.');return;}
- w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>New Service Book</title><style>@page{size:A4 portrait;margin:10mm}body{margin:0}'+document.getElementById('nsbStyle').textContent+'</style></head><body><div class="nsb-wrap">'+h+'</div><script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
- w.document.close();
-};
-window.nsbOpenAndGenerate=function(){const h=$('tab-newsb'); if(h&&h._setOpen) h._setOpen(true); nsbGenerate(); if(h) h.scrollIntoView({behavior:'smooth',block:'start'});};
 })();
 </script>
 </body>
