@@ -2009,7 +2009,7 @@
             if (ev.isLwpDeferred) {
                 lwpNote = `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>`;
             } else if (ev.snappedToWindow) {
-                lwpNote = `<div class="slip-row" style="color:#0f766e;"><span>LWP enjoyed: ${ev.lwpDaysApplied} day(s) (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Milestone notionally shifts from ${formatDate(ev.exactMilestoneDate || ev.notionalDate)} to ${formatDate(ev.lwpShiftedDate)}; as shifted date falls within 2.1 to 30.6, pay fixed as per ROPA-09/19 rules w.e.f. ${formatDate(ev.date)} as per ROPA-09/ROPA-19</span></div>`;
+                lwpNote = `<div class="slip-row" style="color:#0f766e;"><span>LWP enjoyed: ${ev.lwpDaysApplied} day(s) (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Milestone notionally shifts from ${formatDate(ev.exactMilestoneDate || ev.notionalDate)} to ${formatDate(ev.lwpShiftedDate)}; as shifted date falls within 2.1 to 30.6, pay fixed / benifit admmissible w.e.f. ${formatDate(ev.date)} as per ROPA-09/ROPA-19</span></div>`;
             }
 
             if (ev.isInitial) {
