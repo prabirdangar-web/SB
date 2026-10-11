@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="TFHS SB">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <title>Unified ROPA Pay Fixation System</title>
     <style>
         :root {
@@ -474,6 +482,15 @@
             .table-responsive table, .table-wrap table { min-width: 560px; }
             #mainTable { min-width: 860px; }
         }
+    
+        /* mobile section dropdown */
+        .secSel{display:none}
+        @media screen and (max-width:640px){
+            .top-tabs{display:none!important}
+            .secSel{display:block;position:sticky;top:0;z-index:1000;background:#fff;padding:6px;margin:0 0 6px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+            .secSel select{width:100%;padding:11px 12px;font-size:16px;font-weight:700;border:1px solid #1d4ed8;border-radius:8px;background:#fff;color:#0f172a}
+        }
+        @media print{.secSel{display:none!important}}
     </style>
 <style id="nsbStyle">
 .nsb-r{display:grid;grid-template-columns:150px 1fr 140px 1.4fr 34px;gap:6px;align-items:start;margin-bottom:6px}
@@ -5206,6 +5223,26 @@ window.nsbPrint=function(){
  w.document.close();
 };
 window.nsbOpenAndGenerate=function(){const h=$('tab-newsb'); if(h&&h._setOpen) h._setOpen(true); nsbGenerate(); if(h) h.scrollIntoView({behavior:'smooth',block:'start'});};
+})();
+</script>
+<script>
+(function(){
+  /* mobile section dropdown: mirrors the top tab links */
+  function build(){
+    var nav=document.querySelector('.top-tabs'); if(!nav||document.getElementById('secSel'))return;
+    var links=[].slice.call(nav.querySelectorAll('a')); if(!links.length)return;
+    var wrap=document.createElement('div'); wrap.className='secSel no-print';
+    var sel=document.createElement('select'); sel.id='secSel'; sel.setAttribute('aria-label','Choose section');
+    links.forEach(function(a,i){
+      var ic=a.querySelector('i'); var o=document.createElement('option'); o.value=i;
+      o.textContent=((ic?ic.textContent:'')+' '+(a.getAttribute('title')||a.textContent)).trim(); sel.appendChild(o);
+      a.addEventListener('click',function(){ sel.value=i; });
+    });
+    sel.addEventListener('change',function(){ links[sel.value].click(); });
+    wrap.appendChild(sel); nav.parentNode.insertBefore(wrap,nav);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build();
+  if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 })();
 </script>
 </body>
