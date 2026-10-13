@@ -521,6 +521,7 @@
 
 <div id="syncStatus" style="position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.2);" class="no-print">Connecting…</div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -618,11 +619,14 @@
                 <button type="button" class="ibtn" style="background:#0891b2;" onclick="exportAllTeachersJSON()"><i>&#128101;</i><b>Export All Teachers</b></button>
                 <button type="button" class="ibtn admin-only" style="background:#0f766e;" onclick="document.getElementById('bulkStaffImport').click()"><i>&#128101;</i><b>Bulk Import All Staff</b></button>
                 <button type="button" class="ibtn admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()"><i>&#128101;</i><b>Import All Teachers</b></button>
+                <button type="button" class="ibtn admin-only" style="background:#15803d;" onclick="document.getElementById('bulkStaffExcel').click()"><i>&#128196;</i><b>Import Staff from Excel</b></button>
+                <button type="button" class="ibtn admin-only" style="background:#0369a1;" onclick="toggleSingleStaffPanel(true)"><i>&#10133;</i><b>Add Single Staff</b></button>
                 <button type="button" class="ibtn" style="background:#64748b;" onclick="secAll(true)"><i>&#9662;</i><b>Expand all sections</b></button>
                 <button type="button" class="ibtn" style="background:#64748b;" onclick="secAll(false)"><i>&#9652;</i><b>Collapse all sections</b></button>
             </div>
         </details>
         <input type="file" id="bulkStaffImport" accept="application/json,.json" style="display:none;" onchange="bulkImportStaffJSON(event)">
+        <input type="file" id="bulkStaffExcel" accept=".xlsx,.xls,.csv" style="display:none;" onchange="bulkImportStaffExcel(event)">
         <span id="topTeacherRecordCount" class="qcount"></span>
     </div>
 
@@ -650,6 +654,9 @@
                 <option value="Laboratory Assistant">
                 <option value="Clerk">
                 <option value="Head Clerk">
+                <option value="Class-IV Employee">
+                <option value="Laboratory Attendant">
+                <option value="Manual Worker">
                 <option value="Group-D Staff">
                 <option value="Group-C Staff (Non-Teaching)">
                 <option value="Physical Education Teacher">
@@ -1157,6 +1164,28 @@
             <button type="button" class="btn-add" style="background:#0891b2;" onclick="exportAllTeachersJSON()">⇩ Export All Teachers</button>
             <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()">⇧ Import All Teachers</button>
             <input type="file" id="allTeachersJsonImport" accept="application/json,.json" style="display:none;" onchange="importAllTeachersJSON(event)">
+        </div>
+        <div class="btn-row" style="margin-top:6px;">
+            <button type="button" class="btn-add admin-only" style="background:#15803d;" onclick="document.getElementById('bulkStaffExcel').click()">⇧ Import Staff from Excel</button>
+            <button type="button" class="btn-add" style="background:#0d9488;" onclick="downloadStaffExcelTemplate()">⇩ Excel Template</button>
+            <button type="button" class="btn-add admin-only" style="background:#0369a1;" onclick="toggleSingleStaffPanel()">＋ Add Single Staff</button>
+        </div>
+        <div id="singleStaffPanel" class="admin-only" style="display:none;margin-top:10px;padding:10px;border:1px dashed #0369a1;border-radius:8px;background:#f0f9ff;">
+            <div style="font-weight:800;color:#0369a1;margin-bottom:6px;">Add Single Staff (basic info)</div>
+            <div class="grid-inputs">
+                <div class="form-group"><label>Name *</label><input type="text" id="ssName"></div>
+                <div class="form-group"><label>Designation</label><input type="text" id="ssDesignation" list="designationOptions" placeholder="e.g. Class-IV Employee"></div>
+                <div class="form-group"><label>Sex</label><select id="ssSex"><option value="">--</option><option value="M">Male</option><option value="F">Female</option></select></div>
+                <div class="form-group"><label>Date of Birth</label><input type="date" id="ssDob"></div>
+                <div class="form-group"><label>Date of First Joining</label><input type="date" id="ssDoj"></div>
+                <div class="form-group"><label>Date of Joining (Current School)</label><input type="date" id="ssDojCur"></div>
+                <div class="form-group"><label>Approval No.</label><input type="text" id="ssApproval"></div>
+                <div class="form-group"><label>Qualification</label><input type="text" id="ssQual"></div>
+            </div>
+            <div class="btn-row" style="margin-top:6px;">
+                <button type="button" class="btn-print" onclick="addSingleStaff()">✔ Add Staff</button>
+                <button type="button" class="btn-add" style="background:#64748b;" onclick="toggleSingleStaffPanel(false)">Close</button>
+            </div>
         </div>
         <div id="dataSaveStatus" style="margin-top:8px;font-size:.8rem;font-weight:700;color:#065f46;"></div>
         <div id="teacherRecordCount" style="margin-top:4px;font-size:.75rem;color:#475569;"></div>
@@ -4814,22 +4843,9 @@ function importAllTeachersJSON(event) {
    ALREADY has a saved record, only blank basic-info fields are filled in and
    any pay-fixation work (periods/promotion/LWP) already entered is left
    untouched. Nothing is ever silently overwritten. */
-function bulkImportStaffJSON(event) {
-    if (!isAdmin) {
-        const status = document.getElementById('dataSaveStatus');
-        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to bulk import staff.'; }
-        event.target.value = '';
-        return;
-    }
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const list = JSON.parse(e.target.result);
-            if (!Array.isArray(list)) throw new Error('Expected a JSON array of staff records.');
-            const records = getTeacherRecords();
-            let added = 0, updated = 0, skipped = 0;
+function bulkMergeStaff(list) {
+    const records = getTeacherRecords();
+    let added = 0, updated = 0, skipped = 0;
             list.forEach(person => {
                 const name = String(person.staffName || '').trim();
                 if (!name) { skipped++; return; }
@@ -4872,6 +4888,24 @@ function bulkImportStaffJSON(event) {
                     added++;
                 }
             });
+    return { records, added, updated, skipped };
+}
+
+function bulkImportStaffJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to bulk import staff.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const list = JSON.parse(e.target.result);
+            if (!Array.isArray(list)) throw new Error('Expected a JSON array of staff records.');
+            const { records, added, updated, skipped } = bulkMergeStaff(list);
             setTeacherRecords(records);
             refreshTeacherRecordList();
             const status = document.getElementById('dataSaveStatus');
@@ -4885,6 +4919,143 @@ function bulkImportStaffJSON(event) {
         } finally { event.target.value = ''; }
     };
     reader.readAsText(file);
+}
+
+
+/* ---------- EXCEL IMPORT + SINGLE ADD (basic staff info) ---------- */
+const STAFF_XL_HEADERS = ['Name','Designation','Sex','DOB','DOJ (First Joining)','DOJ (Current School)','Approval No','Qualification',
+    'Prior School 1 Name','Prior School 1 DOJ','Prior School 1 DOL','Prior School 2 Name','Prior School 2 DOJ','Prior School 2 DOL','Prior School 3 Name','Prior School 3 DOJ','Prior School 3 DOL'];
+
+function xlNormHeader(h) { return String(h || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function xlToISODate(v) {
+    if (v === null || v === undefined || v === '') return '';
+    const pad = n => String(n).padStart(2, '0');
+    if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
+    if (typeof v === 'number') { // Excel serial date
+        const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+        return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+    }
+    const t = String(v).trim();
+    let m = t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+    if (m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+    m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/); // dd/mm/yyyy
+    if (m) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+    return '';
+}
+
+function xlNormSex(v) {
+    const t = String(v || '').trim().toUpperCase();
+    if (!t) return '';
+    if (t[0] === 'M') return 'M';
+    if (t[0] === 'F') return 'F';
+    return '';
+}
+
+function xlRowToPerson(row) {
+    const g = {};
+    Object.keys(row).forEach(k => { g[xlNormHeader(k)] = row[k]; });
+    const pick = (...keys) => { for (const k of keys) { if (g[k] !== undefined && g[k] !== '') return g[k]; } return ''; };
+    const prior = [];
+    for (let i = 1; i <= 3; i++) {
+        const nm = String(pick(`priorschool${i}name`, `priorschool${i}`) || '').trim();
+        if (nm) prior.push({ name: nm, doj: xlToISODate(pick(`priorschool${i}doj`)), dol: xlToISODate(pick(`priorschool${i}dol`)) });
+    }
+    return {
+        staffName: String(pick('name', 'staffname', 'nameofthestaff', 'employeename') || '').trim(),
+        designation: String(pick('designation', 'post') || '').trim(),
+        sex: xlNormSex(pick('sex', 'gender')),
+        dob: xlToISODate(pick('dob', 'dateofbirth')),
+        doj: xlToISODate(pick('dojfirstjoining', 'doj', 'dateofjoining', 'dateoffirstjoining')),
+        casDojCurrentSchool: xlToISODate(pick('dojcurrentschool', 'dateofjoiningcurrentschool', 'cadojcurrentschool')),
+        casApprovalNo: String(pick('approvalno', 'casapprovalno', 'approvalnumber') || '').trim(),
+        casQualification: String(pick('qualification', 'casqualification') || '').trim(),
+        casPriorSchools: prior
+    };
+}
+
+function bulkImportStaffExcel(event) {
+    const status = document.getElementById('dataSaveStatus');
+    if (!isAdmin) {
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to import staff from Excel.'; }
+        event.target.value = '';
+        return;
+    }
+    if (typeof XLSX === 'undefined') {
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Excel library could not load (check internet connection) — try again.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
+            if (!rows.length) throw new Error('No rows found in the first sheet.');
+            const list = rows.map(xlRowToPerson);
+            const { records, added, updated, skipped } = bulkMergeStaff(list);
+            setTeacherRecords(records);
+            refreshTeacherRecordList();
+            if (status) {
+                status.style.color = '#065f46';
+                status.textContent = `✓ Excel import complete: ${added} new staff added, ${updated} existing staff updated (blank fields only)${skipped ? `, ${skipped} skipped (no name)` : ''}.`;
+            }
+        } catch (err) {
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Excel import failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function downloadStaffExcelTemplate() {
+    if (typeof XLSX === 'undefined') { alert('Excel library could not load (check internet connection).'); return; }
+    const sample = ['SAMPLE NAME', 'Class-IV Employee', 'M', '1985-05-15', '2010-06-01', '2015-07-01', '', 'Madhyamik', '', '', '', '', '', '', '', '', ''];
+    const ws = XLSX.utils.aoa_to_sheet([STAFF_XL_HEADERS, sample]);
+    ws['!cols'] = STAFF_XL_HEADERS.map(h => ({ wch: Math.max(14, h.length + 2) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Staff');
+    XLSX.writeFile(wb, 'staff_import_template.xlsx');
+}
+
+function toggleSingleStaffPanel(force) {
+    const el = document.getElementById('singleStaffPanel');
+    if (!el) return;
+    const show = (typeof force === 'boolean') ? force : (el.style.display === 'none');
+    el.style.display = show ? 'block' : 'none';
+    if (show) {
+        const panel = document.getElementById('dataSavePanel');
+        if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const n = document.getElementById('ssName'); if (n) n.focus();
+    }
+}
+
+function addSingleStaff() {
+    const status = document.getElementById('dataSaveStatus');
+    if (!isAdmin) {
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to add staff.'; }
+        return;
+    }
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const name = v('ssName');
+    if (!name) {
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Enter the staff name to add.'; }
+        return;
+    }
+    const person = {
+        staffName: name, designation: v('ssDesignation'), sex: v('ssSex'), dob: v('ssDob'), doj: v('ssDoj'),
+        casDojCurrentSchool: v('ssDojCur'), casApprovalNo: v('ssApproval'), casQualification: v('ssQual'), casPriorSchools: []
+    };
+    const { records, added, updated } = bulkMergeStaff([person]);
+    setTeacherRecords(records);
+    refreshTeacherRecordList(teacherRecordKey(name));
+    ['ssName','ssDesignation','ssSex','ssDob','ssDoj','ssDojCur','ssApproval','ssQual'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    if (status) {
+        status.style.color = '#065f46';
+        status.textContent = added ? `✓ Staff added: ${name}. Select from "Saved Teacher" to open.` : `✓ ${name} already existed — blank fields filled in.`;
+    }
 }
 
 function armDashboardAutoSave() {
