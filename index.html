@@ -1103,6 +1103,14 @@
             <label>Date of Option (today, or as applicable)</label>
             <input type="date" id="casOptionDate">
         </div>
+        <div class="form-group">
+            <label>D.I. Approval Memo No. (for Final Acceptance Letter)</label>
+            <input type="text" id="casDiApprovalMemoNo" placeholder="e.g. 1234 (without /S)">
+        </div>
+        <div class="form-group">
+            <label>D.I. Approval Memo Date</label>
+            <input type="date" id="casDiApprovalMemoDate">
+        </div>
     </div>
     <div class="grid-inputs">
         <div class="form-group">
@@ -4071,7 +4079,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
         <p style="margin-top:16px;"><strong>Enclosures (with Check List):</strong></p>
         <ol style="font-size:.88rem;line-height:1.5;">
             <li>Forwarding letter of the HOI</li>
-            <li>Incumbent's application (Part-A)</li>
+            <li>Incumbent's application</li>
             <li>Photocopy of M.C. Resolution / Administrator's Order</li>
             <li>Photocopies of all approvals, including 1st approval</li>
             <li>Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma </li>
@@ -4089,13 +4097,17 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <li>Certificate of reason for delay (if applicable)</li>
         </ol>`;
 
+    const diMemoNoRaw = (document.getElementById('casDiApprovalMemoNo').value || '').trim().replace(/\/S$/i, '');
+    const diMemoDateVal = document.getElementById('casDiApprovalMemoDate').value;
+    const diMemoNoText = diMemoNoRaw || '________________';
+    const diMemoDateText = diMemoDateVal ? casFmt(new Date(diMemoDateVal + 'T00:00:00')) : '________________';
     /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
     const doc7 = `
         <div class="cas-letterhead-space" title="Blank space reserved for pre-printed school letterhead pad (min 8.5cm from top of page)"></div>
         <p>To<br>The ${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
         <p style="margin-top:16px;" class="cas-subject-line"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
         <p>Sir,</p>
-        <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
+        <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ${diMemoNoText}/S dated ${diMemoDateText}, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
         <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
         <table style="width:100%;margin-top:24px;"><tr>
             <td style="width:50%;">With thanks,</td>
@@ -4277,7 +4289,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
           <tr><th style="border:1px solid #000;padding:5px;width:8%;">Sl.</th><th style="border:1px solid #000;padding:5px;text-align:left;">Document / Record</th><th style="border:1px solid #000;padding:5px;width:18%;">Checked</th></tr>
           ${[
             'Forwarding letter of the HOI',
-            'Incumbent\'s application (Part-A)',
+            'Incumbent\'s application',
             'Photocopy of M.C. Resolution / Administrator\'s Order',
             'Photocopies of all approvals, including 1st approval',
             `Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)`,
