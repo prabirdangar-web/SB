@@ -602,7 +602,7 @@
         <select id="topSavedTeacherSelect" onchange="loadTeacherRecordByTopSelect()" title="Saved Teacher List">
             <option value="">-- Select Saved Teacher --</option>
         </select>
-        <button type="button" class="ibtn" title="Load selected teacher" onclick="loadTeacherRecordFromTop()"><i>&#128194;</i><b>Load</b></button>
+        <button type="button" class="ibtn" title="Load the selected saved teacher into the form" aria-label="Load selected saved teacher" onclick="loadTeacherRecordFromTop()"><i>&#128194;</i><b>Load Teacher</b></button>
         <button type="button" class="ibtn" title="New Teacher" onclick="newTeacherRecord()"><i>&#10133;</i><b>New</b></button>
         <button type="button" class="ibtn admin-only" style="background:#059669;" title="Save Teacher" onclick="saveTeacherRecord()"><i>&#128190;</i><b>Save</b></button>
         <button type="button" class="ibtn" style="background:#7c3aed;" title="Export Teacher JSON" onclick="exportDashboardJSON()"><i>&#11015;</i><b>Export</b></button>
@@ -1746,9 +1746,18 @@
     /* Multi-event career history, persisted with each teacher record. */
     function careerMovementRows(){const b=document.getElementById('careerMovementsBody');if(!b)return[];return Array.from(b.querySelectorAll('tr[data-career-movement]')).map(tr=>({date:tr.querySelector('.career-date')?.value||'',evType:tr.querySelector('.career-type')?.value||'promo',targetGp:Number(tr.querySelector('.career-gp')?.value||0),additionalGp:Number(tr.querySelector('.career-agp')?.value||0),designation:(tr.querySelector('.career-designation')?.value||'').trim()})).filter(e=>e.date&&e.targetGp>0).sort((a,b)=>a.date.localeCompare(b.date));}
     function getCareerMovements(fallbackDate,fallbackGp,fallbackType){if(document.getElementById('enablePromotion')&&!document.getElementById('enablePromotion').checked)return[];const rows=careerMovementRows();if(rows.length)return rows.map(e=>({...e,dateObj:new Date(e.date+'T00:00:00')}));if(fallbackDate instanceof Date&&!isNaN(fallbackDate)&&fallbackGp>0)return[{date:toISO(fallbackDate),dateObj:new Date(fallbackDate),targetGp:fallbackGp,evType:fallbackType||'promo',designation:''}];return[];}
-    function addCareerMovementRow(data={}){const b=document.getElementById('careerMovementsBody');if(!b)return;const tr=document.createElement('tr');tr.setAttribute('data-career-movement','1');const date=data.date||document.getElementById('promotionDate')?.value||'',type=data.evType||document.getElementById('promotionType')?.value||'promo',gp=String(data.targetGp||document.getElementById('promotionTargetGp')?.value||'5400'),designation=data.designation||document.getElementById('promotionNewDesignation')?.value||'';const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');tr.innerHTML=`<td style="padding:4px"><input class="career-date" type="date" value="${esc(date)}" style="min-width:145px;width:100%"></td><td style="padding:4px"><select class="career-type" style="width:100%"><option value="promo">Promotion (increment per ROPA)</option><option value="highscale">Higher scale / upgradation</option></select></td><td style="padding:4px"><select class="career-gp" style="width:100%"><option value="1800">GP 1800</option><option value="2900">GP 2900</option><option value="4100">GP 4100</option><option value="4400">GP 4400</option><option value="4700">GP 4700</option><option value="4800">GP 4800</option><option value="5400">GP 5400 / Level 16</option></select></td><td style="padding:4px"><input class="career-designation" value="${esc(designation)}" placeholder="AT / AHM / Junior HM / HM" style="width:100%"></td><td style="padding:4px"><select class="career-agp" title="Additional Grade Pay where admissible" style="width:100%"><option value="0">₹0</option><option value="200">₹200 AGP</option></select></td><td style="text-align:center;padding:4px"><button type="button" class="btn-del" onclick="this.closest('tr').remove();syncCareerMovementStatus()">✕</button></td>`;b.appendChild(tr);tr.querySelector('.career-type').value=type;tr.querySelector('.career-gp').value=gp;tr.querySelector('.career-agp').value=agp;tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',syncCareerMovementStatus));syncCareerMovementStatus();}
+    function addCareerMovementRow(data={}){const b=document.getElementById('careerMovementsBody');if(!b)return;const tr=document.createElement('tr');tr.setAttribute('data-career-movement','1');const date=data.date||document.getElementById('promotionDate')?.value||'',type=data.evType||document.getElementById('promotionType')?.value||'promo',gp=String(data.targetGp||document.getElementById('promotionTargetGp')?.value||'5400'),agp=String(data.additionalGp??0),designation=data.designation||document.getElementById('promotionNewDesignation')?.value||'';const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');tr.innerHTML=`<td style="padding:4px"><input class="career-date" type="date" value="${esc(date)}" style="min-width:145px;width:100%"></td><td style="padding:4px"><select class="career-type" style="width:100%"><option value="promo">Promotion (increment per ROPA)</option><option value="highscale">Higher scale / upgradation</option></select></td><td style="padding:4px"><select class="career-gp" style="width:100%"><option value="1800">GP 1800</option><option value="2900">GP 2900</option><option value="4100">GP 4100</option><option value="4400">GP 4400</option><option value="4700">GP 4700</option><option value="4800">GP 4800</option><option value="5400">GP 5400 / Level 16</option></select></td><td style="padding:4px"><input class="career-designation" value="${esc(designation)}" placeholder="AT / AHM / Junior HM / HM" style="width:100%"></td><td style="padding:4px"><select class="career-agp" title="Additional Grade Pay where admissible" style="width:100%"><option value="0">₹0</option><option value="200">₹200 AGP</option></select></td><td style="text-align:center;padding:4px"><button type="button" class="btn-del" onclick="this.closest('tr').remove();syncCareerMovementStatus()">✕</button></td>`;b.appendChild(tr);tr.querySelector('.career-type').value=type;tr.querySelector('.career-gp').value=gp;tr.querySelector('.career-agp').value=agp;tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',syncCareerMovementStatus));syncCareerMovementStatus();}
     function syncCareerMovementStatus(){const r=careerMovementRows(),el=document.getElementById('careerMovementStatus');if(el)el.textContent=r.length?`${r.length} movement(s) entered; sorted by effective date. ROPA-1998 increment-cycle logic follows its existing first-event rule.`:'No movement rows entered — legacy single-event fields are used.';}
-    function restoreCareerMovements(rows){const b=document.getElementById('careerMovementsBody');if(!b)return;b.innerHTML='';(Array.isArray(rows)?rows:[]).forEach(e=>addCareerMovementRow(e));syncCareerMovementStatus();}
+    function restoreCareerMovements(rows){
+        const b=document.getElementById('careerMovementsBody');
+        if(!b)return;
+        b.innerHTML='';
+        (Array.isArray(rows)?rows:[]).forEach(e=>{
+            try { addCareerMovementRow(e || {}); }
+            catch(err) { console.error('Could not restore career movement:', err); }
+        });
+        syncCareerMovementStatus();
+    }
 
     /* --- ROPA-1998 TIMELINE COMPUTATION --- */
     function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, promotionDate, promotionTargetGp, evType) {
@@ -2454,7 +2463,7 @@
         });
     }
 
-    function processFixationTimeline() {
+    function _processFixationTimelineCore() {
         const dojInput = document.getElementById('doj').value;
         const dor = getDOR();
         if (!dojInput || !dor) return;
@@ -2651,6 +2660,22 @@
         window.CAS_dataReady = true;
         window.CAS_axData = axData;
     }
+
+function processFixationTimeline() {
+    try {
+        return _processFixationTimelineCore();
+    } catch (err) {
+        console.error('Pay table generation failed:', err);
+        const status = document.getElementById('dataSaveStatus');
+        if (status) {
+            status.style.color = '#b91c1c';
+            status.textContent = 'Pay table generation failed: ' + (err && err.message ? err.message : err);
+        }
+        const alertBox = document.getElementById('careerMovementStatus');
+        if (alertBox) alertBox.textContent = 'Calculation error: ' + (err && err.message ? err.message : err);
+        return false;
+    }
+}
 
     /* ---------- Annexure-III (ROPA-2009 & ROPA-2019) Initial Pay Fixation Forms — official-format print output ---------- */
     function renderAnnexureForms(ax, doj, dor, ropa09Rows, ropa19Rows) {
