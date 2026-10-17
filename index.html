@@ -715,7 +715,7 @@
                 <option value="highscale">Higher Scale / Upgradation Only (Direct Fitment - No Extra Increment)</option>
                 <option value="ahm">AHM - ROPA-09: one addl. increment in old scale, then GP = AT's GP + AGP 200 (auto)</option>
                 <option value="hmjr">HM of Junior High School - ROPA-09: fixed just as AHM (AT's GP + AGP 200); ROPA-98: designation change + one addl. increment in same scale, no fitment</option>
-                <option value="hm">HM - High School (GP 5400; ROPA-98: one addl. increment in same scale then fit in 6000-12200; if AHM precedes, fixed straight from AT)</option>
+                <option value="hm">HM - High School (GP 5400; ROPA-98: one addl. increment in same scale then fit in 8000-13500; if AHM precedes, fixed straight from AT)</option>
                 <option value="revert">Reversion to AT (demotion) - pay protected (not reduced)</option>
                 <option value="recast">Recast as AT - AHM/HM benefit deducted, pay fixed as AT would have drawn (no protection)</option>
                 <option value="hmhs">HM - Higher Secondary School (ROPA-09: GP 5400 + AGP 200; ROPA-19: Level 16)</option>
@@ -1481,13 +1481,12 @@
         4400: [4800, 4975, 5150, 5325, 5500, 5675, 5850, 6050, 6250, 6450, 6650, 6875, 7100, 7325, 7550, 7775, 8000, 8225, 8450, 8675, 8925, 9175, 9425, 9675, 9925, 10175, 10425, 10675, 10925],
         4700: [5500, 5700, 5900, 6100, 6300, 6525, 6750, 6975, 7200, 7425, 7650, 7875, 8100, 8325, 8575, 8825, 9075, 9325, 9575, 9825, 10075, 10325, 10575, 10825, 11075],
         4800: [6000, 6225, 6450, 6675, 6900, 7125, 7350, 7575, 7800, 8050, 8300, 8550, 8800, 9050, 9300, 9550, 9800, 10075, 10350, 10625, 10900, 11175, 11450, 11725, 12000],
-        5401: [6000, 6225, 6450, 6675, 6900, 7125, 7350, 7575, 7800, 8050, 8300, 8550, 8800, 9050, 9300, 9550, 9800, 10100, 10400, 10700, 11000, 11300, 11600, 11900, 12200],
         5400: [8000, 8275, 8550, 8825, 9100, 9375, 9650, 9925, 10200, 10475, 10750, 11025, 11300, 11575, 11850, 12125, 12400, 12675, 12950, 13225, 13500]
     };
 
     const ROPA98_TO_09_FACTOR = 1.86;
-    // Internal ROPA-98 scale key for the HM (High / Higher Secondary) scale Rs.6,000-225-7,800-250-9,800-300-12,200 = GP 5400 in ROPA-09
-    const HM98_SCALE_KEY = 5401;
+    // ROPA-98 scale key for the HM (High / Higher Secondary) scale Rs.8,000-13,500 = GP 5400 in ROPA-09
+    const HM98_SCALE_KEY = 5400;
     const gpOfScaleKey98 = k => (k === HM98_SCALE_KEY ? 5400 : k);
 
     // PAY SCALE column fix: for ROPA-1998 rows only, show the actual
@@ -1705,7 +1704,7 @@
             const sameScaleIncr98 = (ropa === '98' && agpKind);
             if (ropa === '98') {
                 // ROPA-98: AHM / HM(Jr) = designation change + ONE additional increment in the SAME scale (no fitment in higher scale).
-                // HM (High / Higher Sec.) = designation change + ONE additional increment in the same scale, then fitment in Rs.6000-12200 (GP 5400).
+                // HM (High / Higher Sec.) = designation change + ONE additional increment in the same scale, then fitment in Rs.8000-13500 (GP 5400).
                 if (agpKind) p.targetGp = eff;
                 else if ((p.kind === 'hm' || p.kind === 'hmhs') && eff !== 5400 && eff !== HM98_SCALE_KEY) p.targetGp = HM98_SCALE_KEY;
                 p.sameScaleIncr98 = sameScaleIncr98;
