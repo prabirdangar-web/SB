@@ -1769,6 +1769,9 @@
         const quick = (document.getElementById('ropa90EndSel').value === '1999-01-31') ? '1999-02-01' : '1999-03-01';
         const st0 = new Date(document.getElementById('ropa90StartDate').value || dojV);
         if (!odEl.value) odEl.value = quick;
+        // Rule 7 (ROPA-98) starts on 01-01-1996: staff already in service earlier are fixed as on 01-01-1996
+        // (on the ROPA-1990 pay drawn that day, with notional DA at 148%); later joiners are fixed on their own option / joining date.
+        if (odEl.value && odEl.value < '1996-01-01') odEl.value = '1996-01-01';
         let o98 = odEl.value;
         const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
         const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
