@@ -713,9 +713,10 @@
             <select id="promotionType" class="pe-type1">
                 <option value="promo" selected>Promotion to Higher Post (one addl. increment in old scale, then new scale)</option>
                 <option value="highscale">Higher Scale / Upgradation Only (Direct Fitment - No Extra Increment)</option>
-                <option value="ahm">AHM - one addl. increment in old scale, then AGP (Addl. Grade Pay) added</option>
-                <option value="hm">HM - as AHM; if GP same as AHM = designation change only (no pay change)</option>
-                <option value="hmjr">HM (Junior) - pay fixed just as AHM</option>
+                <option value="ahm">AHM - ROPA-09: one addl. increment in old scale, then GP = AT's GP + AGP 200 (auto)</option>
+                <option value="hmjr">HM of Junior High School - fixed just as AHM (AT's GP + AGP 200)</option>
+                <option value="hm">HM - High School (GP 5400; if AHM precedes, fixed straight from AT)</option>
+                <option value="hmhs">HM - Higher Secondary School (ROPA-09: GP 5400 + AGP 200; ROPA-19: Level 16)</option>
             </select>
         </div>
         <div class="form-group">
@@ -745,10 +746,12 @@
             <button type="button" class="btn-print" onclick="addPromoRow()">+ Add Next Event (Higher Scale / AHM / HM ...)</button>
         </div>
         <div class="output-box" style="background-color:#f0fdf4;border-left-color:#15803d;">
-            <strong>Career chain (AT &rarr; Higher Scale &rarr; AHM &rarr; HM):</strong> add events in any order; each is fixed on top of the previous one.
-            AHM / HM(Jr): one additional increment in the old scale, then AGP (additional grade pay) is added; the next increment date follows the ROPA rule in force
-            (ROPA-98: promotion month anniversary; ROPA-09/19: 1st July). HM after AHM in the same scale/level is a designation change only &mdash; no increment, no re-fixation, increment date undisturbed.
-            HM (Junior) is fixed exactly as AHM.
+            <strong>Career chain (AT &rarr; Higher Scale &rarr; AHM &rarr; HM):</strong> add events in date order; each is fixed on top of the previous one.
+            <b>ROPA-09:</b> AHM / HM of Junior High School = one additional increment in old scale, then GP = AT's GP + AGP Rs. 200 (e.g. 4800 &rarr; 5000); target GP is automatic.
+            HM High School = GP 5400; HM Higher Secondary = GP 5400 + AGP Rs. 200. <b>AHM &rarr; HM:</b> the AHM stage is ignored for the HM fixation &mdash; pay is first re-fitted as AT
+            (background) on the date preceding HM appointment, then HM fixation is applied (one addl. increment in old scale, GP 5400 from AT's GP, not from AHM's GP).
+            <b>ROPA-19:</b> no AGP &mdash; AGP Rs. 200 is deducted before fitment, AHM/HM(Jr) keep the same Level, HM (High / Higher Sec.) = Level 16.
+            Next increment date follows the ROPA in force (ROPA-98: promotion-month anniversary; ROPA-09/19: 1st July). Same-GP event = designation change only.
         </div>
     </div>
 
@@ -1419,7 +1422,8 @@
     const pbMap09 = {
         1700: "PB-1:4900-16200", 1800: "PB-1:4900-16200", 2600: "PB-2:5400-25200", 2900: "PB-2:5400-25200",
         3900: "PB-3:7100-37600", 4100: "PB-3:7100-37600", 4400: "PB-4:9000-40500", 4700: "PB-4:9000-40500",
-        4800: "PB-4:9000-40500", 5400: "PB-4:9000-40500"
+        4800: "PB-4:9000-40500", 5400: "PB-4:9000-40500",
+        4300: "PB-3:7100-37600", 4600: "PB-4:9000-40500", 5000: "PB-4:9000-40500", 5600: "PB-4:9000-40500"
     };
 
     const minEntryPayBand09 = {
@@ -1513,9 +1517,10 @@
         const i = all.indexOf(row);
         const prevGp = i > 0 ? all[i - 1].querySelector('.pe-gp').value : document.getElementById('promotionTargetGp').value;
         // HM after AHM: same scale by default (designation change only)
-        if (sel.value === 'hm') row.querySelector('.pe-gp').value = prevGp;
+        if (sel.value === 'hm' || sel.value === 'hmhs') row.querySelector('.pe-gp').value = '5400';
         const d = row.querySelector('.pe-desig');
         if (sel.value === 'hm') d.value = 'Headmaster';
+        else if (sel.value === 'hmhs') d.value = 'Headmaster (Higher Secondary)';
         else if (sel.value === 'ahm') d.value = 'Assistant Headmaster';
         else if (sel.value === 'hmjr') d.value = 'Headmaster (Junior)';
     }
@@ -1622,7 +1627,8 @@
         let base = 'PROMOTION';
         if (p.kind === 'highscale') base = 'HIGHER SCALE';
         else if (p.kind === 'ahm') base = 'PROMOTION - AHM';
-        else if (p.kind === 'hm') base = 'PROMOTION - HM';
+        else if (p.kind === 'hm') base = 'PROMOTION - HM (HIGH SCHOOL)';
+        else if (p.kind === 'hmhs') base = 'PROMOTION - HM (HIGHER SEC. SCHOOL)';
         else if (p.kind === 'hmjr') base = 'PROMOTION - HM (JR) AS AHM';
         return p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base;
     }
@@ -1650,17 +1656,42 @@
     // Keep only events inside [from, to]; flag an event as "designation only" when the
     // target GP equals the GP already in force (e.g. AHM -> HM in the same scale): no
     // increment, no re-fixation, and the date of next increment is NOT disturbed.
-    function prepPromoChain(promos, baseGp, doj, from, to) {
-        const list = (promos || []).filter(p => p.date >= from && p.date <= to).map(p => ({ ...p }));
+    const AGP_AMOUNT = 200;
+    function prepPromoChain(promos, baseGp, doj, from, to, ropa) {
+        const list = (promos || []).filter(p => p.date >= from && p.date <= to).map(p => ({ ...p, _orig: p }));
         const m18 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
-        let prevGp = baseGp, prevDate = from;
+        let prevGp = baseGp, prevDate = from, prevAgp = 0;
         list.forEach(p => {
             let eff = prevGp;
             if (m18 > prevDate && m18 <= p.date && [1700, 2600, 3900, 4100].includes(eff) && promoMap09[eff]) eff = promoMap09[eff];
-            p.designationOnly = (p.targetGp === eff);
+            const agpKind = (p.kind === 'ahm' || p.kind === 'hmjr');
+            p.agp = 0;
+            if (ropa === '09') {
+                // AHM / HM(Jr): GP = AT's GP + AGP 200.  HM Higher Secondary: 5400 + AGP 200.
+                if (agpKind) { p.targetGp = (eff - prevAgp) + AGP_AMOUNT; p.agp = AGP_AMOUNT; }
+                else if (p.kind === 'hmhs') { p.targetGp = p.targetGp + AGP_AMOUNT; p.agp = AGP_AMOUNT; }
+            }
+            // ROPA-19 has no AGP: AHM / HM(Jr) = same Level, designation change only.
+            p.designationOnly = (ropa === '19' && agpKind) || (p.targetGp === eff);
             p.label = promoEventLabel(p);
-            prevGp = p.targetGp; prevDate = p.date;
+            prevGp = p.designationOnly ? eff : p.targetGp;
+            if (!p.designationOnly) prevAgp = p.agp;
+            prevDate = p.date;
         });
+        // HM straight from AT: if an AHM / HM(Jr) stage immediately precedes an HM, the pay is
+        // re-fitted in the background as AT (AHM stage ignored) and HM fixation is applied on that.
+        if (ropa !== '19') {
+            list.forEach((p, i) => {
+                if ((p.kind === 'hm' || p.kind === 'hmhs') && !p.designationOnly) {
+                    let j = i - 1, found = false;
+                    while (j >= 0 && (list[j].kind === 'ahm' || list[j].kind === 'hmjr')) { found = true; j--; }
+                    if (found) {
+                        const dropped = new Set(list.slice(j + 1, i));
+                        p.bgPromos = list.slice(0, i).filter(x => !dropped.has(x)).map(x => x._orig);
+                    }
+                }
+            });
+        }
         return list;
     }
 
@@ -1848,7 +1879,7 @@
     }
 
     /* --- ROPA-1998 TIMELINE COMPUTATION --- */
-    function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, promos) {
+    function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, promos, _isBg) {
         let ladder = matrixData98[scaleKey] || [];
         let currentScaleKey = scaleKey;
         let events = [];
@@ -1860,9 +1891,10 @@
 
         const optionMonth = optionDate.getMonth();
 
-        const chain98 = prepPromoChain(promos, scaleKey, doj, optionDate, endDate);
+        const chain98 = prepPromoChain(promos, scaleKey, doj, optionDate, endDate, '98');
+        if (!_isBg) chain98.forEach(p => { if (p.bgPromos) { const bg = computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; } });
         const promotionActive98 = chain98.length > 0;
-        chain98.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly }));
+        chain98.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, bgSnap: p.bgSnap }));
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
         // 18-year milestone, not the joining-time scale: if a Promotion/Higher-Scale
@@ -1953,6 +1985,14 @@
         }
 
         events.forEach(ev => {
+            if (ev.isPromotion && ev.bgSnap && !ev.designationOnly) {
+                // HM straight from AT: re-fit pay as AT (AHM stage ignored) before HM fixation
+                currentScaleKey = ev.bgSnap.snapScaleKey;
+                ladder = matrixData98[currentScaleKey] || ladder;
+                idx = ladder.indexOf(ev.bgSnap.snapBasicPay);
+                if (idx === -1) { idx = ladder.findIndex(v => v >= ev.bgSnap.snapBasicPay); if (idx === -1) idx = ladder.length - 1; }
+                runningBasicPay = ladder[idx];
+            }
             if (ev.isPromotion && ev.designationOnly) {
                 // Designation change only (same scale already in force): no increment, no re-fixation.
             } else if (ev.isPromotion) {
@@ -2009,7 +2049,7 @@
     }
 
     /* --- ROPA-2009 TIMELINE COMPUTATION --- */
-    function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, promos) {
+    function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, promos, _isBg) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
 
@@ -2017,7 +2057,8 @@
 
         const lwpEntries09 = getLwpEffectEntries();
 
-        const chain09 = prepPromoChain(promos, gpInput, doj, optionDate, endDate);
+        const chain09 = prepPromoChain(promos, gpInput, doj, optionDate, endDate, '09');
+        if (!_isBg) chain09.forEach(p => { if (p.bgPromos) { const bg = computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; } });
         chain09.forEach(p => {
             pushEvent(p.date, {
                 label: p.label,
@@ -2025,12 +2066,14 @@
                 targetGp: p.targetGp,
                 evType: p.evType,
                 kind: p.kind,
+                agp: p.agp,
+                bgSnap: p.bgSnap,
                 designationOnly: p.designationOnly,
                 exactPromotionDate: p.date
             });
             // HM/AHM joining 02-Jan to 30-Jun: option exercised from 01-Jul. Same-day INCREMENT row
             // is display/period-control only (the HM/AHM increment is already inside the fixation).
-            const tLevel = levelMap19[p.targetGp] || 0;
+            const tLevel = levelMap19[p.targetGp - (p.agp || 0)] || 0;
             if (!p.designationOnly && tLevel === 16 && isInPromoIncrWindow(p.date)) {
                 const optDt = new Date(p.date.getFullYear(), 6, 1);
                 pushEvent(optDt, { label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: optDt });
@@ -2043,7 +2086,7 @@
         // post-promotion GP instead (e.g. GP 4800 is never eligible for 18Y benefit).
         const milestone18YDateRaw09 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
         const effectiveGpAt18Y09 = effectiveGpAtDate(chain09, gpInput, milestone18YDateRaw09);
-        const isExcludedFrom18Y = [4700, 4800, 5400].includes(effectiveGpAt18Y09);
+        const isExcludedFrom18Y = [4700, 4800, 5000, 5400, 5600].includes(effectiveGpAt18Y09);
         const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(effectiveGpAt18Y09);
 
         let milestoneDefs09 = [
@@ -2098,9 +2141,19 @@
         let compiledRows = [];
         let runningBandPay = initialBandPay;
         let runningGp = gpInput;
+        let runningAgp = 0;
         let runningBasicPay = initialBandPay + gpInput;
 
         events.forEach(ev => {
+            let bgNote = null;
+            if (ev.isPromotion && ev.bgSnap && !ev.designationOnly) {
+                // HM straight from AT: pay re-fitted in background as AT (AHM stage ignored)
+                runningBandPay = ev.bgSnap.snapBandPay;
+                runningGp = ev.bgSnap.snapGp;
+                runningAgp = 0;
+                runningBasicPay = runningBandPay + runningGp;
+                bgNote = runningBasicPay;
+            }
             let colScaleStr = `${pbMap09[runningGp] || ''}-GP-${runningGp}`;
             let slipBlockHTML = "";
             let existingBandPay = runningBandPay;
@@ -2125,6 +2178,7 @@
             } else if (ev.isPromotion) {
                 let oldGp = runningGp;
                 runningGp = ev.targetGp;
+                runningAgp = ev.agp || 0;
                 
                 if (ev.evType === 'promo') {
                     incAmt = calculate09Increment(runningBandPay, oldGp);
@@ -2134,7 +2188,7 @@
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.a) One Additional Increment in Existing Scale</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
-                            <div class="slip-row"><span>${(ev.kind === 'ahm' || ev.kind === 'hmjr') ? '&nbsp;&nbsp;&nbsp;b) Additional Grade Pay (AGP) of Rs. ' + (runningGp - oldGp).toLocaleString('en-IN') + ' added after the one additional increment in old scale' : '&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post'}</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>${(ev.kind === 'ahm' || ev.kind === 'hmjr') ? '&nbsp;&nbsp;&nbsp;b) GP of AT Rs. ' + oldGp.toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') + ' added after the one additional increment in old scale' : (ev.kind === 'hmhs' ? '&nbsp;&nbsp;&nbsp;b) GP of HM (Higher Sec.) = Rs. ' + (runningGp - (ev.agp || 0)).toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') : '&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post')}</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
                 } else {
@@ -2175,6 +2229,9 @@
                     </div>`;
             }
 
+            if (bgNote !== null && slipBlockHTML) {
+                slipBlockHTML = slipBlockHTML.replace('<div class="slip-box">', `<div class="slip-box"><div class="slip-row" style="color:#6d28d9;"><span>HM straight from AT: pay re-fitted in background as AT on ${formatDate(ev.date)} (AHM stage ignored)</span><span>BP+GP Rs. ${bgNote.toLocaleString('en-IN')}</span></div>`);
+            }
             compiledRows.push({
                 date: ev.date,
                 label: ev.label,
@@ -2185,7 +2242,8 @@
                 slipHTML: slipBlockHTML,
                 casRemark: ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : '',
                 snapBandPay: runningBandPay,
-                snapGp: runningGp
+                snapGp: runningGp,
+                snapAgp: runningAgp
             });
         });
 
@@ -2202,7 +2260,7 @@
 
         const lwpEntries19 = getLwpEffectEntries();
 
-        const chain19 = prepPromoChain(promos, gpInput, doj, startDate, dor);
+        const chain19 = prepPromoChain(promos, gpInput, doj, startDate, dor, '19');
         chain19.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, exactPromotionDate: p.date }));
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
@@ -2451,15 +2509,17 @@
     function getRopa09SnapshotAsOf(rows, initialGp, initialBandPay, asOfDate) {
         let bandPay = initialBandPay;
         let gp = initialGp;
+        let agp = 0;
         for (const row of rows) {
             if (row.date <= asOfDate) {
                 bandPay = row.snapBandPay;
                 gp = row.snapGp;
+                agp = row.snapAgp || 0;
             } else {
                 break;
             }
         }
-        return { bandPay, gp };
+        return { bandPay, gp, agp };
     }
 
     function renderRows98(tbodyId, sbTbodyId, rows) {
@@ -2594,18 +2654,21 @@
             axData.ropa09OptionDate = ropa09OptionDate;
 
             const snap = getRopa09SnapshotAsOf(ropa09Rows, ropa09Gp, ropa09BandPay, ropa19OptionDate);
-            const notionalBasic = snap.bandPay + snap.gp;
+            // ROPA-19 has no AGP: the Rs. 200 AGP (if any) is fully deducted before fitment.
+            const snapAgpDed = snap.agp || 0;
+            const snapBaseGp = snap.gp - snapAgpDed;
+            const notionalBasic = snap.bandPay + snapBaseGp;
             const FITMENT_FACTOR = 2.57;
             const revisedRaw = Math.round(notionalBasic * FITMENT_FACTOR);
-            carryLevel = levelMap19[snap.gp] || 1;
+            carryLevel = levelMap19[snapBaseGp] || 1;
             const fit = findCell19(carryLevel, revisedRaw);
-            carryGp = snap.gp;
+            carryGp = snapBaseGp;
             carryBasic = fit.value;
 
             axData.notionalBasic = notionalBasic;
             axData.revisedRaw = revisedRaw;
 
-            carryNote = `<strong>Carried Forward into ROPA-2019 (Rule 7, WBS(RPA) Rules 2019):</strong> Notional pay as on ${formatDate(ropa19OptionDate)} under ROPA-2009 = BP Rs. ${snap.bandPay.toLocaleString('en-IN')} + GP Rs. ${snap.gp.toLocaleString('en-IN')} = Rs. ${notionalBasic.toLocaleString('en-IN')} &times; fitment factor 2.57 = Rs. ${revisedRaw.toLocaleString('en-IN')} &rarr; located at equal/next-higher cell in ROPA-2019 Level-${carryLevel}: Rs. ${carryBasic.toLocaleString('en-IN')} (${fit.cell}). The ROPA-2009 table above continues independently as a notional record up to ${formatDate(ropa09EndDate)}.`;
+            carryNote = `<strong>Carried Forward into ROPA-2019 (Rule 7, WBS(RPA) Rules 2019):</strong> Notional pay as on ${formatDate(ropa19OptionDate)} under ROPA-2009 = BP Rs. ${snap.bandPay.toLocaleString('en-IN')} + GP Rs. ${snapBaseGp.toLocaleString('en-IN')}${snapAgpDed ? ' (AGP Rs. ' + snapAgpDed.toLocaleString('en-IN') + ' deducted from GP Rs. ' + snap.gp.toLocaleString('en-IN') + ')' : ''} = Rs. ${notionalBasic.toLocaleString('en-IN')} &times; fitment factor 2.57 = Rs. ${revisedRaw.toLocaleString('en-IN')} &rarr; located at equal/next-higher cell in ROPA-2019 Level-${carryLevel}: Rs. ${carryBasic.toLocaleString('en-IN')} (${fit.cell}). The ROPA-2009 table above continues independently as a notional record up to ${formatDate(ropa09EndDate)}.`;
         } else {
             carryGp = parseInt(document.getElementById('ropa19GradePayManual').value, 10);
             carryBasic = parseInt(document.getElementById('ropa19BasicPayManual').value, 10);
