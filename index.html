@@ -854,7 +854,7 @@
         </div>
         <div class="grid-inputs">
             <div class="form-group">
-                <label>Dearness Allowance at AICPI 1510 (auto: DA-table rate on the option date up to 01-01-1996; 148% for later dates)</label>
+                <label>Dearness Allowance at AICPI 1510 (auto: 148% of basic on the option date, rounded - Rule 7, ROPA-98)</label>
                 <input type="number" id="ropa90DA" value="0" min="0">
             </div>
             <div class="form-group">
@@ -1705,16 +1705,13 @@
         ['1995-02-01',104,'975-F dt. 31-01-1995'],['1995-06-01',114,'5733-F dt. 01-06-1995'],['1995-12-01',125,'11200-F dt. 13-11-1995'],
         ['1996-04-01',136,'2675-F dt. 08-03-1996']
     ];
-    // Rule 7 DA: option date up to and including 01-01-1996 -> DA rate from the table above (rate in force on that date);
-    // option date later than 01-01-1996 -> flat 148% (AICPI 1510).  Returns {pct, da}.
+    // Rule 3(b)(iii) / Rule 7, WBS(ROPA) Rules 1998: DA is taken at AICPI average 1510 (1960=100) = 148% of basic pay,
+    // whatever the date of option (Rule 7 covers options from 01-01-1996 to 01-01-1997). Returns {pct, da, inWindow}.
+    const ROPA98_DA_PCT_1510 = 148;
     function ropa98DaRule(optionDate, basicOnOption) {
         const k = d => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-        let pct;
-        if (k(optionDate) <= 19960101) {
-            pct = 0;
-            DA_RATES_90.forEach(r => { if (r[0].replace(/-/g, '') <= String(k(optionDate))) pct = r[1]; });
-        } else pct = 148;
-        return { pct: pct, da: Math.round(basicOnOption * pct / 100) };
+        const inWindow = k(optionDate) >= 19960101 && k(optionDate) <= 19970101;
+        return { pct: ROPA98_DA_PCT_1510, da: Math.round(basicOnOption * ROPA98_DA_PCT_1510 / 100), inWindow: inWindow };
     }
     function computeRopa98Fixation(sc, basic90, da) {
         const ladder = matrixData98[sc] || [];
@@ -1803,7 +1800,7 @@
         const scOpt90 = optRow.snapScaleKey || scEnd90;
         const daR = ropa98DaRule(o98d, lastB), da90 = daR.da;
         const daEl = document.getElementById('ropa90DA');
-        if (daEl) { daEl.value = da90; daEl.readOnly = true; daEl.style.background = '#f1f5f9'; daEl.title = 'Auto: DA table rate up to 01-01-1996, 148% later'; }
+        if (daEl) { daEl.value = da90; daEl.readOnly = true; daEl.style.background = '#f1f5f9'; daEl.title = 'Auto: DA at AICPI 1510 = 148% of basic on option date (Rule 7, ROPA-98)'; }
         const f = computeRopa98Fixation(scOpt90, lastB, da90);
         const auto = document.getElementById('ropa90AutoFix').checked;
         const pay98El = document.getElementById('ropa98BasicPay');
@@ -1819,7 +1816,7 @@
         res.fix = window.CAS_fix98;
         if (note) {
             note.style.display = '';
-            note.textContent = 'ROPA-1990 basic pay on ' + formatDate(o98d) + ' (date of option): Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation: Basic ' + lastB + ' + DA ' + da90 + ' (@' + daR.pct + '%)' + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]');
+            note.textContent = 'ROPA-1990 basic pay on ' + formatDate(o98d) + ' (date of option): Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation: Basic ' + lastB + ' + DA ' + da90 + ' (@' + daR.pct + '% at AICPI 1510)' + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]') + (daR.inWindow ? '' : '  \u26A0 Rule 7 applies to options from 01-01-1996 to 01-01-1997 - check the Date of Option.');
         }
         return res;
     }
@@ -3365,7 +3362,7 @@
                 ropa98Rows[0].slipHTML = slipBoxHTML([
                     ['RULE 7 FIXATION (WBS ROPA-98) on ' + formatDate(fx.optionDate), null, 1],
                     ['1. Basic Pay in ROPA-1990 scale on ' + formatDate(fx.optionDate), slipR(fx.basic90)],
-                    ['2. D.A. @' + fx.daPct + '% on Basic (' + (fx.optionDate <= new Date(1996, 0, 1) ? 'as per DA table in force on the date of option' : 'flat 148% at AICPI 1510') + ')', slipR(fx.da)],
+                    ['2. D.A. @' + fx.daPct + '% on Basic (' + 'AICPI 1510 (1960=100), Rule 3(b) / Rule 7' + ')', slipR(fx.da)],
                     ['3. Interim Relief (Rs.100 + 10% of Basic, min Rs.100)', slipR(fx.ir1 + fx.ir2)],
                     ['4. 40% of Basic Pay', slipR(fx.forty)],
                     ['5. Total (1+2+3+4)', slipR(fx.total), 1],
