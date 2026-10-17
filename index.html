@@ -838,7 +838,7 @@
                 <input type="date" id="ropa90StartDate">
             </div>
             <div class="form-group">
-                <label>ROPA-1990 runs up to (ROPA-1998 date is set automatically as the next day)</label>
+                <label>Quick-set ROPA-1998 date (ROPA-1990 then ends the day before; the date in Section 2 stays editable)</label>
                 <select id="ropa90EndSel">
                     <option value="1999-02-28" selected>28-02-1999 (ROPA-1998 from 01-03-1999)</option>
                     <option value="1999-01-31">31-01-1999 (ROPA-1998 from 01-02-1999)</option>
@@ -1743,11 +1743,13 @@
         const hideNote = () => { if (note) note.style.display = 'none'; window.CAS_fix98 = null; const p98 = document.getElementById('ropa98BasicPay'); if (p98) { p98.readOnly = false; p98.style.background = ''; p98.title = ''; } const od = document.getElementById('ropa98OptionDate'); if (od) { od.readOnly = false; od.style.background = ''; od.title = ''; } };
         if (!(document.getElementById('enableRopa90').checked && document.getElementById('enableRopa98').checked)) { hideNote(); return res; }
         const dojV = document.getElementById('doj').value;
-        // ROPA-1998 Date of Option is generated, not typed: day after the chosen ROPA-1990 end date.
+        // ROPA-1998 Date of Option stays editable (option date may vary). The dropdown is only a quick-set;
+        // a blank date, or one not after the ROPA-1990 start, is filled from the dropdown.
         const odEl = document.getElementById('ropa98OptionDate');
-        let o98 = (document.getElementById('ropa90EndSel').value === '1999-01-31') ? '1999-02-01' : '1999-03-01';
-        odEl.value = o98; odEl.readOnly = true; odEl.style.background = '#f1f5f9';
-        odEl.title = 'Set automatically from ROPA-1990 end date (ROPA-1998 runs up to 31-03-2009)';
+        const quick = (document.getElementById('ropa90EndSel').value === '1999-01-31') ? '1999-02-01' : '1999-03-01';
+        const st0 = new Date(document.getElementById('ropa90StartDate').value || dojV);
+        if (!odEl.value || new Date(odEl.value) <= st0) odEl.value = quick;
+        let o98 = odEl.value;
         const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
         const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
         if (!dojV || !o98 || isNaN(sc90) || isNaN(bp90)) { hideNote(); return res; }
@@ -1797,6 +1799,7 @@
         const id = e.target && e.target.id;
         if (!id) return;
         if (id === 'ropa90Scale') ropa90SetInitialToMin();
+        if (id === 'ropa90EndSel') document.getElementById('ropa98OptionDate').value = (e.target.value === '1999-01-31') ? '1999-02-01' : '1999-03-01';
         if (['ropa90Scale', 'ropa90StartDate', 'ropa90EndSel', 'ropa90BasicPay', 'ropa90DA', 'ropa90AutoFix', 'ropa98OptionDate', 'ropa98Scale', 'doj', 'enableRopa90', 'enableRopa98'].includes(id)) {
             try { ropa90Evaluate(); } catch (err) { /* inputs incomplete */ }
         }
