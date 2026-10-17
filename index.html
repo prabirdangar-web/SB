@@ -2275,6 +2275,17 @@
         return t + '.';
     }
 
+    // Remarks wording for HM / AHM (Level-16 / GP 5400) rows when the appointment date falls within
+    // 02-01 to 30-06: the option is exercised and pay is fixed w.e.f. 01-07 of that year, NOT on the
+    // actual date of appointment. Same style as the 10 / 18 / 20-Year CAS remarks.
+    function hmOptionRemarkText(kind, promoDate, optDate, ropaName) {
+        const post = (kind === 'hmhs') ? 'Headmaster (Higher Secondary School)'
+                   : (kind === 'hmjr') ? 'Headmaster (Junior High School)'
+                   : (kind === 'ahm') ? 'Assistant Headmaster'
+                   : 'Headmaster (High School)';
+        return `Appointed as ${post} on ${formatDate(promoDate)} but, as the date of appointment falls within 2.1 to 30.6, option exercised and pay fixed w.e.f. ${formatDate(optDate)} instead of ${formatDate(promoDate)} (date of promotion) as per ${ropaName} rules and granted by MCR / Administrator Order No. ____________ dated ____________.`;
+    }
+
     function resolveDateNoWindow(originalDate, entries) {
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
@@ -2639,7 +2650,12 @@
         const chain09 = prepPromoChain(promos, gpInput, doj, optionDate, endDate, '09', initialAgp);
         if (!_isBg) chain09.forEach(p => { if (p.bgPromos) { const bg = computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, p.bgPromos, true, initialAgp); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
         chain09.forEach(p => {
+            // HM (Level-16 / GP 5400) appointed 02-Jan to 30-Jun: option exercised, pay shown from 01-Jul
+            const _tLevel09 = levelMap19[p.targetGp - (p.agp || 0)] || 0;
+            const _hmOpt09 = (!p.designationOnly && !p.agpOnly && !p.isRevert && _tLevel09 === 16 && isInPromoIncrWindow(p.date))
+                ? new Date(p.date.getFullYear(), 6, 1) : null;
             pushEvent(p.date, {
+                hmOptDate: _hmOpt09,
                 label: p.label,
                 isPromotion: true,
                 targetGp: p.targetGp,
@@ -2861,7 +2877,7 @@
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.a) One Additional Increment in Existing Scale</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>${(ev.kind === 'ahm' || ev.kind === 'hmjr') ? '&nbsp;&nbsp;&nbsp;b) GP of AT Rs. ' + oldGp.toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') + ' added after the one additional increment in old scale' : (ev.kind === 'hmhs' ? '&nbsp;&nbsp;&nbsp;b) GP of HM (Higher Sec.) = Rs. ' + (runningGp - (ev.agp || 0)).toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') : '&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post')}</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
-                            <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.hmOptDate || ev.date)}${ev.hmOptDate ? ' (as per option)' : ''}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
                 } else {
                     const floorBand = minEntryPayBand09[runningGp] || 0;
@@ -2929,7 +2945,7 @@
                 const dniEv2 = events.slice(evIdx + 1).find(e => e.isAnnual && !e.isHmAhmOptionIncrementRow);
                 const dni2 = dniEv2 ? dniEv2.date : nextJuly(ev.date);
                 const bpDate = isAhmStyle ? dotDate(ev.date) : dotDate(ev.date).replace(/\.(\d{2})(\d{2})$/, '.$2');
-                const effDate = isAhmStyle ? formatDate(ev.date) : dotDate(ev.date);
+                const effDate = isAhmStyle ? formatDate(ev.hmOptDate || ev.date) : dotDate(ev.hmOptDate || ev.date);
                 const dniTxt = isAhmStyle ? formatDate(dni2) : dotDate(dni2);
                 slipBlockHTML = `
                     <div class="slip-box">
@@ -2953,7 +2969,7 @@
                 colScaleStr = `${pbMap09[_bg] || ''}-GP-${_bg}` + (agpLabel ? `+AGP-${agpLabel}` : '');
             }
             compiledRows.push({
-                date: ev.date,
+                date: ev.hmOptDate || ev.date,
                 label: ev.label,
                 evKind: ev.kind || null,
                 fx: (ev.isPromotion && !ev.designationOnly) ? { kind: ev.kind, evType: ev.evType, isRevert: !!ev.isRevert, noProtect: !!ev.noProtect, agpOnly: !!ev.agpOnly, existingBand: existingBandPay, existingGp: existingGp, existingAgp: exAgp09, incAmt: incAmt, bgNote: bgNote, fit98: ev._fit98 ? ev._fit98Info : null, r98rev: ev._r98rev || null } : null,
@@ -2962,7 +2978,7 @@
                 gpDisplay: agpLabel ? ((runningGp - runningAgp).toLocaleString('en-IN') + '+AGP-' + agpLabel) : runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
-                casRemark: ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : '',
+                casRemark: ev.hmOptDate ? hmOptionRemarkText(ev.kind, ev.date, ev.hmOptDate, 'ROPA-2009') : (ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : ''),
                 snapBandPay: runningBandPay,
                 snapGp: runningGp,
                 snapAgp: runningAgp
@@ -3226,15 +3242,16 @@
 
             colScaleStr = `Level-${runningLevel}`;
 
+            const _hmOptRow19 = (promoDetail && promoDetail.optionApplied && promoDetail.date) ? promoDetail.date : null;
             compiledRows.push({
-                date: ev.date,
+                date: _hmOptRow19 || ev.date,
                 label: ev.label,
                 scaleStr: colScaleStr,
                 trackCol: colTrackingInfo,
                 gpDisplay: runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
-                casRemark: ev.isMilestone ? milestoneRemarkText(ev, existingLevel !== runningLevel, 'ROPA-2019') : '',
+                casRemark: _hmOptRow19 ? hmOptionRemarkText(ev.kind, ev.date, _hmOptRow19, 'ROPA-2019') : (ev.isMilestone ? milestoneRemarkText(ev, existingLevel !== runningLevel, 'ROPA-2019') : ''),
                 promoDetail: promoDetail,
                 evKind: ev.kind || null,
                 fx19: ev.isRevert ? { isRevert: true, noProtect: !!ev.noProtect, kind: ev.kind, oldBasic: existingBasic, oldLevel: existingLevel, newBasic: runningBasicPay, newLevel: runningLevel, newGp: runningGp, cell: colTrackingInfo } : null,
