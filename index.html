@@ -1455,11 +1455,11 @@
     </table>
 
     <div id="annexRopa98Page" class="annex-page" style="display:none;">
-        <div class="annex-title" style="font-size:12.5pt;">Form of Fixation of Initial Pay in the Revised Scale under the West Bengal Services (Revision of Pay and Allowance) Rules, 1998</div>
-        <div class="annex-seepara">[Schedule II, Part B]</div>
+        <div class="annex-title" style="text-decoration:none;font-size:17pt;">ANNEXURE VIII</div>
+        <div class="annex-seepara" style="font-weight:normal;font-size:10.5pt;">Form of Fixation of Initial Pay in the Revised Scale under Memorandum<br>25-S.E.(B) Dated.12.02.99</div>
         <table class="annex-table">
-            <tr><td class="a-num">1.</td><td class="a-label">Name of the Department and Office</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98Office"></td></tr>
-            <tr class="a-gap"><td class="a-num">2.</td><td class="a-label">Name and Designation of Government Employee</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98NameDesig"></td></tr>
+            <tr><td class="a-num">1.</td><td class="a-label">Name of the Institution</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98Office"></td></tr>
+            <tr class="a-gap"><td class="a-num">2.</td><td class="a-label">Name and Designation of Employee</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98NameDesig"></td></tr>
             <tr class="a-gap"><td class="a-num">3.</td><td class="a-label">Date from which he/she elects to come under the revised Scale of Pay</td><td class="a-colon"></td><td></td></tr>
             <tr><td></td><td class="a-sub">(a) in substantive post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98OptDateA"></td></tr>
             <tr><td></td><td class="a-sub">(b) in officiating/temporary post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;">N.A.</td></tr>
@@ -6358,6 +6358,23 @@ table.fxf-grid td.t{text-align:left}
 .fxf-page .hmahm-office-table{width:100%;border-collapse:collapse;margin-top:4px}
 .fxf-page .hmahm-office-table td{border:1px solid #000;padding:6px 8px}
 .fxf-page .hmahm-stampspace{height:40px}
+
+table.fxf-emol{width:100%;border-collapse:collapse;font-size:9pt;margin-top:3mm}
+table.fxf-emol th,table.fxf-emol td{border:1px solid #000;padding:1mm 1.5mm;text-align:center;vertical-align:middle}
+table.fxf-emol td.t{text-align:left}
+table.fxf-emol td.r{text-align:right}
+table.fxf-emol table td{text-align:left;border:none}
+.fxf-sign98{margin-top:8mm;text-align:center;font-size:9.5pt;width:62mm;margin-left:auto;border-top:1px solid #000;padding-top:1mm}
+.fxf-prov{display:flex;justify-content:space-between;gap:8mm;margin-top:6mm;font-size:9.5pt}
+.fxf-prov .pl{flex:1.2;padding-left:6mm;line-height:1.35}
+.fxf-prov .pr{flex:1;text-align:left}
+.fxf-prov .sigl{border-top:1px solid #000;padding-top:1mm;text-align:center}
+.fxf-prov .di{text-align:center;margin-top:5mm}
+.fxf-page .fxf-box{display:flex;justify-content:space-between;gap:8mm;margin-top:7mm;font-size:9pt;align-items:flex-start}
+.fxf-page .fxf-box .pl{flex:1;line-height:1.4;padding-left:4mm}
+.fxf-page .fxf-box .pr{flex:1;text-align:center}
+.fxf-page .fxf-box .pr .sigl{border-top:1px solid #000;padding-top:1mm;margin-top:8mm}
+.fxf-page .fxf-box .di{text-align:center;margin-top:5mm}
 </style>
 <script>
 /* =========================================================================
@@ -6419,7 +6436,22 @@ table.fxf-grid td.t{text-align:left}
     const page = (html) => '<div class="fxf-page">' + html + '</div>';
     const dniOf = (rows, i, row) => { const r = rows.slice(i + 1).find(isInc) || rows.slice(i + 1).find(x => /INCREMENT/i.test(lbl(x))); return r ? r.date : null; };
 
-    /* ---------------- ROPA-98: Annexure VIII for an event ---------------- */
+    /* ---- shared helpers: official layout (number | label | colon | value), exactly as in the vetted forms ---- */
+    const axRow = (n, label, val, o) => { o = o || {}; return '<tr' + (o.gap === false ? '' : ' class="a-gap"') + '><td class="a-num">' + (n == null ? '' : n) + '</td><td class="' + (o.sub ? 'a-sub' : 'a-label') + '">' + label + '</td><td class="a-colon">' + (o.colon ? ':' : '') + '</td><td class="a-value"' + (o.style ? ' style="' + o.style + '"' : '') + '>' + (val == null ? '' : val) + '</td></tr>'; };
+    const axTable = rows => '<table class="annex-table">' + rows.join('') + '</table>';
+    const slash = d => formatDate(d).replace(/-/g, '/');
+    // full scale text exactly as in the vetted forms, e.g. 6000-225-7800-250-9800-275-12000
+    function scaleFull98(key) {
+        const l = matrixData98[key];
+        if (!l || l.length < 2) return ropa98ScaleLabel(key);
+        const out = [l[0]]; let step = l[1] - l[0];
+        for (let i = 1; i < l.length; i++) { const st = l[i] - l[i - 1]; if (st !== step) { out.push(step, l[i - 1]); step = st; } }
+        out.push(step, l[l.length - 1]);
+        return out.join('-');
+    }
+    const lblPayRemark = r => { const t = lbl(r); return /DOA|PAY FIXATION/i.test(t) ? 'PAY ROPA-98' : t; };
+
+    /* ---------------- ROPA-98: Annexure VIII for an event (2 pages, as in the vetted form) ---------------- */
     function page98(row, i, rows, ctx) {
         const fx = row.fx98;
         const lad = matrixData98[fx.oldKey] || [];
@@ -6432,67 +6464,114 @@ table.fxf-grid td.t{text-align:left}
         const boost = fx.isRevert ? 0 : Math.max(0, fx.newBasic - pre);
         const dni = dniOf(rows, i, row);
         const tag = tagFor(fx.kind);
-        let fixRows;
+        const nameC = esc(ctx.name) + ', ' + esc(desigFor(fx.kind, ctx.desig)) + ((ctx.pf && tag) ? '<div class="fxf-tag" style="font-weight:normal;font-size:8pt">[POST FACTO FIXATION AS ' + esc(tag) + ']</div>' : '');
+        const head = '<div class="annex-title" style="text-decoration:none;font-size:17pt">ANNEXURE VIII</div>' +
+            '<div class="annex-seepara" style="font-weight:normal;font-size:10.5pt;margin-bottom:4mm">Form of Fixation of Initial Pay in the Revised Scale under Memorandum<br>25-S.E.(B) Dated.12.02.99</div>';
+        const top = axTable([
+            axRow(1, 'Name of the Institution', esc(ctx.school), { colon: 1 }),
+            axRow(2, 'Name and Designation of Employee', nameC, { colon: 1 }),
+            axRow(3, 'Date from which he/she elects to come under the revised Scale of Pay&mdash;', ''),
+            axRow('', '(a) in substantive post', slash(row.date), { sub: 1, colon: 1, gap: false }),
+            axRow('', '(b) in officiating/temporary post', 'N.A.', { sub: 1, colon: 1, gap: false }),
+            axRow(4, 'Existing Scale of Pay&mdash;', ''),
+            axRow('', '(a) in substantive post', esc(scaleFull98(fx.oldKey)), { sub: 1, colon: 1, gap: false }),
+            axRow('', '(b) in officiating/temporary post', 'N.A.', { sub: 1, colon: 1, gap: false }),
+            axRow(5, 'Revised Scale of Pay&mdash;', ''),
+            axRow('', '(a) in substantive post', esc(scaleFull98(fx.newKey)), { sub: 1, colon: 1, gap: false }),
+            axRow('', '(b) in officiating/temporary post', 'N.A.', { sub: 1, colon: 1, gap: false }),
+            axRow(6, 'Special Pay, if any, in the existing Scale of pay&mdash;', ''),
+            axRow('', '(a) in substantive post', 'N.A.', { sub: 1, colon: 1, gap: false }),
+            axRow('', '(b) in officiating/temporary post', 'N.A.', { sub: 1, colon: 1, gap: false })
+        ]);
+        const D = '<td class="r">-</td><td>-</td><td class="r">-</td><td>-</td>';
+        const amt = v => '<td class="r">' + (v == null ? '-' : n0(v)) + '</td><td>-</td><td class="r">-</td><td>-</td>';
+        const hdr = '<thead><tr><th rowspan="2" style="width:38%"></th><th colspan="2">Substantive post</th><th colspan="2">Officiating/Temporary</th><th rowspan="2" style="width:30%">Remarks</th></tr><tr><th>Rs.</th><th>P.</th><th>Rs.</th><th>P.</th></tr></thead>';
+        const hist = rows.slice(0, i + 1).slice(-14);
+        const struct = '<div style="font-size:7.5pt;text-align:left"><div style="text-decoration:underline;margin-bottom:.8mm">PAY STRUCTURE</div><table style="width:100%;border-collapse:collapse;font-size:7.5pt"><tbody>' +
+            hist.map(r => '<tr><td style="border:none;padding:.2mm 0">' + slash(r.date) + '</td><td style="border:none;padding:.2mm 1mm;text-align:right">' + esc(r.basicDisplay) + '</td><td style="border:none;padding:.2mm 0 .2mm 1mm">' + esc(lblPayRemark(r)) + '</td></tr>').join('') + '</tbody></table></div>';
+        const t1 = '<table class="fxf-emol">' + hdr + '<tbody>' +
+            '<tr><td class="t"><b>7</b>&nbsp; Existing Emoluments as defined under rule ............... 3</td>' + D + '<td rowspan="7" style="vertical-align:top;padding:1mm">' + struct + '</td></tr>' +
+            '<tr><td class="t">(i)&nbsp; Basic Pay in the existing scale including stagnation increment, if any</td>' + amt(fx.oldBasic) + '</tr>' +
+            '<tr><td class="t">(ii)&nbsp; Dearness Allowance appropriate to the Basic Pay admissible at index average 1510 (1960=100)</td>' + amt(null) + '</tr>' +
+            '<tr><td class="t">(iii)&nbsp; Special Pay</td>' + amt(null) + '</tr>' +
+            '<tr><td class="t">(iv)&nbsp; Interim Relief</td>' + amt(null) + '</tr>' +
+            '<tr><td class="t">(v)&nbsp; 40% of Basic Pay in the existing scale, including stagnation increments, if any</td>' + amt(null) + '</tr>' +
+            '<tr><td class="t" style="text-align:right"><b>TOTAL:</b></td>' + amt(fx.oldBasic) + '</tr></tbody></table>';
+        // page 2 rows
+        let r2;
         if (fx.isRevert) {
             const prot = (!fx.noProtect && fx.newBasic >= fx.oldBasic && fx.oldBasic !== fx.newBasic);
-            fixRows = [
-                [null, '(i) Basic Pay drawn in the higher post', n0(fx.oldBasic) + '/-', ''],
-                [null, '(ii) Pay re-fixed as A.T. (AHM / HM benefit deducted' + (prot ? '; pay drawn protected' : '') + ')', n0(fx.newBasic) + '/-', ''],
-                [null, '<b>Total (Basic Pay in the revised scale)</b>', n0(fx.newBasic) + '/-', '']
-            ];
+            r2 = [['(i) Basic Pay drawn in the higher post', n0(fx.oldBasic), ''],
+                  ['(ii) Pay re-fixed as A.T. (AHM / HM benefit deducted' + (prot ? '; pay drawn protected' : '') + ')', n0(fx.newBasic), ''],
+                  ['<b>Total (Basic Pay in the revised scale)</b>', n0(fx.newBasic), '']];
         } else {
-            fixRows = [[null, '(i) Basic Pay', n0(fx.oldBasic), ''], [null, '(ii) Personal Pay', '-', '']];
-            if (incr > 0) fixRows.push([null, '+ One Addl. incr. for Higher Responsibility' + (tag ? ' (' + esc(tag) + ')' : ''), n0(incr), '']);
-            if (boost > 0 || fx.newKey !== fx.oldKey) fixRows.push([null, '+ Boosting (fitment in the revised scale)', n0(boost), '']);
-            fixRows.push([null, '<b>Total</b>', n0(fx.newBasic), '']);
+            r2 = [['(i) Basic Pay', n0(fx.oldBasic), ''], ['(ii) Personal Pay', '-', '']];
+            if (incr > 0) r2.push(['+ One Addl incr for Higher Responsibility', n0(incr), tag ? 'Addl incr for ' + esc(tag) : '']);
+            if (boost > 0 || fx.newKey !== fx.oldKey) r2.push(['+ Boosting', n0(boost), '']);
+            r2.push(['<b>' + n0(fx.newBasic) + '</b>', '', '']);
+            r2[r2.length - 1] = ['', n0(fx.newBasic), ''];
         }
-        const hist = rows.slice(0, i + 1).slice(-10).map(r => '<tr><td>' + dot(r.date) + '</td><td>' + esc(r.basicDisplay) + '</td><td class="t">' + esc(lbl(r)) + '</td></tr>').join('');
-        return page(
-            '<div class="fxf-title">ANNEXURE VIII</div>' +
-            '<div class="fxf-sub">Form of Fixation of Initial Pay in the Revised Scale under Memorandum 25-S.E.(B) Dated 12.02.99</div>' +
-            kv([
-                [1, 'Name of the Institution', esc(ctx.school)],
-                [2, 'Name and Designation of Employee', nameCell(ctx, fx.kind)],
-                [3, 'Date from which he/she elects to come under the revised Scale of Pay', ''],
-                [null, '(a) in substantive post', dot(row.date), 's'],
-                [null, '(b) in officiating/temporary post', 'N.A.', 's'],
-                [4, 'Existing Scale of Pay (a) in substantive post', esc(ropa98ScaleLabel(fx.oldKey))],
-                [5, 'Revised Scale of Pay (a) in substantive post', esc(ropa98ScaleLabel(fx.newKey))],
-                [6, 'Special Pay, if any, in the existing Scale of pay', 'N.A.'],
-                [7, 'Existing Emoluments as defined under rule 3', ''],
-                [null, '(i) Basic Pay in the existing scale including stagnation increment, if any', n0(fx.oldBasic), 's'],
-                [null, '(ii) D.A. / (iii) Special Pay / (iv) Interim Relief / (v) 40% of Basic Pay', '-', 's'],
-                [null, '<b>TOTAL</b>', n0(fx.oldBasic), 's'],
-                [8, 'Pay fixed in the revised scale of Pay (Vide rule 7)', '']
-            ].concat(fixRows.map(r => [null, r[1], r[2], 's'])).concat([
-                [9, 'Date of effect', dot(row.date)],
-                [10, 'Date of next increment', dni ? dot(dni) : '-']
-            ])) +
-            '<div class="fxf-cap2">PAY STRUCTURE (ROPA-98)</div>' +
-            '<table class="fxf-grid"><thead><tr><th style="width:20%">Pay On</th><th style="width:20%">Basic Pay</th><th>Remarks</th></tr></thead><tbody>' + hist + '</tbody></table>' +
-            '<div class="fxf-sign"><div>Signature of the Head of the Institution /<br>Secretary / Administrator</div><div>Signature of Checking Authority<br>(District Inspector of Schools (SE), ' + esc(ctx.district) + ')</div></div>' +
-            '<div class="fxf-office">' +
-            '<table style="width:100%;border-collapse:collapse"><tr><td>On the basis of declaration on option exercised by the employee the Basic Pay provisionally fixed at Rs. <b>' + n0(fx.newBasic) + '/-</b> on <b>' + dot(row.date) + '</b> in the Scale of Pay <b>' + esc(ropa98ScaleLabel(fx.newKey)) + '</b> in terms of G.O. No.-25-SE (B) dated 12.02.1999.<br>The Date of next increment: <b>' + (dni ? dot(dni) : '-') + '</b></td></tr></table></div>'
-        );
+        const t2 = '<table class="fxf-emol">' + hdr + '<tbody>' +
+            '<tr><td class="t" style="height:9mm"></td>' + D + '<td></td></tr>' +
+            '<tr><td class="t"><b>8</b>&nbsp; Pay fixed in the revised scale of Pay<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Vide rule ............................. 7)</td>' + D + '<td></td></tr>' +
+            r2.map((x, k) => '<tr><td class="t"' + (k === r2.length - 1 ? ' style="text-align:right"' : '') + '>' + x[0] + '</td>' + (k === r2.length - 1 ? '<td class="r"><b>' + x[1] + '</b></td><td>-</td><td class="r">-</td><td>-</td>' : (x[1] === '-' ? amt(null) : amt(parseInt(String(x[1]).replace(/,/g, ''), 10)))) + '<td class="t" style="font-size:8pt">' + x[2] + '</td></tr>').join('') +
+            '</tbody></table>';
+        const p2 = t2 +
+            axTable([axRow(9, 'Date of effect', slash(row.date)), axRow(10, 'Date of next increment', dni ? slash(dni) : '-')]) +
+            '<div class="fxf-sign98"><div>Signature of the Head of the Institution<br>Secretary / Administrator</div></div>' +
+            '<div style="margin-top:4mm;font-size:9.5pt">Name of the Institution&nbsp;&nbsp;&nbsp;<b>' + esc(ctx.school) + '</b></div>' +
+            '<div style="text-align:center;margin-top:6mm;border-bottom:1.5px solid #000;padding-bottom:1mm;font-size:9.5pt">For use in the District Inspector of Schools/<br>District School Board/Council</div>' +
+            '<div style="margin-top:5mm;font-size:9.5pt">Checked and Found Correct<br>----------------------------------------<br>Not Checked</div>' +
+            '<div class="fxf-prov"><div class="pl">On the basis of declaration on option exercised by the employee the Basic Pay Provisionally fixed at Rs. <b>' + n0(fx.newBasic) + '/-</b> on <b>' + dot(row.date) + '</b> in the Scale of Pay Rs. <b>' + esc(scaleFull98(fx.newKey).replace(/^(\d+)-.*-(\d+)$/, '$1 to $2')) + '</b> in terms of G.O. No.-25-SE (B) dated 12.02.1999.<br>The Date of next increment:- <b>' + (dni ? dot(dni) : '-') + '</b><div class="di">District Inspector of Schools (SE)<br>' + esc(ctx.district) + '</div></div>' +
+            '<div class="pr"><div class="sigl">Signature of Checking Authority</div><div style="margin-top:6mm">Designation</div><div style="margin-top:6mm">Date</div></div></div>';
+        return page(head + top + t1) + page(p2);
     }
 
-    /* ---------------- ROPA-09: Annexure-III ---------------- */
-    const ANX09_HEAD = '<div class="fxf-title">Annexure-III</div>' +
-        '<div class="fxf-sub" style="font-weight:normal;text-decoration:none;">Form for Fixation of Initial pay in the revised pay structure for :- Teachers and Non-Teaching Staff of Government Sponsored or aided Junior High / High / Higher Secondary Schools upto Class XII standard</div>' +
-        '<div class="fxf-rule">(Revision of Pay and Allowance) Rules, 2009</div>';
+    /* ---------------- ROPA-09: Annexure-III (as in the vetted form) ---------------- */
+    const ANX09_HEAD = '<div class="annex-title">Annexure-III</div>' +
+        '<div class="annex-desc"><p style="text-align:center;font-weight:bold;font-style:italic;">Form for Fixation of Initial pay in the revised pay structure for :-</p>' +
+        '<p>1.Teachers and Non-Teaching Staff of :-</p>' +
+        '<p>a)Government Sponsored or aided Primary Schools/Junior Basic Schools (Including pre Basic Schools)</p>' +
+        '<p>b)Government Sponsored or aided Junior High/High/Higher SecondarySchools upto Class XII standard.</p>' +
+        '<p>c)Government Sponsored or aided Training Institute for primary Teachers.</p>' +
+        '<p>2.Employees of the District School Board ,Darjeeling (Hill Areas)/District Primary School Councils/ Siliguri Sib-Divisional School Council.</p>' +
+        '<p>3.Employees of the West Bengal Board Primary Education.</p></div>' +
+        '<div class="annex-rule">(Revision of Pay and Allowance) Rules,2009</div>';
     const pbTxt = (gp, agp) => { const pb = (pbMap09[gp] || 'PB-4:9000-40500').split(':'); return pb[0] + ' - Rs.' + pb[1] + '/- + Rs.' + n0(gp) + '/-[G.PAY]' + (agp ? ' + AGP-Rs.' + agp + '/-' : ''); };
     const gpTxt = (gp, agp) => 'G.PAY-Rs.' + n0(gp) + '/-' + (agp ? '+AGP-Rs.' + agp + '/-' : '');
+    // Sl.No.7 value is printed centred on two lines in the vetted form
+    const pbTwoLine = (gp, agp) => { const pb = (pbMap09[gp] || 'PB-4:9000-40500').split(':'); return '<div style="text-align:center">' + pb[0] + ' - Rs.' + pb[1] + '/- +<br>' + (agp ? 'G.PAY-Rs.' + n0(gp) + '/-+AGP-Rs.' + agp + '/-' : 'Rs.' + n0(gp) + '/-[G.PAY]') + '</div>'; };
+    const pbOne = (gp, agp) => { const pb = (pbMap09[gp] || 'PB-4:9000-40500').split(':'); return pb[0] + ' - Rs.' + pb[1] + '/-' + (agp ? ' +G.PAY-Rs.' + n0(gp) + '/-' : ' + Rs.' + n0(gp) + '/-[G.PAY]') + (agp ? ' +AGP-Rs.' + agp + '/-' : ''); };
     function structure09(rows, upto) {
         const body = rows.slice(0, upto + 1).slice(-16).map(r => {
             const agp = r.snapAgp || 0, gp = r.snapGp - agp;
             return '<tr><td>' + dot(r.date) + '</td><td>' + n0(r.snapBandPay) + '</td><td>' + n0(gp) + (agp ? '+' + agp : '') + '</td><td>' + n0(r.snapBandPay + r.snapGp) + '</td><td class="t">' + esc(lbl(r)) + '</td></tr>';
         }).join('');
-        return '<div class="fxf-cap2">PAY STRUCTURE (ROPA-09)</div><table class="fxf-grid"><thead><tr><th>Pay On</th><th>Pay in Band</th><th>Grade Pay</th><th>Basic Pay</th><th>Remarks</th></tr></thead><tbody>' + body + '</tbody></table>';
+        return '<div class="fxf-cap2">PAY STRUCTURE</div><table class="fxf-grid" style="width:75%;margin-left:auto"><thead><tr><th>Pay On</th><th>Pay in Band</th><th>Grade Pay</th><th>Basic Pay</th><th>Remarks</th></tr></thead><tbody>' + body + '</tbody></table>';
     }
     function tail09(ctx, row, dni) {
         const agp = row.snapAgp || 0, gp = row.snapGp - agp;
-        return '<div class="fxf-sign"><div>Signature of Head of the Institution /<br>Administrator / President</div><div>District Inspector of Schools<br>(Secondary Education), ' + esc(ctx.district) + '</div></div>' +
-            '<div class="fxf-office"><table style="width:100%;border-collapse:collapse"><tr><td>Pay provisionally fixed at Rs. <b>' + n0(row.snapBandPay + row.snapGp) + '/-</b> on <b>' + dot(row.date) + '</b> including Grade Pay Rs. <b>' + n0(gp) + (agp ? ' + AGP Rs.' + agp : '') + '/-</b> under the Pay Band Scale Rs. 9000-40500/- in terms of G.O. No. 46-SE(B) dated 27.2.09 &amp; G.O. No. 181-SE(B) dated 8.10.09.<br>Date of next increment: <b>' + (dni ? dot(dni) : '-') + '</b></td></tr></table></div>';
+        return '<div class="fxf-box"><div class="pl">Pay provisionally fixed at<br>Rs. <b>' + n0(row.snapBandPay + row.snapGp) + '/-</b> on <b>' + dot(row.date) + '</b><br>including Grade Pay Rs. <b>' + n0(gp) + (agp ? ' + AGP Rs.' + agp : '') + '/-</b><br>under the Pay Band Scale Rs. <b>9000/-&nbsp;&ndash;&nbsp;40,500/-</b> in terms of G.O. NO. 46-SE(B) dated 27.2.09 &amp; G.O. NO. 181-SE(B) dated 8.10.09.<br>Date of next increment .......<b>' + (dni ? dot(dni) : '-') + '</b>.' +
+            '<div class="di">District Inspector of Schools<br>(Secondary Education) ' + esc(ctx.district) + '</div></div>' +
+            '<div class="pr"><div class="sigl">Signature of Head of the Institution /Administrator/President</div></div></div>';
+    }
+    function ax09Rows(o) {
+        return axTable([
+            axRow(1, 'Name of the Department and Office', esc(o.school)),
+            axRow(2, 'Name and Designation of the Employee', o.nameCell),
+            axRow(3, 'Status (<b>Substantive / Officiating</b>)', esc(o.status)),
+            axRow(4, 'Existing Scale of Pay', '', { gap: true }),
+            axRow('', '(a) In Substantive Post', o.scaleA, { sub: 1, gap: false }),
+            axRow('', '(b) In Officiating Post / Temporary Post', 'NA', { sub: 1, gap: false }),
+            axRow(5, o.l5, o.v5),
+            axRow(6, 'Pay after multiplication by a Factor 1.86 and rounded off to next multiple of 10.', o.v6),
+            axRow(7, 'Revised Pay Band and Grade Pay corresponding to existing Scale (as shown at Sl.No.4 above)', o.v7),
+            axRow(8, 'Pay in the Revised Pay Band /Scale in which pay is to be fixed', o.v8),
+            axRow(9, 'Grade Pay to be applied in terms of West Bengal Services (Revision of Pay and allowance) Rules , 2009', o.v9),
+            axRow(10, 'Revised Basic Pay( Sl.No.8+Sl.No.9)', o.v10),
+            axRow(11, 'Date of effect', o.v11),
+            axRow(12, 'Date of Next Increment', o.v12)
+        ]);
     }
     function page09(row, i, rows, ctx) {
         const fx = row.fx;
@@ -6501,33 +6580,23 @@ table.fxf-grid td.t{text-align:left}
         const info = fx.fit98 || fx.r98rev;
         let scaleA, basic5, mult6;
         if (info) {
-            scaleA = esc(ropa98ScaleLabel(info.scaleKey));
+            scaleA = esc(scaleFull98(info.scaleKey));
             basic5 = R2(info.b98) + '<br><span style="font-weight:normal;font-size:8.5pt">[ROPA-1998 basic pay as on ' + dot(row.date) + (fx.isRevert ? ', AHM / HM benefit deducted' : ', after promotion benefit') + ']</span>';
             mult6 = R2(ceilToNext10(info.b98 * ROPA98_TO_09_FACTOR));
         } else {
-            scaleA = esc(pbTxt(exGp, exAgp));
+            scaleA = esc(pbOne(exGp, exAgp));
             basic5 = R2(fx.existingBand + fx.existingGp) + '<br><span style="font-weight:normal;font-size:8.5pt">[PAY IN PAY BAND-Rs.' + fx.existingBand + ' +G.PAY-Rs.' + exGp + (exAgp ? ' +AGP-Rs.' + exAgp : '') + ']</span>';
             mult6 = 'NA';
         }
         const dni = dniOf(rows, i, row);
         const note = fx.bgNote != null ? '<div class="fxf-note">Pay first re-fitted as A.T. (AHM stage ignored): Rs. ' + n0(fx.bgNote) + '; the fixation above is on that pay.</div>' : '';
         const incrTxt = (!info && fx.incAmt > 0) ? '<div class="fxf-note">Pay in the existing Pay Band Rs.' + n0(fx.existingBand) + ' + one additional increment Rs.' + n0(fx.incAmt) + ' = Rs.' + n0(row.snapBandPay) + (fx.existingGp !== row.snapGp ? '; Grade Pay Rs.' + n0(exGp) + ' &rarr; Rs.' + n0(newGp) + (newAgp ? ' + AGP Rs.' + newAgp : '') : '') + '.</div>' : '';
-        return page(ANX09_HEAD + kv([
-            [1, 'Name of the Department and Office', esc(ctx.school)],
-            [2, 'Name and Designation of the Employee', nameCell(ctx, fx.kind)],
-            [3, 'Status (<b>Substantive / Officiating</b>)', esc(ctx.status)],
-            [4, 'Existing Scale of Pay', ''],
-            [null, '(a) In Substantive Post', scaleA, 's'],
-            [null, '(b) In Officiating Post / Temporary Post', 'NA', 's'],
-            [5, 'Existing Basic Pay as on ' + dot(row.date) + ' or on the date of Option', basic5],
-            [6, 'Pay after multiplication by a Factor 1.86 and rounded off to next multiple of 10.', mult6],
-            [7, 'Revised Pay Band and Grade Pay corresponding to existing Scale (as shown at Sl.No.4 above)', esc(pbTxt(newGp, newAgp))],
-            [8, 'Pay in the Revised Pay Band /Scale in which pay is to be fixed', R2(row.snapBandPay)],
-            [9, 'Grade Pay to be applied in terms of West Bengal Services (Revision of Pay and allowance) Rules, 2009', gpTxt(newGp, newAgp)],
-            [10, 'Revised Basic Pay (Sl.No.8+Sl.No.9)', R2(row.snapBandPay + row.snapGp)],
-            [11, 'Date of effect', dot(row.date)],
-            [12, 'Date of Next Increment', dni ? dot(dni) : '-']
-        ]) + note + incrTxt + structure09(rows, i) + tail09(ctx, row, dni));
+        return page(ANX09_HEAD + ax09Rows({
+            school: ctx.school, nameCell: nameCell(ctx, fx.kind), status: ctx.status, scaleA: scaleA,
+            l5: 'Existing Basic Pay as on ' + dot(row.date) + '<br>or on The date of Option......................', v5: basic5, v6: mult6,
+            v7: pbTwoLine(newGp, newAgp), v8: R2(row.snapBandPay), v9: gpTxt(newGp, newAgp),
+            v10: R2(row.snapBandPay + row.snapGp), v11: dot(row.date), v12: dni ? dot(dni) : '-'
+        }) + note + incrTxt + structure09(rows, i) + tail09(ctx, row, dni));
     }
     function page09Initial(ax, rows, ctx) {
         const gp = ax.ropa09Gp, agp = ax.ropa09Agp || 0, band = ax.ropa09BandPay;
@@ -6536,55 +6605,46 @@ table.fxf-grid td.t{text-align:left}
         const row0 = rows[0] || { date: ax.ropa09OptionDate, label: 'DOA', snapBandPay: band, snapGp: gp + agp, snapAgp: agp };
         const dni = dniOf(rows, 0, row0);
         const minNote = (has98 && ax.ropa98MinEntryApplied) ? '<div class="fxf-note">Pay in Pay Band stepped up to the minimum entry pay Rs.' + n0(ax.ropa98MinBandForGp) + ' prescribed for Grade Pay Rs.' + n0(gp) + '.</div>' : '';
-        return page(ANX09_HEAD + kv([
-            [1, 'Name of the Department and Office', esc(ctx.school)],
-            [2, 'Name and Designation of the Employee', nameCell(ctx, kind)],
-            [3, 'Status (<b>Substantive / Officiating</b>)', esc(ctx.status)],
-            [4, 'Existing Scale of Pay', ''],
-            [null, '(a) In Substantive Post', has98 ? esc(ropa98ScaleLabel(ax.ropa98AsOfScaleKey)) : 'N.A.', 's'],
-            [null, '(b) In Officiating Post / Temporary Post', 'NA', 's'],
-            [5, 'Existing Basic Pay as on ' + dot(ax.ropa09OptionDate) + ' (on the date of Option)', has98 ? R2(ax.ropa98AsOfBasic) : 'N.A.'],
-            [6, 'Pay after multiplication by a Factor 1.86 and rounded off to next multiple of 10.', has98 ? R2(ax.multipliedBand) : 'N.A.'],
-            [7, 'Revised Pay Band and Grade Pay corresponding to existing Scale (as shown at Sl.No.4 above)', esc(pbTxt(gp, agp))],
-            [8, 'Pay in the Revised Pay Band /Scale in which pay is to be fixed', R2(band)],
-            [9, 'Grade Pay to be applied in terms of West Bengal Services (Revision of Pay and allowance) Rules, 2009', gpTxt(gp, agp)],
-            [10, 'Revised Basic Pay (Sl.No.8+Sl.No.9)', R2(band + gp + agp)],
-            [11, 'Date of effect', dot(ax.ropa09OptionDate)],
-            [12, 'Date of Next Increment', dni ? dot(dni) : '-']
-        ]) + minNote + structure09(rows, 0) + tail09(ctx, row0, dni));
+        return page(ANX09_HEAD + ax09Rows({
+            school: ctx.school, nameCell: nameCell(ctx, kind), status: ctx.status, scaleA: has98 ? esc(scaleFull98(ax.ropa98AsOfScaleKey)) : 'N.A.',
+            l5: 'Existing Basic Pay as on as on ' + dot(ax.ropa09OptionDate) + '<br>( on The date of Option)', v5: has98 ? R2(ax.ropa98AsOfBasic) : 'N.A.', v6: has98 ? R2(ax.multipliedBand) : 'N.A.',
+            v7: pbTwoLine(gp, agp), v8: R2(band), v9: gpTxt(gp, agp), v10: R2(band + gp + agp), v11: dot(ax.ropa09OptionDate), v12: dni ? dot(dni) : '-'
+        }) + minNote + tail09(ctx, row0, dni));
     }
 
-    /* ---------------- ROPA-19 ---------------- */
+    /* ---------------- ROPA-19: Annexure - III [see para 7 (1)] (as in the vetted form) ---------------- */
+    const ANX19_HEAD = '<div class="annex-title">Annexure - III</div><div class="annex-seepara">[see para 7 (1)]</div>' +
+        '<div class="annex-memo">Form for fixation of initial pay in the revised pay structure under memorandum of West Bengal Recognized Non Govt. Aided &amp; Govt. Sponsored Educational Institutions Revision of Pay and Allowances, 2019.</div>';
+    function tail19(ctx, basic, level, date, dni) {
+        return '<div class="fxf-box"><div class="pl"></div><div class="pr"><div class="sigl">Signature of the Head of the Institution with Designation</div></div></div>' +
+            '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3">Pay provisionally Fixed at Rs. <b>' + n0(basic) + '/-</b><br>on <b>' + dot(date) + '</b> in the level <b>' + level + '</b> of the Pay Matrix<br>in terms of Memo No-437-SE(P&amp;B) / SL / 5S-408 / 19<br>Dated 13.12.2019.<br>Date of next increment:- <b>' + (dni ? dot(dni) : '-') + '</b>.' +
+            '<div class="di">District Inspector of Schools (SE), ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+    }
     function page19Generic(row, i, rows, ctx) {
         const dni = dniOf(rows, i, row);
-        let items, kind, title;
+        let items, kind, level, basic;
         if (row.fx19) {
-            const f = row.fx19; kind = f.kind;
-            title = 'REVERSION / RECAST AS A.T.';
+            const f = row.fx19; kind = f.kind; level = f.newLevel; basic = f.newBasic;
             items = [
-                [5, 'Existing Basic Pay as per ROPA\'19 in the Pay Matrix as on ' + dot(row.date), 'Rs. ' + n0(f.oldBasic) + ' (Level ' + f.oldLevel + ')'],
-                [6, 'Pay re-fixed as A.T. in Level <b>' + f.newLevel + '</b>' + (f.noProtect ? ' (AHM / HM benefit deducted - no protection)' : ' (pay drawn protected, if higher)'), 'Rs. ' + n0(f.newBasic) + ' (Cell ' + esc(f.cell) + ')']
+                axRow(5, 'Basic Pay (Band Pay + Grade Pay) in the existing pay structure as on ' + dot(row.date), 'Rs. ' + n0(f.oldBasic) + ' (Level ' + f.oldLevel + ')', { colon: 1 }),
+                axRow(6, 'Pay re-fixed as A.T. in Level <b>' + f.newLevel + '</b>' + (f.noProtect ? ' (AHM / HM benefit deducted - no protection)' : ' (pay drawn protected, if higher)'), 'Rs. ' + n0(f.newBasic) + ' (Cell ' + esc(f.cell) + ')', { colon: 1 })
             ];
         } else {
-            const pd = row.promoDetail; kind = pd.kind;
-            title = (pd.evType === 'highscale' ? 'HIGHER SCALE' : 'PROMOTION');
-            items = [
-                [5, 'Existing Basic Pay as per ROPA\'19 Rs. ' + n0(pd.existingBasic) + ' (Level ' + pd.oldLevel + ', Cell ' + esc(pd.existingCellLabel) + ') as on ' + dot(pd.asOnDate), 'Rs. ' + n0(pd.existingBasic)]
-            ];
-            if (pd.oneStepAdded > 0) items.push(['5.a', 'Add: One increment in the same pay level', 'Rs. ' + n0(pd.oneStepAdded)]);
-            items.push([6, 'Basic Pay fixed in the pay matrix, Level <b>' + pd.targetLevel + '</b>, Cell <b>' + esc(pd.fittedCell) + '</b>', 'Rs. ' + n0(pd.fittedValue)]);
+            const pd = row.promoDetail; kind = pd.kind; level = pd.targetLevel; basic = pd.fittedValue;
+            items = [axRow(5, 'Basic Pay in the existing pay structure as on ' + dot(pd.asOnDate) + ' (Level ' + pd.oldLevel + ', Cell ' + esc(pd.existingCellLabel) + ')', 'Rs. ' + n0(pd.existingBasic), { colon: 1 })];
+            if (pd.oneStepAdded > 0) items.push(axRow('5.a', 'Add: One increment in the same pay level', 'Rs. ' + n0(pd.oneStepAdded), { colon: 1 }));
+            items.push(axRow(6, 'Applicable Level in the Pay Matrix: Level <b>' + pd.targetLevel + '</b>, Cell <b>' + esc(pd.fittedCell) + '</b>', 'LEVEL-' + pd.targetLevel, { colon: 1 }));
+            items.push(axRow(7, 'Revised Basic Pay (as per Pay Matrix cell above)', 'Rs. ' + n0(pd.fittedValue), { colon: 1 }));
         }
-        return page('<div class="fxf-title">FORM FOR FIXATION OF PAY ON ' + title + ' AS PER ROPA\'19</div>' +
-            '<div class="fxf-sub">West Bengal Recognized Non-Government Aided &amp; Govt. Sponsored Educational Institutions Revision of Pay and Allowances, 2019</div>' +
-            kv([
-                [1, 'Name of the Institute', esc(ctx.school)],
-                [2, 'Name and Designation of the Employee', nameCell(ctx, kind)],
-                [3, 'Status (Substantive / Officiating)', esc(ctx.status)]
-            ].concat(items).concat([
-                [7, 'Date of effect', dot(row.date)],
-                [8, 'Date of next Annual increment', dni ? dot(dni) : '-']
-            ])) +
-            '<div class="fxf-sign"><div>Signature of the Head of the Institution<br>with designation</div><div>District Inspector of Schools (SE),<br>' + esc(ctx.district) + '</div></div>');
+        const top = axTable([
+            axRow('1.', 'Name of the Institute/Office', esc(ctx.school), { colon: 1 }),
+            axRow('2.', 'Name and Designation of the employee', nameCell(ctx, kind), { colon: 1 }),
+            axRow('3.', 'Status (Substantive/Officiating)', esc(ctx.status), { colon: 1 })
+        ].concat(items).concat([
+            axRow('', 'Date of effect', dot(row.date), { colon: 1 }),
+            axRow('', 'Date of Next Annual Increment', dni ? dot(dni) : '-', { colon: 1 })
+        ]));
+        return page(ANX19_HEAD + top + tail19(ctx, basic, level, row.date, dni));
     }
     function page19(row, i, rows, ctx) {
         const pd = row.promoDetail;
@@ -6600,7 +6660,20 @@ table.fxf-grid td.t{text-align:left}
     function initialClone(id, check) {
         const el = document.getElementById(id);
         if (!el || (check && el.style.display === 'none')) return null;
-        return page(el.innerHTML);
+        const T = i => { const e = document.getElementById(i); return e ? e.textContent.trim() : ''; };
+        const ctx = ctxNow();
+        let tail = '';
+        if (id === 'annexRopa98Page') {
+            tail = '<div style="text-align:center;margin-top:5mm;border-bottom:1.5px solid #000;padding-bottom:1mm;font-size:9.5pt">For use in the District Inspector of Schools/<br>District School Board/Council</div>' +
+                '<div style="margin-top:3mm;font-size:9.5pt">Checked and Found Correct<br>----------------------------------------<br>Not Checked</div>' +
+                '<div class="fxf-prov"><div class="pl">On the basis of declaration on option exercised by the employee the Basic Pay Provisionally fixed at Rs. <b>' + esc(T('ax98FixedTotal')) + '</b> on <b>' + esc(T('ax98EffectDate')) + '</b> in the Scale of Pay Rs. <b>' + esc(T('ax98RevScaleA')) + '</b> in terms of G.O. No.-25-SE (B) dated 12.02.1999.<br>The Date of next increment:- <b>' + esc(T('ax98NextIncrement')) + '</b><div class="di">District Inspector of Schools (SE)<br>' + esc(ctx.district) + '</div></div>' +
+                '<div class="pr"><div class="sigl">Signature of Checking Authority</div><div style="margin-top:6mm">Designation</div><div style="margin-top:6mm">Date</div></div></div>';
+        } else if (id === 'annexRopa19Page') {
+            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3">Pay provisionally Fixed at Rs. <b>' + esc(T('ax19RevisedBasic').replace(/^Rs\.?\s*/i, '')) + '/-</b><br>on <b>' + esc(window.CAS_axData && window.CAS_axData.ropa19OptionDate ? dot(window.CAS_axData.ropa19OptionDate) : '') + '</b> in the level <b>' + esc(T('ax19Level').replace(/^LEVEL-0?/, '')) + '</b> of the Pay Matrix<br>in terms of Memo No-437-SE(P&amp;B) / SL / 5S-408 / 19<br>Dated 13.12.2019.<br>Date of next increment:- <b>' + esc((function(){ const c = document.querySelector('#ax19IncrementBody tr td'); const t = c ? c.textContent.trim() : ''; return /^\d\d-\d\d-\d{4}$/.test(t) ? t.replace(/-/g, '.') : T('ax19NextIncrement'); })()) + '</b>.<div class="di">District Inspector of Schools (SE), ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+        } else if (id === 'annexRopa09Page') {
+            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl">Pay provisionally fixed at<br>Rs. <b>' + esc(T('ax09RevisedBasic').replace(/^Rs\.?\s*/i, '')) + '/-</b> on <b>' + esc(T('ax09EffectDate')) + '</b><br>under the Pay Band Scale Rs. <b>9000/- &ndash; 40,500/-</b> in terms of G.O. NO. 46-SE(B) dated 27.2.09 &amp; G.O. NO. 181-SE(B) dated 8.10.09.<br>Date of next increment .......<b>' + esc(T('ax09NextIncrement')) + '</b>.<div class="di">District Inspector of Schools<br>(Secondary Education) ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+        }
+        return page(el.innerHTML + tail);
     }
     window.generateAllFixationForms = function () {
         const box = document.getElementById('allFixFormsPreview');
