@@ -1946,7 +1946,7 @@
         const optionMonth = optionDate.getMonth();
 
         const chain98 = prepPromoChain(promos, scaleKey, doj, optionDate, endDate, '98');
-        if (!_isBg) chain98.forEach(p => { if (p.bgPromos) { const bg = computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
+        if (!_isBg) chain98.forEach(p => { if (p.bgPromos) { const bg = computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
         const promotionActive98 = chain98.length > 0;
         chain98.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap, sameScaleIncr98: p.sameScaleIncr98 }));
 
@@ -1979,7 +1979,9 @@
 
         let lwpConsumedSoFar98 = 0;
 
-        const cuts98 = [optionDate, ...chain98.filter(p => !p.designationOnly && !p.isRevert).map(p => p.date)];
+        const cutEv98 = chain98.filter(p => !p.designationOnly);   // reversions also start a new increment segment (AT cycle)
+        const cuts98 = [optionDate, ...cutEv98.map(p => p.date)];
+        const cutRevert98 = [null, ...cutEv98.map(p => p.isRevert ? p : null)];
         for (let k = 0; k < cuts98.length; k++) {
             const segStart = cuts98[k];
             const segEnd = (k + 1 < cuts98.length) ? cuts98[k + 1] : null;
@@ -2002,8 +2004,16 @@
             } else {
                 // Annual increments anchored on the month of this segment's start
                 // (option month for the first segment; promotion month after every promotion - ROPA-98 rule)
-                const anchorMonth = segStart.getMonth();
+                let anchorMonth = segStart.getMonth();
                 let yr = segStart.getFullYear() + 1;
+                const rv98 = cutRevert98[k];
+                if (rv98) {
+                    // Reverted to AT: increment date follows the AT's own cycle (option month, or month of the last
+                    // Higher-Scale event the AT would have had), NOT the promoted post's cycle.
+                    const atEv98 = (rv98.bgPromos || []).filter(x => x.kind === 'highscale' && x.date <= rv98.date && x.date > optionDate).sort((a, b) => b.date - a.date)[0];
+                    anchorMonth = (atEv98 ? atEv98.date : optionDate).getMonth();
+                    yr = segStart.getFullYear();
+                }
                 const lastYr = (segEnd ? segEnd.getFullYear() : endDate.getFullYear()) + 1;
                 while (yr <= lastYr) {
                     let normalCycleDate = new Date(yr, anchorMonth, 1);
@@ -2142,7 +2152,7 @@
         const lwpEntries09 = getLwpEffectEntries();
 
         const chain09 = prepPromoChain(promos, gpInput, doj, optionDate, endDate, '09');
-        if (!_isBg) chain09.forEach(p => { if (p.bgPromos) { const bg = computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
+        if (!_isBg) chain09.forEach(p => { if (p.bgPromos) { const bg = computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
         chain09.forEach(p => {
             pushEvent(p.date, {
                 label: p.label,
@@ -2186,7 +2196,9 @@
         if (isExcludedFrom18Y) milestoneDefs09 = milestoneDefs09.filter(m => m.name !== "18 YEARS");
 
         let lwpConsumedSoFar09 = 0;
-        const cuts09 = [optionDate, ...chain09.filter(p => !p.designationOnly && !p.isRevert).map(p => p.date)];
+        const cutEv09 = chain09.filter(p => !p.designationOnly);   // reversions also start a new segment (AT cycle)
+        const cuts09 = [optionDate, ...cutEv09.map(p => p.date)];
+        const cutRevert09 = [null, ...cutEv09.map(p => p.isRevert)];
         for (let k = 0; k < cuts09.length; k++) {
             const segStart = cuts09[k];
             const segEnd = (k + 1 < cuts09.length) ? cuts09[k + 1] : null;
@@ -2194,6 +2206,9 @@
             if (k === 0) {
                 const oDay = segStart.getDate(), oMon = segStart.getMonth();
                 if ((oMon === 0 && oDay >= 2) || (oMon > 0 && oMon < 5) || (oMon === 5 && oDay <= 30)) firstYr += 1;
+            } else if (cutRevert09[k]) {
+                // Reverted to AT: increment follows the AT's own 1st-July cycle (next 1st July on/after the reversion date)
+                firstYr = (segStart.getMonth() < 6 || (segStart.getMonth() === 6 && segStart.getDate() === 1)) ? segStart.getFullYear() : segStart.getFullYear() + 1;
             } else {
                 // After a promotion: 1-Jan promotion -> 01-Jul same year; otherwise 01-Jul of NEXT year
                 firstYr = (segStart.getMonth() === 0 && segStart.getDate() === 1) ? segStart.getFullYear() : segStart.getFullYear() + 1;
@@ -2428,7 +2443,7 @@
 
         const _carry09 = !!(document.getElementById('enableRopa09') && document.getElementById('enableRopa09').checked);
         const chain19 = prepPromoChain((promos || []).filter(p => !_carry09 || p.date > startDate), gpInput, doj, startDate, dor, '19');
-        if (!_isBg) chain19.forEach(p => { if (p.bgPromos) { const bg = computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
+        if (!_isBg) chain19.forEach(p => { if (p.bgPromos) { const bg = computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, p.bgPromos, true); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
         chain19.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap, exactPromotionDate: p.date }));
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
@@ -2448,7 +2463,9 @@
         if (isExcludedFrom18Y) milestoneDefs19 = milestoneDefs19.filter(m => m.name !== "18 YEARS");
 
         let lwpConsumedSoFar19 = 0;
-        const cuts19 = [startDate, ...chain19.filter(p => !p.designationOnly && !p.isRevert).map(p => p.date)];
+        const cutEv19 = chain19.filter(p => !p.designationOnly);   // reversions also start a new segment (AT cycle)
+        const cuts19 = [startDate, ...cutEv19.map(p => p.date)];
+        const cutRevert19 = [null, ...cutEv19.map(p => p.isRevert)];
         for (let k = 0; k < cuts19.length; k++) {
             const segStart = cuts19[k];
             const segEnd = (k + 1 < cuts19.length) ? cuts19[k + 1] : null;
@@ -2456,6 +2473,9 @@
             if (k === 0) {
                 const oDay = segStart.getDate(), oMon = segStart.getMonth();
                 if ((oMon === 0 && oDay >= 2) || (oMon > 0 && oMon < 5) || (oMon === 5 && oDay <= 30)) firstYr += 1;
+            } else if (cutRevert19[k]) {
+                // Reverted to AT: increment follows the AT's own 1st-July cycle (next 1st July on/after the reversion date)
+                firstYr = (segStart.getMonth() < 6 || (segStart.getMonth() === 6 && segStart.getDate() === 1)) ? segStart.getFullYear() : segStart.getFullYear() + 1;
             } else {
                 // After a promotion: 1-Jan promotion -> 01-Jul same year; otherwise 01-Jul of NEXT year
                 firstYr = (segStart.getMonth() === 0 && segStart.getDate() === 1) ? segStart.getFullYear() : segStart.getFullYear() + 1;
