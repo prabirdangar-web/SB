@@ -1662,7 +1662,7 @@
         else if (p.kind === 'hmhs') base = 'PROMOTION - HM (HIGHER SEC. SCHOOL)';
         else if (p.kind === 'hmjr') base = 'PROMOTION - HM (JR) AS AHM';
         else if (p.kind === 'revert') base = 'REVERSION TO AT';
-        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM BENEFIT DEDUCTED)';
+        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM / HM JR HIGH SCHOOL BENEFIT DEDUCTED)';
         if (p.agpOnly) return base + ' (AGP Rs.200 ADDED ONLY - INCREMENT DATE UNCHANGED)';
         return p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base;
     }
