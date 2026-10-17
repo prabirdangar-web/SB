@@ -1646,9 +1646,11 @@
     }
     function toggleRopa90Section() {
         const on = document.getElementById('enableRopa90').checked;
+        if (on) { const lad = ropa90Ladder(parseInt(document.getElementById('ropa90Scale').value, 10)); const cur = parseInt(document.getElementById('ropa90BasicPay').value, 10); if (lad.length && !lad.includes(cur)) ropa90SetInitialToMin(); }
         document.getElementById('ropa90Fields').style.display = on ? '' : 'none';
         document.getElementById('ropa90Section').style.display = on ? '' : 'none';
         updateRopa90Hint();
+        if (on) { try { ropa90Evaluate(); } catch (err) {} } else { const n = document.getElementById('ropa98FixNote'); if (n) n.style.display = 'none'; }
     }
     function updateRopa90Hint() {
         const dojV = (document.getElementById('doj') || {}).value;
@@ -1701,6 +1703,59 @@
             ? 'Note: Pay fixed in the revised scale was entered manually (Rs. ' + fix.fixed.toLocaleString('en-IN') + '); the emoluments above are shown for reference as per rule 7(1).'
             : 'Pay fixed at the stage next above the total of existing emoluments (rule 7(1)(ii)); next increment after completion of twelve months from the date of fixation (rule 8).';
     }
+
+
+    /* Evaluates the ROPA-1990 leg and (if ticked) auto-sets the ROPA-1998 initial pay by Rule 7.
+       Runs live whenever a related input changes, and again on "Generate Pay Tables". */
+    function ropa90Evaluate() {
+        const res = { rows: [], fix: null };
+        const note = document.getElementById('ropa98FixNote');
+        const hideNote = () => { if (note) note.style.display = 'none'; window.CAS_fix98 = null; };
+        if (!(document.getElementById('enableRopa90').checked && document.getElementById('enableRopa98').checked)) { hideNote(); return res; }
+        const dojV = document.getElementById('doj').value, o98 = document.getElementById('ropa98OptionDate').value;
+        const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
+        const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
+        if (!dojV || !o98 || isNaN(sc90) || isNaN(bp90)) { hideNote(); return res; }
+        const doj = new Date(dojV), o98d = new Date(o98);
+        const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
+        const dor = getDOR();
+        res.rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
+        if (!res.rows.length) { hideNote(); return res; }
+        const da90 = parseInt(document.getElementById('ropa90DA').value, 10) || 0;
+        const lastB = res.rows[res.rows.length - 1].snapBasicPay;
+        const f = computeRopa98Fixation(sc90, lastB, da90);
+        const auto = document.getElementById('ropa90AutoFix').checked;
+        if (auto) {
+            document.getElementById('ropa98Scale').value = String(sc90);
+            document.getElementById('ropa98BasicPay').value = f.fixed;
+        }
+        const usedPay = parseInt(document.getElementById('ropa98BasicPay').value, 10) || f.fixed;
+        window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: sc90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
+        res.fix = window.CAS_fix98;
+        if (note) {
+            note.style.display = '';
+            note.textContent = 'ROPA-1990 pay on ' + formatDate(end90) + ': Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]');
+        }
+        return res;
+    }
+    // Initial pay in ROPA-1990 = minimum of the chosen scale (editable afterwards)
+    function ropa90SetInitialToMin() {
+        const sc = parseInt(document.getElementById('ropa90Scale').value, 10);
+        const lad = ropa90Ladder(sc);
+        if (lad.length) document.getElementById('ropa90BasicPay').value = lad[0];
+    }
+    document.addEventListener('change', e => {
+        const id = e.target && e.target.id;
+        if (!id) return;
+        if (id === 'ropa90Scale') ropa90SetInitialToMin();
+        if (['ropa90Scale', 'ropa90BasicPay', 'ropa90DA', 'ropa90AutoFix', 'ropa98OptionDate', 'ropa98Scale', 'doj', 'enableRopa90', 'enableRopa98'].includes(id)) {
+            try { ropa90Evaluate(); } catch (err) { /* inputs incomplete */ }
+        }
+    });
+    document.addEventListener('input', e => {
+        const id = e.target && e.target.id;
+        if (id === 'ropa90BasicPay' || id === 'ropa90DA') { try { ropa90Evaluate(); } catch (err) {} }
+    });
 
     function computeRopa90Timeline(doj, scaleKey, basic, endDate) {
         const ladder = ropa90Ladder(scaleKey);
@@ -3045,33 +3100,8 @@
         let ropa98Rows = [];
         let ropa09Rows = [];
         // ---- ROPA-1990 leg (runs from joining up to the day before the ROPA-1998 date) ----
-        let ropa90Rows = [];
-        if (document.getElementById('enableRopa90').checked && enableRopa98) {
-            const o98 = document.getElementById('ropa98OptionDate').value;
-            const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
-            const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
-            if (o98 && !isNaN(sc90) && !isNaN(bp90)) {
-                const o98d = new Date(o98);
-                const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
-                ropa90Rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
-                if (ropa90Rows.length) {
-                    const da90 = parseInt(document.getElementById('ropa90DA').value, 10) || 0;
-                    const lastB = ropa90Rows[ropa90Rows.length - 1].snapBasicPay;
-                    const f = computeRopa98Fixation(sc90, lastB, da90);
-                    const auto = document.getElementById('ropa90AutoFix').checked;
-                    if (auto) {
-                        document.getElementById('ropa98Scale').value = String(sc90);
-                        document.getElementById('ropa98BasicPay').value = f.fixed;
-                    }
-                    const usedPay = parseInt(document.getElementById('ropa98BasicPay').value, 10) || f.fixed;
-                    window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: sc90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
-                    const note = document.getElementById('ropa98FixNote');
-                    note.style.display = '';
-                    note.textContent = 'Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal + ')' : '') + (auto ? '  [applied as ROPA-1998 initial pay]' : '  [not applied - manual pay in use]');
-                }
-            }
-        }
-        if (!ropa90Rows.length) { window.CAS_fix98 = null; const n = document.getElementById('ropa98FixNote'); if (n) n.style.display = 'none'; }
+        const ev90 = ropa90Evaluate();
+        let ropa90Rows = ev90.rows;
         window.CAS_ropa90Rows = ropa90Rows;
         let carryGp, carryBasic, carryLevel;
         let carryNote = "";
@@ -5249,6 +5279,7 @@ function applyDashboardState(data) {
 
     togglePromotionSection();
     toggleRopa09Section();
+    toggleRopa90Section();
     casToggleGovFields();
     toggleTransferUI();
     calculateDOR();
@@ -5364,6 +5395,7 @@ function newTeacherRecord() {
     casPriorSchoolSeq = 0;
     togglePromotionSection();
     toggleRopa09Section();
+    toggleRopa90Section();
     casToggleGovFields();
     toggleTransferUI();
     calculateDOR();
