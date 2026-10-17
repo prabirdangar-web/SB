@@ -1662,9 +1662,10 @@
         else if (p.kind === 'hmhs') base = 'PROMOTION - HM (HIGHER SEC. SCHOOL)';
         else if (p.kind === 'hmjr') base = 'PROMOTION - HM (JR) AS AHM';
         else if (p.kind === 'revert') base = 'REVERSION TO AT';
-        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM / HM JR HIGH SCHOOL BENEFIT DEDUCTED)';
-        if (p.agpOnly) return base + ' (AGP Rs.200 ADDED ONLY - INCREMENT DATE UNCHANGED)';
-        return p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base;
+        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM BENEFIT DEDUCTED)';
+        const fj = p.forcedJuly ? ' [W.E.F. 01-07-' + p.date.getFullYear() + ' - DATE FALLS 02-JAN TO 30-JUN]' : '';
+        if (p.agpOnly) return base + ' (AGP Rs.200 ADDED ONLY - INCREMENT DATE UNCHANGED)' + fj;
+        return (p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base) + fj;
     }
 
     function getPromotionEvents() {
@@ -1724,6 +1725,11 @@
             p.isRevert = (p.kind === 'revert' || p.kind === 'recast');
             p.noProtect = (p.kind === 'recast');
             p.designationOnly = !p.isRevert && !sameScaleIncr98 && ((ropa === '19' && agpKind) || (p.targetGp === eff));
+            // HM High -> HM Higher Secondary (ROPA-09 AGP-only / ROPA-19 designation-only): if the date falls between
+            // 02-Jan and 30-Jun it is forcibly taken as 01-July of that year.
+            if (((ropa === '09' && p.agpOnly) || (ropa === '19' && p.kind === 'hmhs' && p.designationOnly)) && isInPromoIncrWindow(p.date)) {
+                p.dateOrig = p.date; p.date = new Date(p.date.getFullYear(), 6, 1); p.forcedJuly = true;
+            }
             p.label = promoEventLabel(p);
             prevGp = (p.designationOnly || p.agpOnly) ? eff : p.targetGp;
             if (!p.designationOnly && !p.agpOnly) prevAgp = p.agp;
