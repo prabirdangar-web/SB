@@ -2628,7 +2628,27 @@
                 runningAgp = ev.agp || 0;
                 agpLabel = ev.agp || 0;
                 
-                if (ev.evType === 'promo') {
+                // Promotion / higher scale falling AFTER the 01-01-2006 option date but within the ROPA-1998 notional window
+                // (up to 31-03-2009): ROPA-98 pay is first fixed with the promotion benefit, and ROPA-09 pay is then the
+                // ROPA-98 basic x 1.86 (rounded up to next Rs.10) + Grade Pay - same method as the 01-01-2006 fixation.
+                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate)
+                    ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /PROMOTION|HIGHER SCALE/i.test(r.label) && r.snapBasicPay)
+                    : null;
+                if (r98fit) {
+                    const b98 = r98fit.snapBasicPay;
+                    const raw98 = b98 * ROPA98_TO_09_FACTOR;
+                    runningBandPay = ceilToNext10(raw98);
+                    runningBasicPay = runningBandPay + runningGp;
+                    incAmt = 0;
+                    ev._fit98 = true;
+                    slipBlockHTML = `
+                        <div class="slip-box">
+                            <div class="slip-row"><span class="slip-bold">1. ROPA-1998 basic pay as on ${formatDate(ev.date)} after promotion benefit (${ropa98ScaleLabel(r98fit.snapScaleKey)})</span><span class="slip-bold">Rs. ${b98.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>2. x fitment factor 1.86 = Rs. ${raw98.toFixed(2)} &rarr; rounded up to next Rs.10 (Pay Band)</span><span>Rs. ${runningBandPay.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>3. Grade Pay${ev.agp ? ' (GP Rs. ' + (runningGp - ev.agp).toLocaleString('en-IN') + ' + AGP Rs. ' + ev.agp.toLocaleString('en-IN') + ')' : ''}</span><span>Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">4. Pay Fixed w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                        </div>`;
+                } else if (ev.evType === 'promo') {
                     incAmt = calculate09Increment(runningBandPay, oldGp);
                     runningBandPay += incAmt;
                     runningBasicPay = runningBandPay + runningGp;
@@ -2694,7 +2714,7 @@
                         <div class="slip-row"><span>BY RECAST OF PAY AFTER DEDUCTING THE BENEFIT OF AHM HIGHER SEC SCHOOL i.e. Pay Fixed as AT</span></div>
                     </div>`;
             }
-            if (ev.isPromotion && !ev.designationOnly && !ev.agpOnly && !ev.isRevert && ev.evType === 'promo' && ['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind)) {
+            if (ev.isPromotion && !ev._fit98 && !ev.designationOnly && !ev.agpOnly && !ev.isRevert && ev.evType === 'promo' && ['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind)) {
                 const agpA = ev.agp || 0;
                 const newBaseGp = runningGp - agpA;
                 const isAhmStyle = (ev.kind === 'ahm' || ev.kind === 'hmjr');
@@ -3173,7 +3193,9 @@
             const ropa09OptionDate = new Date(ropa09OptionInput);
             const ropa09EndDate = dor < ROPA09_CUTOFF ? dor : ROPA09_CUTOFF;
 
+            window.__ropa98FitRows = (enableRopa98 && ropa09HasCarry) ? ropa98Rows : null;
             const result09 = computeRopa09Timeline(doj, ropa09OptionDate, ropa09Gp, ropa09BandPay, ropa09EndDate, promoChain);
+            window.__ropa98FitRows = null;
             ropa09Rows = result09.rows;
             appendCessationNoteToLastRow(ropa09Rows, ropa09EndDate);
 
