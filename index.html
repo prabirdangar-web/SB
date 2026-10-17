@@ -2397,10 +2397,13 @@
             if (ev.isHmAhmOptionIncrementRow) return 4;
             return 5;
         }
+        // HM appointed 02-Jan to 30-Jun: the fixation takes effect on 01-Jul (option date), so for ordering it
+        // sits on 01-Jul AFTER any 10 / 18 / 20-Year benefit (or annual increment) falling on that same day.
+        const sd = (e) => e.hmOptDate || e.date;
         events.sort((a, b) => {
-            let yA = a.date.getFullYear(), yB = b.date.getFullYear();
-            let mA = a.date.getMonth(), mB = b.date.getMonth();
-            let dA = a.date.getDate(), dB = b.date.getDate();
+            let yA = sd(a).getFullYear(), yB = sd(b).getFullYear();
+            let mA = sd(a).getMonth(), mB = sd(b).getMonth();
+            let dA = sd(a).getDate(), dB = sd(b).getDate();
             
             if (yA !== yB) return yA - yB;
             if (mA !== mB) return mA - mB;
@@ -3002,7 +3005,7 @@
         const _carry09 = !!(document.getElementById('enableRopa09') && document.getElementById('enableRopa09').checked);
         const chain19 = prepPromoChain((promos || []).filter(p => !_carry09 || p.date > startDate), gpInput, doj, startDate, dor, '19');
         if (!_isBg) chain19.forEach(p => { if (p.bgPromos) { const bg = computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, p.bgPromos, true); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
-        chain19.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap, exactPromotionDate: p.date }));
+        chain19.forEach(p => pushEvent(p.date, { hmOptDate: (!p.designationOnly && !p.isRevert && (levelMap19[p.targetGp] || 0) === 16 && isInPromoIncrWindow(p.date)) ? new Date(p.date.getFullYear(), 6, 1) : null, label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap, exactPromotionDate: p.date }));
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
         // 18-year milestone, not the joining-time GP: if a Promotion/Higher-Scale
