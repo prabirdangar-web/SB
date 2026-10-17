@@ -766,6 +766,31 @@
     </div>
     <div id="hmAhmFormPreview"></div>
 
+    <h4 style="margin:18px 0 6px;">Pay Structure Statement (for submission) - any staff, up to any date</h4>
+    <div class="grid-inputs" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px 15px;">
+        <div class="form-group"><label>Generate Pay Structure UP TO (blank = full service up to DOR)</label><input type="date" id="psfUpto"></div>
+        <div class="form-group"><label>Designation shown in header</label><input type="text" id="psfDesignation" list="designationOptions" placeholder="e.g. HEADMASTER (blank = Designation field above)"></div>
+        <div class="form-group"><label>Signatory (HOI)</label><input type="text" id="psfSignatory" value="Headmaster"></div>
+        <div class="form-group"><label>&nbsp;</label><label class="inline-check"><input type="checkbox" id="psfNotes" checked> Show fixation notes in Remarks</label></div>
+    </div>
+    <div class="btn-group" style="margin:10px 0;">
+        <button type="button" class="btn-print" onclick="generatePayStructureStatement()">Generate Pay Structure Statement</button>
+        <button type="button" class="btn-print" onclick="printPayStructureStatement()">Print / Save as PDF</button>
+    </div>
+    <style>.psf-doc{font-family:'Times New Roman',Times,serif;color:#000;background:#fff}
+.psf-doc table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:9pt}
+.psf-doc th,.psf-doc td{border:1px solid #000;padding:3px 4px;vertical-align:middle;word-wrap:break-word}
+.psf-doc thead{display:table-header-group}
+.psf-doc tr{page-break-inside:avoid}
+.psf-doc .hd td{border:none;padding:1px 2px;text-align:center}
+.psf-doc .hd .nm{text-align:left;font-weight:bold}.psf-doc .hd .da{text-align:right;font-weight:bold}
+.psf-doc .sch{font-size:12pt;font-weight:bold}.psf-doc .ttl{font-weight:bold;font-size:9.5pt}
+.psf-doc th{background:#e5e7eb;font-weight:bold;text-align:center}
+.psf-doc td.c{text-align:center}.psf-doc td.r{text-align:right}
+.psf-doc .n{font-size:8pt;margin-top:2px;line-height:1.3}
+.psf-doc .sig{margin-top:18mm;text-align:right;font-weight:bold;font-size:10pt}</style>
+    <div id="psfPreview"></div>
+
     <h3 id="tab-ropa98">2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
     <div class="grid-inputs">
         <div class="form-group">
@@ -4037,6 +4062,79 @@ function casGenerateHmAhmForm() {
             </div>
             <div class="cas-hmahm-form" style="font-size:.92rem;line-height:1.5;">${html}</div>
         </div>`;
+}
+
+
+/* ---------- PAY STRUCTURE STATEMENT (submission format: Scale | DOA | B.P. | DOT | Remarks) ---------- */
+function psfEsc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function psfScale(row, regime){
+    const sc = row.scaleStr || '';
+    if (regime === '98') return sc;
+    if (regime === '09') return sc.replace(/:([0-9])/,'-$1').replace(/-GP-(\d+)/,'-GP-RS-$1');
+    const lv = (sc.match(/Level-(\d+)/i) || [])[1] || '';
+    const gp = parseInt(String(row.gpDisplay||'').replace(/,/g,''),10);
+    const pb = (Number.isFinite(gp) && typeof pbMap09 !== 'undefined' && pbMap09[gp]) ? pbMap09[gp].replace(':','-') : '';
+    return 'Level-' + lv + (pb ? '-' + pb + '-GP-RS-' + gp : '');
+}
+function psfRemarks(row, withNotes){
+    const lab = (row.label || '').replace(/<br>\s*<span[^>]*>.*?<\/span>\s*$/, '');
+    const t = document.createElement('div'); t.innerHTML = lab;
+    const head = t.textContent.trim();
+    let out = '<b>' + psfEsc(head) + '</b>';
+    if (withNotes && row.slipHTML && !/^INCREMENT$/i.test(head) && !/YEARS/i.test(head)) {
+        const d = document.createElement('div'); d.innerHTML = row.slipHTML;
+        let lines = [];
+        d.querySelectorAll('.slip-row').forEach(r => {
+            const parts = Array.from(r.querySelectorAll('span')).map(x => x.textContent.replace(/\s+/g,' ').trim()).filter(Boolean);
+            if (parts.length) lines.push(parts.join(' : '));
+        });
+        if (!lines.length) { const tx = d.textContent.replace(/\s+/g,' ').trim(); if (tx) lines = [tx]; }
+        if (lines.length) out += '<div class="n">' + lines.map(psfEsc).join('<br>') + '</div>';
+    }
+    return out;
+}
+function generatePayStructureStatement(){
+    const box = document.getElementById('psfPreview');
+    const warn = m => { box.innerHTML = '<div class="output-box" style="border-left-color:#b91c1c;color:#b91c1c;">' + m + '</div>'; window._psfDoc = null; };
+    try { processFixationTimeline(); } catch(e) { return warn('Could not generate pay tables: ' + e.message); }
+    const dojV = document.getElementById('doj').value;
+    if (!dojV) return warn('Enter Date of Joining first.');
+    const doj = new Date(dojV);
+    const uptoV = document.getElementById('psfUpto').value;
+    const cutoff = uptoV ? new Date(uptoV) : null;
+    if (cutoff && cutoff < doj) return warn('"Generate up to" date is before the date of joining.');
+    const withNotes = document.getElementById('psfNotes').checked;
+    const staff = (document.getElementById('staffName').value || '').toUpperCase();
+    const desig = (document.getElementById('psfDesignation').value || document.getElementById('designation').value || '').toUpperCase();
+    const school = (document.getElementById('schoolName').value || '').toUpperCase();
+    const addr = (document.getElementById('casSchoolAddress') || {}).value || '';
+    const sign = document.getElementById('psfSignatory').value || 'Headmaster';
+    const sets = [['98', window.CAS_ropa98Rows], ['09', window.CAS_ropa09Rows], ['19', window.CAS_ropa19Rows]];
+    let body = '', n = 0;
+    sets.forEach(([reg, rows]) => (rows || []).forEach(r => {
+        if (!r || !(r.date instanceof Date) || r.date < doj || (cutoff && r.date > cutoff)) return;
+        let dot = r.dot instanceof Date ? r.dot : null;
+        if (cutoff && dot && dot > cutoff) dot = cutoff;
+        body += '<tr><td>' + psfEsc(psfScale(r, reg)) + '</td><td class="c">' + formatDate(r.date) + '</td><td class="r">' + psfEsc(r.basicDisplay) + '</td><td class="c">' + (dot ? formatDate(dot) : '') + '</td><td>' + psfRemarks(r, withNotes) + '</td></tr>';
+        n++;
+    }));
+    if (!n) return warn('No pay rows found for the selected period. Check the pay inputs above.');
+    const upto = cutoff ? 'PAY STRUCTURE UP TO ' + formatDate(cutoff) : 'PAY STRUCTURE (FULL SERVICE)';
+    const html = '<div class="psf-doc"><table><colgroup><col style="width:25%"><col style="width:12%"><col style="width:10%"><col style="width:12%"><col style="width:41%"></colgroup><thead>'
+        + '<tr class="hd"><td colspan="5"><table style="border:none;table-layout:auto;width:100%"><tr class="hd"><td class="nm">NAME OF THE EMPLOYEE: ' + psfEsc(staff) + '</td><td class="da">DATE OF FIRST APPOINTMENT: ' + formatDate(doj) + '</td></tr></table>'
+        + '<div class="sch">' + psfEsc(school) + '</div><div>' + psfEsc(addr) + '</div><div class="ttl">' + upto + '</div><div class="ttl">DESIGNATION: ' + psfEsc(desig) + '</div></td></tr>'
+        + '<tr><th>Scale of Pay</th><th>Date of Appointment</th><th>B.P.</th><th>Date of Termination</th><th>REMARKS</th></tr></thead><tbody>' + body + '</tbody></table>'
+        + '<div class="sig">Signature of the HOI / Office Seal<br>' + psfEsc(sign) + '</div></div>';
+    window._psfDoc = { html: html, title: 'Pay_Structure_' + staff.replace(/\s+/g,'_') };
+    box.innerHTML = '<div style="border:1px solid #cbd5e1;border-radius:8px;padding:14px;background:#fff;overflow-x:auto;">' + html + '</div>';
+}
+function printPayStructureStatement(){
+    if (!window._psfDoc) generatePayStructureStatement();
+    if (!window._psfDoc) return;
+    const css = document.querySelector('#psfPreview') ? Array.from(document.querySelectorAll('style')).map(s => s.textContent).filter(t => t.indexOf('.psf-doc') > -1).join('\n') : '';
+    const w = window.open('', '_blank');
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + window._psfDoc.title + '</title><style>@page{size:A4 portrait;margin:12mm 12mm}body{margin:0}' + css + '</style></head><body>' + window._psfDoc.html + '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
+    w.document.close();
 }
 
 function casPrintHmAhmForm() {
