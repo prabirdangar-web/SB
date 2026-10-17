@@ -761,7 +761,7 @@
     </div>
 
     <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
-        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step. For HM/AHM (Level-16), one increment in the existing level is always added before fitment. If joining as HM/AHM is between 2nd January and 30th June, the option is exercised w.e.f. 1st July of that year; the pay table shows 1st July to 1st July (HM/AHM increment/option row) followed by 1st July to 30th June of the next year. If the joining date is outside 2nd January–30th June, no same-year 1st July option row is created and fixation remains on the actual joining date.
+        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step. For HM/AHM (Level-16), one increment in the existing level is always added before fitment. If joining as HM/AHM is between 2nd January and 30th June, the option is exercised w.e.f. 1st July of that year; the pay table shows ONE row from 1st July to 30th June of the next year (the 1st July increment is included in that row, not repeated), and the Remarks column states the actual date of appointment; the next increment is 1st July of the following year. If the joining date is outside 2nd January–30th June, no same-year 1st July option row is created and fixation remains on the actual joining date.
     </div>
 
     <div class="btn-group" style="margin:10px 0;">
@@ -2677,11 +2677,6 @@
             });
             // HM/AHM joining 02-Jan to 30-Jun: option exercised from 01-Jul. Same-day INCREMENT row
             // is display/period-control only (the HM/AHM increment is already inside the fixation).
-            const tLevel = levelMap19[p.targetGp - (p.agp || 0)] || 0;
-            if (!p.designationOnly && !p.agpOnly && !p.isRevert && tLevel === 16 && isInPromoIncrWindow(p.date)) {
-                const optDt = new Date(p.date.getFullYear(), 6, 1);
-                pushEvent(optDt, { label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: optDt });
-            }
         });
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
@@ -2779,6 +2774,7 @@
             let existingGp = runningGp;
             const exAgp09 = runningAgp;
             let incAmt = 0;
+            let optInc09 = 0;
             let lwpNote = '';
             if (ev.isLwpDeferred) {
                 lwpNote = `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>`;
@@ -2875,11 +2871,19 @@
                     incAmt = calculate09Increment(runningBandPay, oldGp);
                     runningBandPay += incAmt;
                     runningBasicPay = runningBandPay + runningGp;
+                    // HM appointed 02-Jan to 30-Jun, option on 01-Jul: the normal 01-Jul increment is given in the
+                    // SAME row (no separate repeated 01-Jul row); next increment falls on 01-Jul of the next year.
+                    if (ev.hmOptDate) {
+                        optInc09 = calculate09Increment(runningBandPay, runningGp);
+                        runningBandPay += optInc09;
+                        runningBasicPay = runningBandPay + runningGp;
+                    }
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.a) One Additional Increment in Existing Scale</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>${(ev.kind === 'ahm' || ev.kind === 'hmjr') ? '&nbsp;&nbsp;&nbsp;b) GP of AT Rs. ' + oldGp.toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') + ' added after the one additional increment in old scale' : (ev.kind === 'hmhs' ? '&nbsp;&nbsp;&nbsp;b) GP of HM (Higher Sec.) = Rs. ' + (runningGp - (ev.agp || 0)).toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') : '&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post')}</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
+                            ${optInc09 ? `<div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b1) Normal annual increment due on ${formatDate(ev.hmOptDate)} (option)</span><span>Rs. ${optInc09.toLocaleString('en-IN')}</span></div>` : ''}
                             <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.hmOptDate || ev.date)}${ev.hmOptDate ? ' (as per option)' : ''}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
                 } else {
@@ -2956,6 +2960,7 @@
                         <div class="slip-row"><span class="slip-bold">PAY FIXED AS ${asWhat} [ROPA-09]</span></div>
                         <div class="slip-row"><span>BASIC PAY AS ON ${bpDate}- RS.${existingBandPay + existingGp}</span></div>
                         <div class="slip-row"><span>One Increment for Higher Responsibility- Rs.${incAmt}</span></div>
+                        ${optInc09 ? `<div class="slip-row"><span>Normal annual increment due on ${formatDate(ev.hmOptDate)} (option)- Rs.${optInc09}</span></div>` : ''}
                         <div class="slip-row"><span>Difference of G. Pay:[${newBaseGp}-${existingGp}]${isAhmStyle ? ' ' : ''}= Rs.${newBaseGp - existingGp}</span></div>
                         ${agpA ? `<div class="slip-row"><span>AGP FOR HS SCHOOL RS.${agpA}</span></div>` : ''}
                         <div class="slip-row"><span class="slip-bold">Pay Fixed at Rs.${runningBasicPay}/-</span></div>
