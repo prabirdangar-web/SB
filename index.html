@@ -819,9 +819,20 @@
                 <input type="number" id="ropa90BasicPay" value="1780">
             </div>
         </div>
+        <div class="grid-inputs">
+            <div class="form-group">
+                <label>Dearness Allowance at AICPI 1510 (1960=100) on this basic pay (Rs.)</label>
+                <input type="number" id="ropa90DA" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <label class="inline-check"><input type="checkbox" id="ropa90AutoFix" checked> Fix ROPA-1998 initial pay automatically (Rule 7: Basic + DA + Interim Relief + 40% of Basic)</label>
+            </div>
+        </div>
+        <div id="ropa98FixNote" style="display:none;font-size:.85rem;color:#14532d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;margin:6px 0;"></div>
         <div style="font-size:.82rem;color:#475569;margin:2px 0 8px;">
             The ROPA-1990 table starts on the Date of Joining and ends the day before the <b>Date of Option / DOA (ROPA-1998)</b> given in Section 2
-            (e.g. 01-03-1999 &rarr; ends 28-02-1999; 01-02-1999 &rarr; ends 31-01-1999). Enter in Section 2 the ROPA-1998 pay fixed on that date as the Initial Basic Pay.
+            (e.g. 01-03-1999 &rarr; ends 28-02-1999; 01-02-1999 &rarr; ends 31-01-1999). If automatic fixing is ticked, the Initial Basic Pay in Section 2 is set by the program (WBS(ROPA) Rules 1998, rule 7); otherwise enter it yourself.
             Increments fall on the 1st of the month of joining each year.
         </div>
     </div>
@@ -1414,6 +1425,40 @@
         <tbody id="sbPrintTableBody19"></tbody>
     </table>
 
+    <div id="annexRopa98Page" class="annex-page" style="display:none;">
+        <div class="annex-title" style="font-size:12.5pt;">Form of Fixation of Initial Pay in the Revised Scale under the West Bengal Services (Revision of Pay and Allowance) Rules, 1998</div>
+        <div class="annex-seepara">[Schedule II, Part B]</div>
+        <table class="annex-table">
+            <tr><td class="a-num">1.</td><td class="a-label">Name of the Department and Office</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98Office"></td></tr>
+            <tr class="a-gap"><td class="a-num">2.</td><td class="a-label">Name and Designation of Government Employee</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98NameDesig"></td></tr>
+            <tr class="a-gap"><td class="a-num">3.</td><td class="a-label">Date from which he/she elects to come under the revised Scale of Pay</td><td class="a-colon"></td><td></td></tr>
+            <tr><td></td><td class="a-sub">(a) in substantive post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;" id="ax98OptDateA"></td></tr>
+            <tr><td></td><td class="a-sub">(b) in officiating/temporary post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;">N.A.</td></tr>
+            <tr class="a-gap"><td class="a-num">4.</td><td class="a-label">Existing Scale of Pay</td><td class="a-colon"></td><td></td></tr>
+            <tr><td></td><td class="a-sub">(a) in substantive post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10pt;" id="ax98ExistScaleA"></td></tr>
+            <tr><td></td><td class="a-sub">(b) in officiating/temporary post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;">N.A.</td></tr>
+            <tr class="a-gap"><td class="a-num">5.</td><td class="a-label">Revised Scale of Pay</td><td class="a-colon"></td><td></td></tr>
+            <tr><td></td><td class="a-sub">(a) in substantive post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10pt;" id="ax98RevScaleA"></td></tr>
+            <tr><td></td><td class="a-sub">(b) in officiating/temporary post</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;">N.A.</td></tr>
+            <tr class="a-gap"><td class="a-num">6.</td><td class="a-label">Special Pay, if any, in the existing Scale of Pay</td><td class="a-colon">:</td><td class="a-value" style="font-size:10.5pt;">NIL</td></tr>
+        </table>
+        <div style="font-weight:bold;font-size:10pt;margin-top:3mm;">7. Existing Emoluments as defined under rule 3(1)(b)</div>
+        <table class="annex-increment" style="text-align:left;">
+            <thead><tr><th style="width:52%;"></th><th>Substantive post</th><th>Officiating / Temporary</th><th>Remarks</th></tr></thead>
+            <tbody id="ax98EmolBody"></tbody>
+        </table>
+        <table class="annex-table" style="margin-top:2mm;">
+            <tr><td class="a-num" style="width:6%;">8.</td><td class="a-label" style="width:47%;font-weight:bold;">Pay fixed in the revised scale of Pay (Vide rule 7)</td><td class="a-colon"></td><td></td></tr>
+            <tr><td></td><td class="a-sub">(i) Basic Pay</td><td class="a-colon">:</td><td class="a-value" id="ax98FixedBasic"></td></tr>
+            <tr><td></td><td class="a-sub">(ii) Personal Pay</td><td class="a-colon">:</td><td class="a-value" id="ax98Personal"></td></tr>
+            <tr><td></td><td class="a-sub">Total</td><td class="a-colon">:</td><td class="a-value" id="ax98FixedTotal"></td></tr>
+            <tr class="a-gap"><td class="a-num">9.</td><td class="a-label">Date of effect</td><td class="a-colon">:</td><td class="a-value" id="ax98EffectDate"></td></tr>
+            <tr class="a-gap"><td class="a-num">10.</td><td class="a-label">Date of next increment</td><td class="a-colon">:</td><td class="a-value" id="ax98NextIncrement"></td></tr>
+        </table>
+        <div class="annex-note" id="ax98Note"></div>
+        <div class="annex-sig"><div class="annex-sig-line">Signature of the Head of the Office/Department with Designation</div></div>
+    </div>
+
     <div id="annexRopa09Page" class="annex-page">
         <div class="annex-title">Annexure-III</div>
         <div class="annex-desc">
@@ -1613,6 +1658,49 @@
         hint.style.display = (early && !document.getElementById('enableRopa90').checked) ? '' : 'none';
     }
     document.addEventListener('change', e => { if (e.target && e.target.id === 'doj') updateRopa90Hint(); });
+
+
+    /* ---------- ROPA-1998 fixation (Rule 7, WBS(ROPA) Rules 1998) from ROPA-1990 pay ---------- */
+    function computeRopa98Fixation(sc, basic90, da) {
+        const ladder = matrixData98[sc] || [];
+        const ir1 = 100;                                   // first instalment of interim relief
+        const ir2 = Math.max(100, Math.round(basic90 * 0.10));   // second instalment: 10% of basic, minimum Rs.100
+        const forty = Math.round(basic90 * 0.40);          // 40% of basic pay in the existing scale
+        const total = basic90 + da + ir1 + ir2 + forty;
+        let fixed = ladder.find(v => v > total);           // stage next above the amount
+        let personal = 0;
+        if (fixed === undefined) { fixed = ladder[ladder.length - 1]; personal = total - fixed; }
+        return { basic90, da, ir1, ir2, forty, total, fixed, personal };
+    }
+    function renderAnnexure98(fix, ropa98Rows) {
+        const page = document.getElementById('annexRopa98Page');
+        if (!page) return;
+        if (!fix) { page.style.display = 'none'; return; }
+        page.style.display = '';
+        const rs = n => 'Rs. ' + Number(n).toLocaleString('en-IN');
+        document.getElementById('ax98Office').textContent = document.getElementById('schoolName').value;
+        document.getElementById('ax98NameDesig').textContent = document.getElementById('staffName').value + ' ; ' + document.getElementById('designation').value;
+        document.getElementById('ax98OptDateA').textContent = formatDate(fix.optionDate);
+        document.getElementById('ax98ExistScaleA').textContent = ropa90ScaleLabel(fix.scale);
+        document.getElementById('ax98RevScaleA').textContent = ropa98ScaleLabel(fix.scale);
+        const R = (l, v, rem) => `<tr><td style="text-align:left;">${l}</td><td class="a-incamt">${v}</td><td>N.A.</td><td>${rem || ''}</td></tr>`;
+        document.getElementById('ax98EmolBody').innerHTML =
+            R('(i) Basic Pay in the existing scale including stagnation increment, if any', fix.basic90.toLocaleString('en-IN')) +
+            R('(ii) Dearness Allowance appropriate to the Basic Pay admissible at index average 1510 (1960=100)', fix.da.toLocaleString('en-IN')) +
+            R('(iii) Special Pay', '0') +
+            R('(iv) Interim Relief (first instalment Rs.100 + second instalment 10% of Basic Pay, min. Rs.100)', (fix.ir1 + fix.ir2).toLocaleString('en-IN'), 'Rs.' + fix.ir1 + ' + Rs.' + fix.ir2) +
+            R('(v) 40% of Basic Pay in the existing scale, including stagnation increments, if any', fix.forty.toLocaleString('en-IN')) +
+            R('<b>Total</b>', '<b>' + fix.total.toLocaleString('en-IN') + '</b>');
+        document.getElementById('ax98FixedBasic').textContent = rs(fix.fixed);
+        document.getElementById('ax98Personal').textContent = fix.personal > 0 ? rs(fix.personal) : 'NIL';
+        document.getElementById('ax98FixedTotal').textContent = rs(fix.fixed + fix.personal);
+        document.getElementById('ax98EffectDate').textContent = formatDate(fix.optionDate);
+        const nx = (ropa98Rows || []).find(r => r.date > fix.optionDate && /INCREMENT/i.test(r.label));
+        document.getElementById('ax98NextIncrement').textContent = nx ? formatDate(nx.date) : '-';
+        document.getElementById('ax98Note').textContent = fix.manual
+            ? 'Note: Pay fixed in the revised scale was entered manually (Rs. ' + fix.fixed.toLocaleString('en-IN') + '); the emoluments above are shown for reference as per rule 7(1).'
+            : 'Pay fixed at the stage next above the total of existing emoluments (rule 7(1)(ii)); next increment after completion of twelve months from the date of fixation (rule 8).';
+    }
 
     function computeRopa90Timeline(doj, scaleKey, basic, endDate) {
         const ladder = ropa90Ladder(scaleKey);
@@ -2966,8 +3054,24 @@
                 const o98d = new Date(o98);
                 const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
                 ropa90Rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
+                if (ropa90Rows.length) {
+                    const da90 = parseInt(document.getElementById('ropa90DA').value, 10) || 0;
+                    const lastB = ropa90Rows[ropa90Rows.length - 1].snapBasicPay;
+                    const f = computeRopa98Fixation(sc90, lastB, da90);
+                    const auto = document.getElementById('ropa90AutoFix').checked;
+                    if (auto) {
+                        document.getElementById('ropa98Scale').value = String(sc90);
+                        document.getElementById('ropa98BasicPay').value = f.fixed;
+                    }
+                    const usedPay = parseInt(document.getElementById('ropa98BasicPay').value, 10) || f.fixed;
+                    window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: sc90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
+                    const note = document.getElementById('ropa98FixNote');
+                    note.style.display = '';
+                    note.textContent = 'Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal + ')' : '') + (auto ? '  [applied as ROPA-1998 initial pay]' : '  [not applied - manual pay in use]');
+                }
             }
         }
+        if (!ropa90Rows.length) { window.CAS_fix98 = null; const n = document.getElementById('ropa98FixNote'); if (n) n.style.display = 'none'; }
         window.CAS_ropa90Rows = ropa90Rows;
         let carryGp, carryBasic, carryLevel;
         let carryNote = "";
@@ -3131,6 +3235,7 @@
         window.NSB_rows19 = rows19Disp;
 
         renderAnnexureForms(axData, doj, dor, ropa09Rows, result19.rows);
+        renderAnnexure98(window.CAS_fix98 || null, ropa98Rows);
 
         /* --- Exposed for Section 6 (CAS / Milestone Benefit Documents) — additive only, does not affect the above --- */
         window.CAS_ropa98Rows = enableRopa98 ? ropa98Rows : [];
