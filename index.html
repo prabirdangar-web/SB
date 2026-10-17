@@ -1735,12 +1735,21 @@
         const note = document.getElementById('ropa98FixNote');
         const hideNote = () => { if (note) note.style.display = 'none'; window.CAS_fix98 = null; const p98 = document.getElementById('ropa98BasicPay'); if (p98) { p98.readOnly = false; p98.style.background = ''; p98.title = ''; } };
         if (!(document.getElementById('enableRopa90').checked && document.getElementById('enableRopa98').checked)) { hideNote(); return res; }
-        const dojV = document.getElementById('doj').value, o98 = document.getElementById('ropa98OptionDate').value;
+        const dojV = document.getElementById('doj').value; let o98 = document.getElementById('ropa98OptionDate').value;
         const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
         const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
         if (!dojV || !o98 || isNaN(sc90) || isNaN(bp90)) { hideNote(); return res; }
         const startV = document.getElementById('ropa90StartDate').value;
-        const doj = new Date(startV || dojV), o98d = new Date(o98);
+        const doj = new Date(startV || dojV); let o98d = new Date(o98);
+        // ROPA-1998 date on/before the ROPA-1990 start (e.g. left equal to Date of Joining) can never work:
+        // default it to 01-03-1999 so the ROPA-1990 table runs up to 28-02-1999 (type 01-02-1999 for 31-01-1999).
+        let o98Defaulted = false;
+        if (o98d <= doj) {
+            o98 = '1999-03-01';
+            document.getElementById('ropa98OptionDate').value = o98;
+            o98d = new Date(o98);
+            o98Defaulted = true;
+        }
         const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
         const dor = getDOR();
         res.rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
@@ -1771,7 +1780,7 @@
         res.fix = window.CAS_fix98;
         if (note) {
             note.style.display = '';
-            note.textContent = 'ROPA-1990 pay on ' + formatDate(end90) + ': Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]');
+            note.textContent = 'ROPA-1990 pay on ' + formatDate(end90) + ': Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]') + (o98Defaulted ? '  [ROPA-1998 date was not after the ROPA-1990 start, so it was set to 01-03-1999; change it in Section 2 if different, e.g. 01-02-1999]' : '');
         }
         return res;
     }
