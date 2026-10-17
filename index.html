@@ -753,7 +753,7 @@
             HM High School = GP 5400; HM Higher Secondary = GP 5400 + AGP Rs. 200. <b>AHM &rarr; HM:</b> the AHM stage is ignored for the HM fixation &mdash; pay is first re-fitted as AT
             (background) on the date preceding HM appointment, then HM fixation is applied (one addl. increment in old scale, GP 5400 from AT's GP, not from AHM's GP).
             <b>ROPA-19:</b> no AGP &mdash; AGP Rs. 200 is deducted before fitment, AHM/HM(Jr) keep the same Level, HM (High / Higher Sec.) = Level 16.
-            Next increment date follows the ROPA in force (ROPA-98: promotion-month anniversary; ROPA-09/19: 1st July). Same-GP event = designation change only. <b>Reversion to AT:</b> GP/Level go back to AT; pay already drawn is <u>protected</u> (not reduced) &mdash; the higher of the protected pay and the pay AT would have drawn is fixed. Higher Scale events are kept; target GP is automatic.
+            Next increment date follows the ROPA in force (ROPA-98: promotion-month anniversary; ROPA-09/19: 1st July). <b>AHM / HM of Junior High School</b> (no change of scale): date of next increment continues <u>as per AT</u>. Same-GP event = designation change only. <b>Reversion to AT:</b> GP/Level go back to AT; pay already drawn is <u>protected</u> (not reduced) &mdash; the higher of the protected pay and the pay AT would have drawn is fixed. Higher Scale events are kept; target GP is automatic.
         </div>
     </div>
 
@@ -1986,7 +1986,7 @@
 
         let lwpConsumedSoFar98 = 0;
 
-        const cutEv98 = chain98.filter(p => !p.designationOnly);   // reversions also start a new increment segment (AT cycle)
+        const cutEv98 = chain98.filter(p => !p.designationOnly && !p.sameScaleIncr98);   // AHM / HM(Jr): no scale change -> increment date stays as per AT   // reversions also start a new increment segment (AT cycle)
         const cuts98 = [optionDate, ...cutEv98.map(p => p.date)];
         const cutRevert98 = [null, ...cutEv98.map(p => p.isRevert ? p : null)];
         for (let k = 0; k < cuts98.length; k++) {
@@ -2204,7 +2204,7 @@
         if (isExcludedFrom18Y) milestoneDefs09 = milestoneDefs09.filter(m => m.name !== "18 YEARS");
 
         let lwpConsumedSoFar09 = 0;
-        const cutEv09 = chain09.filter(p => !p.designationOnly && !p.agpOnly);   // reversions also start a new segment (AT cycle)
+        const cutEv09 = chain09.filter(p => !p.designationOnly && !p.agpOnly && !(p.kind === 'ahm' || p.kind === 'hmjr'));   // AHM / HM(Jr): no scale change -> increment date stays as per AT   // reversions also start a new segment (AT cycle)
         const cuts09 = [optionDate, ...cutEv09.map(p => p.date)];
         const cutRevert09 = [null, ...cutEv09.map(p => p.isRevert)];
         for (let k = 0; k < cuts09.length; k++) {
