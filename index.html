@@ -1663,6 +1663,7 @@
         else if (p.kind === 'hmjr') base = 'PROMOTION - HM (JR) AS AHM';
         else if (p.kind === 'revert') base = 'REVERSION TO AT';
         else if (p.kind === 'recast') base = 'RECAST AS AT (AHM BENEFIT DEDUCTED)';
+        if (p.agpOnly) return base + ' (AGP Rs.200 ADDED ONLY - INCREMENT DATE UNCHANGED)';
         return p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base;
     }
 
@@ -1693,7 +1694,7 @@
     function prepPromoChain(promos, baseGp, doj, from, to, ropa) {
         const list = (promos || []).filter(p => p.date >= from && p.date <= to).map(p => ({ ...p, _orig: p }));
         const m18 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
-        let prevGp = baseGp, prevDate = from, prevAgp = 0, atGp = baseGp;
+        let prevGp = baseGp, prevDate = from, prevAgp = 0, atGp = baseGp, lastKind = null;
         list.forEach(p => {
             let eff = prevGp;
             if (p.kind === 'revert' || p.kind === 'recast') p.targetGp = atGp;
@@ -1712,6 +1713,11 @@
             if (ropa === '09') {
                 // AHM / HM(Jr): GP = AT's GP + AGP 200.  HM Higher Secondary: 5400 + AGP 200.
                 if (agpKind) { p.targetGp = (eff - prevAgp) + AGP_AMOUNT; p.agp = AGP_AMOUNT; }
+                else if (p.kind === 'hmhs' && lastKind === 'hm') {
+                    // HM High -> HM Higher Secondary: ONLY AGP Rs.200 is added to basic pay. No increment, no re-fixation,
+                    // date of next increment continues as per HM High. (ROPA-98 / ROPA-19: designation change only.)
+                    p.targetGp = eff + AGP_AMOUNT; p.agp = AGP_AMOUNT; p.agpOnly = true;
+                }
                 else if (p.kind === 'hmhs') { p.targetGp = p.targetGp + AGP_AMOUNT; p.agp = AGP_AMOUNT; }
             }
             // ROPA-19 has no AGP: AHM / HM(Jr) = same Level, designation change only.
@@ -1719,8 +1725,9 @@
             p.noProtect = (p.kind === 'recast');
             p.designationOnly = !p.isRevert && !sameScaleIncr98 && ((ropa === '19' && agpKind) || (p.targetGp === eff));
             p.label = promoEventLabel(p);
-            prevGp = p.designationOnly ? eff : p.targetGp;
-            if (!p.designationOnly) prevAgp = p.agp;
+            prevGp = (p.designationOnly || p.agpOnly) ? eff : p.targetGp;
+            if (!p.designationOnly && !p.agpOnly) prevAgp = p.agp;
+            lastKind = p.isRevert ? null : p.kind;
             prevDate = p.date;
         });
         // Reversion to AT: pay re-fitted as AT would have drawn had none of the promoted-post events happened
@@ -2168,12 +2175,13 @@
                 bgFirstDate: p.bgFirstDate,
                 agpStage: p.agp,
                 designationOnly: p.designationOnly,
+                agpOnly: p.agpOnly,
                 exactPromotionDate: p.date
             });
             // HM/AHM joining 02-Jan to 30-Jun: option exercised from 01-Jul. Same-day INCREMENT row
             // is display/period-control only (the HM/AHM increment is already inside the fixation).
             const tLevel = levelMap19[p.targetGp - (p.agp || 0)] || 0;
-            if (!p.designationOnly && !p.isRevert && tLevel === 16 && isInPromoIncrWindow(p.date)) {
+            if (!p.designationOnly && !p.agpOnly && !p.isRevert && tLevel === 16 && isInPromoIncrWindow(p.date)) {
                 const optDt = new Date(p.date.getFullYear(), 6, 1);
                 pushEvent(optDt, { label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: optDt });
             }
@@ -2196,7 +2204,7 @@
         if (isExcludedFrom18Y) milestoneDefs09 = milestoneDefs09.filter(m => m.name !== "18 YEARS");
 
         let lwpConsumedSoFar09 = 0;
-        const cutEv09 = chain09.filter(p => !p.designationOnly);   // reversions also start a new segment (AT cycle)
+        const cutEv09 = chain09.filter(p => !p.designationOnly && !p.agpOnly);   // reversions also start a new segment (AT cycle)
         const cuts09 = [optionDate, ...cutEv09.map(p => p.date)];
         const cutRevert09 = [null, ...cutEv09.map(p => p.isRevert)];
         for (let k = 0; k < cuts09.length; k++) {
@@ -2303,6 +2311,18 @@
                         <div class="slip-row"><span>2. Reverted to AT &mdash; ${protApplied09 ? 'pay drawn is PROTECTED (not reduced); new GP of AT, balance in Band Pay' : 'pay re-fixed as AT would have drawn had no promotion been given'}</span><span>BP: Rs. ${runningBandPay.toLocaleString('en-IN')}, GP: Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay Fixed on Reversion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                     </div>`;
+            } else if (ev.isPromotion && ev.agpOnly) {
+                // HM High -> HM Higher Secondary (ROPA-09): only AGP Rs.200 added; increment date continues as per HM High
+                runningGp = ev.targetGp;
+                runningAgp = ev.agp || 0;
+                agpLabel = ev.agp || 0;
+                runningBasicPay = runningBandPay + runningGp;
+                slipBlockHTML = `
+                    <div class="slip-box">
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)} as HM (High School)</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span>2. HM (Higher Secondary): only AGP Rs. ${(ev.agp || 0).toLocaleString('en-IN')} added; no increment, no re-fixation</span><span>+ Rs. ${(ev.agp || 0).toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">3. Pay w.e.f ${formatDate(ev.date)} (date of next increment continues as per HM High School)</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                    </div>`;
             } else if (ev.isPromotion && ev.designationOnly) {
                 slipBlockHTML = `
                     <div class="slip-box">
@@ -2382,7 +2402,7 @@
                         <div class="slip-row"><span>BY RECAST OF PAY AFTER DEDUCTING THE BENEFIT OF AHM HIGHER SEC SCHOOL i.e. Pay Fixed as AT</span></div>
                     </div>`;
             }
-            if (ev.isPromotion && !ev.designationOnly && !ev.isRevert && ev.evType === 'promo' && ['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind)) {
+            if (ev.isPromotion && !ev.designationOnly && !ev.agpOnly && !ev.isRevert && ev.evType === 'promo' && ['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind)) {
                 const agpA = ev.agp || 0;
                 const newBaseGp = runningGp - agpA;
                 const isAhmStyle = (ev.kind === 'ahm' || ev.kind === 'hmjr');
