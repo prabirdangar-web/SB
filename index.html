@@ -4667,12 +4667,38 @@ function dashboardFieldState() {
     return state;
 }
 
+/* Extra career-chain rows (AHM / HM / Recast ...) are created dynamically WITHOUT ids,
+   so dashboardFieldState() never saw them. Save / restore them explicitly. */
+function collectPromoExtraRows() {
+    return Array.from(document.querySelectorAll('#promoExtraRows .promo-extra-row')).map(r => ({
+        kind: r.querySelector('.pe-type')?.value || '',
+        date: r.querySelector('.pe-date')?.value || '',
+        gp: r.querySelector('.pe-gp')?.value || '',
+        desig: r.querySelector('.pe-desig')?.value || ''
+    }));
+}
+function restorePromoExtraRows(list) {
+    const host = document.getElementById('promoExtraRows');
+    if (!host) return;
+    host.innerHTML = '';
+    (Array.isArray(list) ? list : []).forEach(ev => {
+        addPromoRow({ kind: ev.kind, gp: ev.gp, date: ev.date });
+        const row = host.lastElementChild;
+        if (!row) return;
+        if (ev.kind) row.querySelector('.pe-type').value = ev.kind;
+        if (ev.gp) row.querySelector('.pe-gp').value = ev.gp;
+        row.querySelector('.pe-date').value = ev.date || '';
+        row.querySelector('.pe-desig').value = ev.desig || '';
+    });
+}
+
 function collectDashboardState() {
     return {
-        version: 4,
+        version: 5,
         savedAt: new Date().toISOString(),
         staffName: (document.getElementById('staffName')?.value || '').trim(),
         fields: dashboardFieldState(),
+        promoEvents: collectPromoExtraRows(),
         periods: JSON.parse(JSON.stringify(periods || [])),
         masterMlEntries: JSON.parse(JSON.stringify(masterMlEntries || [])),
         transferEvents: JSON.parse(JSON.stringify(transferEvents || [])),
@@ -4786,6 +4812,8 @@ function applyDashboardState(data) {
         if (el.type === 'checkbox') el.checked = !!fields[id];
         else el.value = fields[id] ?? '';
     });
+
+    restorePromoExtraRows(data.promoEvents);
 
     periods = Array.isArray(data.periods) ? data.periods : [];
     masterMlEntries = Array.isArray(data.masterMlEntries) ? data.masterMlEntries : [];
@@ -4912,6 +4940,7 @@ function newTeacherRecord() {
     masterMlEntries = [];
     transferEvents = [];
     idCounter = 1;
+    restorePromoExtraRows([]);
     const ps = document.getElementById('casPriorSchoolsList');
     if (ps) ps.innerHTML = '';
     casPriorSchoolSeq = 0;
