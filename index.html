@@ -714,8 +714,8 @@
                 <option value="promo" selected>Promotion to Higher Post (one addl. increment in old scale, then new scale)</option>
                 <option value="highscale">Higher Scale / Upgradation Only (Direct Fitment - No Extra Increment)</option>
                 <option value="ahm">AHM - ROPA-09: one addl. increment in old scale, then GP = AT's GP + AGP 200 (auto)</option>
-                <option value="hmjr">HM of Junior High School - fixed just as AHM (AT's GP + AGP 200)</option>
-                <option value="hm">HM - High School (GP 5400; if AHM precedes, fixed straight from AT)</option>
+                <option value="hmjr">HM of Junior High School - ROPA-09: fixed just as AHM (AT's GP + AGP 200); ROPA-98: designation change + one addl. increment in same scale, no fitment</option>
+                <option value="hm">HM - High School (GP 5400; ROPA-98: one addl. increment in same scale then fit in 6000-12200; if AHM precedes, fixed straight from AT)</option>
                 <option value="revert">Reversion to AT (demotion) - pay protected (not reduced)</option>
                 <option value="recast">Recast as AT - AHM/HM benefit deducted, pay fixed as AT would have drawn (no protection)</option>
                 <option value="hmhs">HM - Higher Secondary School (ROPA-09: GP 5400 + AGP 200; ROPA-19: Level 16)</option>
@@ -1481,10 +1481,14 @@
         4400: [4800, 4975, 5150, 5325, 5500, 5675, 5850, 6050, 6250, 6450, 6650, 6875, 7100, 7325, 7550, 7775, 8000, 8225, 8450, 8675, 8925, 9175, 9425, 9675, 9925, 10175, 10425, 10675, 10925],
         4700: [5500, 5700, 5900, 6100, 6300, 6525, 6750, 6975, 7200, 7425, 7650, 7875, 8100, 8325, 8575, 8825, 9075, 9325, 9575, 9825, 10075, 10325, 10575, 10825, 11075],
         4800: [6000, 6225, 6450, 6675, 6900, 7125, 7350, 7575, 7800, 8050, 8300, 8550, 8800, 9050, 9300, 9550, 9800, 10075, 10350, 10625, 10900, 11175, 11450, 11725, 12000],
+        5401: [6000, 6225, 6450, 6675, 6900, 7125, 7350, 7575, 7800, 8050, 8300, 8550, 8800, 9050, 9300, 9550, 9800, 10100, 10400, 10700, 11000, 11300, 11600, 11900, 12200],
         5400: [8000, 8275, 8550, 8825, 9100, 9375, 9650, 9925, 10200, 10475, 10750, 11025, 11300, 11575, 11850, 12125, 12400, 12675, 12950, 13225, 13500]
     };
 
     const ROPA98_TO_09_FACTOR = 1.86;
+    // Internal ROPA-98 scale key for the HM (High / Higher Secondary) scale Rs.6,000-225-7,800-250-9,800-300-12,200 = GP 5400 in ROPA-09
+    const HM98_SCALE_KEY = 5401;
+    const gpOfScaleKey98 = k => (k === HM98_SCALE_KEY ? 5400 : k);
 
     // PAY SCALE column fix: for ROPA-1998 rows only, show the actual
     // ROPA-1998 pay scale (Rs. min-max ladder range) instead of the
@@ -1698,6 +1702,14 @@
             if (m18 > prevDate && m18 <= p.date && [1700, 2600, 3900, 4100].includes(eff) && promoMap09[eff]) eff = promoMap09[eff];
             const agpKind = (p.kind === 'ahm' || p.kind === 'hmjr');
             p.agp = 0;
+            const sameScaleIncr98 = (ropa === '98' && agpKind);
+            if (ropa === '98') {
+                // ROPA-98: AHM / HM(Jr) = designation change + ONE additional increment in the SAME scale (no fitment in higher scale).
+                // HM (High / Higher Sec.) = designation change + ONE additional increment in the same scale, then fitment in Rs.6000-12200 (GP 5400).
+                if (agpKind) p.targetGp = eff;
+                else if ((p.kind === 'hm' || p.kind === 'hmhs') && eff !== 5400 && eff !== HM98_SCALE_KEY) p.targetGp = HM98_SCALE_KEY;
+                p.sameScaleIncr98 = sameScaleIncr98;
+            }
             if (ropa === '09') {
                 // AHM / HM(Jr): GP = AT's GP + AGP 200.  HM Higher Secondary: 5400 + AGP 200.
                 if (agpKind) { p.targetGp = (eff - prevAgp) + AGP_AMOUNT; p.agp = AGP_AMOUNT; }
@@ -1706,7 +1718,7 @@
             // ROPA-19 has no AGP: AHM / HM(Jr) = same Level, designation change only.
             p.isRevert = (p.kind === 'revert' || p.kind === 'recast');
             p.noProtect = (p.kind === 'recast');
-            p.designationOnly = !p.isRevert && ((ropa === '19' && agpKind) || (p.targetGp === eff));
+            p.designationOnly = !p.isRevert && !sameScaleIncr98 && ((ropa === '19' && agpKind) || (p.targetGp === eff));
             p.label = promoEventLabel(p);
             prevGp = p.designationOnly ? eff : p.targetGp;
             if (!p.designationOnly) prevAgp = p.agp;
@@ -1937,7 +1949,7 @@
         const chain98 = prepPromoChain(promos, scaleKey, doj, optionDate, endDate, '98');
         if (!_isBg) chain98.forEach(p => { if (p.bgPromos) { const bg = computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, p.bgPromos, true); const prior = bg.rows.filter(r => r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
         const promotionActive98 = chain98.length > 0;
-        chain98.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap }));
+        chain98.forEach(p => pushEvent(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap, sameScaleIncr98: p.sameScaleIncr98 }));
 
         // 18-YEAR eligibility must reflect the Grade Pay actually in force at the
         // 18-year milestone, not the joining-time scale: if a Promotion/Higher-Scale
@@ -2028,6 +2040,7 @@
         }
 
         events.forEach(ev => {
+            let slip98 = '';
             if (ev.isPromotion && ev.bgSnap && !ev.designationOnly && !ev.isRevert) {
                 // HM straight from AT: re-fit pay as AT (AHM stage ignored) before HM fixation
                 currentScaleKey = ev.bgSnap.snapScaleKey;
@@ -2056,6 +2069,7 @@
                 // Designation change only (same scale already in force): no increment, no re-fixation.
             } else if (ev.isPromotion) {
                 let preChangeBasic = runningBasicPay;
+                const oldBasic98 = runningBasicPay, oldScaleLbl98 = ropa98ScaleLabel(currentScaleKey);
                 if (ev.evType === 'promo') {
                     if (idx < ladder.length - 1) idx += 1;
                     preChangeBasic = ladder[idx];
@@ -2069,6 +2083,18 @@
                 ladder = newLadder;
                 idx = newIdx;
                 runningBasicPay = ladder[idx];
+                if (ev.kind === 'ahm' || ev.kind === 'hmjr' || ev.kind === 'hm' || ev.kind === 'hmhs') {
+                    const R = n => 'Rs. ' + Number(n).toLocaleString('en-IN');
+                    const fitScale = (newScaleKey === HM98_SCALE_KEY);
+                    slip98 = '<div class="slip-box">'
+                        + '<div class="slip-row"><span>1. Existing pay on ' + formatDate(ev.date) + ' in scale ' + oldScaleLbl98 + '</span><span>' + R(oldBasic98) + '</span></div>'
+                        + '<div class="slip-row"><span>2. Add one additional increment in the same scale (promotion / change of designation)</span><span>' + R(preChangeBasic) + '</span></div>'
+                        + (fitScale
+                            ? '<div class="slip-row"><span>3. Pay fitted in the HM scale ' + ropa98ScaleLabel(newScaleKey) + ' (corresponding to GP 5400)</span><span>' + R(runningBasicPay) + '</span></div>'
+                            : '<div class="slip-row"><span>3. No fitment benefit in higher scale; pay remains in the same scale ' + ropa98ScaleLabel(newScaleKey) + '</span><span>' + R(runningBasicPay) + '</span></div>')
+                        + '<div class="slip-row"><span class="slip-bold">Pay fixed w.e.f. ' + formatDate(ev.date) + '</span><span class="slip-bold">' + R(runningBasicPay) + '</span></div>'
+                        + '</div>';
+                }
             } else if (ev.isAnnual) {
                 if (idx < ladder.length - 1) idx += 1;
                 runningBasicPay = ladder[idx];
@@ -2097,7 +2123,7 @@
                 trackCol: '',
                 gpDisplay: '',
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
-                slipHTML: '',
+                slipHTML: slip98,
                 snapBasicPay: runningBasicPay,
                 snapScaleKey: currentScaleKey
             });
@@ -2790,7 +2816,7 @@
             axData.ropa98AsOfBasic = snap98.basic;
             axData.ropa98AsOfScaleKey = snap98.scaleKey;
 
-            ropa09InitialGp = snap98.scaleKey;
+            ropa09InitialGp = gpOfScaleKey98(snap98.scaleKey);
 
             const minBandForGp = minEntryPayBand09[ropa09InitialGp];
             const minEntryApplied = (minBandForGp !== undefined && multipliedBand < minBandForGp);
