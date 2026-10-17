@@ -791,6 +791,44 @@
 .psf-doc .sig{margin-top:18mm;text-align:right;font-weight:bold;font-size:10pt}</style>
     <div id="psfPreview"></div>
 
+    <h3 id="tab-ropa90">1c. ROPA-1990 (staff appointed before 01-03-1999)</h3>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>&nbsp;</label>
+            <label class="inline-check"><input type="checkbox" id="enableRopa90" onchange="toggleRopa90Section()"> Applicable (appointed before 01.03.1999, drew pay under ROPA-1990 up to the day before the ROPA-1998 date below)</label>
+        </div>
+    </div>
+    <div id="ropa90Fields" style="display:none;">
+        <div class="grid-inputs">
+            <div class="form-group">
+                <label>ROPA-1990 Scale (GP key)</label>
+                <select id="ropa90Scale">
+                    <option value="1700">GP 1700 (800-15-920-18-1118-21-1265)</option>
+                    <option value="1800">GP 1800 (830-15-890-18-980-21-1232-25-1357)</option>
+                    <option value="2600">GP 2600 (1040-25-1215-30-1485-35-1590-40-1670-50-1920)</option>
+                    <option value="2900">GP 2900 (1200-35-1550-40-1630-50-2180-60-2360)</option>
+                    <option value="4100">GP 4100 (1420-45-1555-55-1720-65-2305-75-3130)</option>
+                    <option value="4400">GP 4400 (1500-55-1665-65-2250-80-3210-100-3410)</option>
+                    <option value="4700">GP 4700 (1640-65-2095-80-3135-100-3635)</option>
+                    <option value="4800" selected>GP 4800 (1780-65-2040-80-3080-100-3780)</option>
+                    <option value="5400">GP 5400 (2200-80-3000-100-4000)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Initial Basic Pay (ROPA-1990 scale) on date of joining</label>
+                <input type="number" id="ropa90BasicPay" value="1780">
+            </div>
+        </div>
+        <div style="font-size:.82rem;color:#475569;margin:2px 0 8px;">
+            The ROPA-1990 table starts on the Date of Joining and ends the day before the <b>Date of Option / DOA (ROPA-1998)</b> given in Section 2
+            (e.g. 01-03-1999 &rarr; ends 28-02-1999; 01-02-1999 &rarr; ends 31-01-1999). Enter in Section 2 the ROPA-1998 pay fixed on that date as the Initial Basic Pay.
+            Increments fall on the 1st of the month of joining each year.
+        </div>
+    </div>
+    <div id="ropa90Hint" style="display:none;font-size:.85rem;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;margin:6px 0;">
+        Date of Joining is before 01-03-1999: tick "ROPA-1990" above if this staff drew pay in the ROPA-1990 scale before ROPA-1998.
+    </div>
+
     <h3 id="tab-ropa98">2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
     <div class="grid-inputs">
         <div class="form-group">
@@ -892,6 +930,20 @@
 
     <div class="output-box" id="carryForwardOutput" style="display:none;"></div>
     <div class="output-box" id="carryForwardOutput98" style="display:none;"></div>
+
+    <div id="ropa90Section" style="display:none;">
+        <h3>Generated ROPA-1990 Pay Timeline (Up to the day before ROPA-1998 date)</h3>
+        <div class="table-responsive">
+            <table id="dashboardTable90">
+                <thead>
+                    <tr>
+                        <th>Effective Date</th><th>Date of Termination</th><th>Scale</th><th>Basic Pay</th><th>Event / Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="payTableBody90"></tbody>
+            </table>
+        </div>
+    </div>
 
     <div id="ropa98Section" style="display:none;">
         <h3>Generated ROPA-1998 Notional Fixation Timeline (Up to 31-03-2009)</h3>
@@ -1316,6 +1368,18 @@
         </tr>
     </table>
 
+    <div id="sbRopa90Block" style="display:none;">
+        <h2 class="sb-section-title">ROPA-1990 PAY (Up to the day before ROPA-1998)</h2>
+        <table class="sb-main-table" id="sbTable90">
+            <thead>
+                <tr>
+                    <th>Effective Date</th><th>Date of Termination</th><th>Scale</th><th>Basic Pay</th><th>Event / Reason</th>
+                </tr>
+            </thead>
+            <tbody id="sbPrintTableBody90"></tbody>
+        </table>
+    </div>
+
     <div id="sbRopa98Block" style="display:none;">
         <h2 class="sb-section-title">ROPA-1998 PAY (Up to 31-03-2009)</h2>
         <table class="sb-main-table" id="sbTable98">
@@ -1505,6 +1569,70 @@
 
     const ROPA09_CUTOFF = new Date(2019, 11, 31);
     const ROPA98_CUTOFF = new Date(2009, 2, 31);
+
+
+    /* ---------- ROPA-1990 (pre-ROPA-1998) ---------- */
+    // Scale definitions: [min, increment, stage, increment, stage, ..., max]
+    const ROPA90_SCALES = {
+        1700: [800, 15, 920, 18, 1118, 21, 1265],
+        1800: [830, 15, 890, 18, 980, 21, 1232, 25, 1357],
+        2600: [1040, 25, 1215, 30, 1485, 35, 1590, 40, 1670, 50, 1920],
+        2900: [1200, 35, 1550, 40, 1630, 50, 2180, 60, 2360],
+        4100: [1420, 45, 1555, 55, 1720, 65, 2305, 75, 3130],
+        4400: [1500, 55, 1665, 65, 2250, 80, 3210, 100, 3410],
+        4700: [1640, 65, 2095, 80, 3135, 100, 3635],
+        4800: [1780, 65, 2040, 80, 3080, 100, 3780],
+        5400: [2200, 80, 3000, 100, 4000]
+    };
+    function ropa90Ladder(key) {
+        const d = ROPA90_SCALES[key];
+        if (!d) return [];
+        const out = [d[0]];
+        let v = d[0];
+        for (let i = 1; i < d.length; i += 2) {
+            const step = d[i], to = d[i + 1];
+            while (v < to) { v += step; out.push(v); }
+        }
+        return out;
+    }
+    function ropa90ScaleLabel(key) {
+        const d = ROPA90_SCALES[key];
+        return d ? 'Rs. ' + d.join('-') : 'ROPA-1990 Scale';
+    }
+    function toggleRopa90Section() {
+        const on = document.getElementById('enableRopa90').checked;
+        document.getElementById('ropa90Fields').style.display = on ? '' : 'none';
+        document.getElementById('ropa90Section').style.display = on ? '' : 'none';
+        updateRopa90Hint();
+    }
+    function updateRopa90Hint() {
+        const dojV = (document.getElementById('doj') || {}).value;
+        const hint = document.getElementById('ropa90Hint');
+        if (!hint) return;
+        const early = dojV && new Date(dojV) < new Date(1999, 2, 1);
+        hint.style.display = (early && !document.getElementById('enableRopa90').checked) ? '' : 'none';
+    }
+    document.addEventListener('change', e => { if (e.target && e.target.id === 'doj') updateRopa90Hint(); });
+
+    function computeRopa90Timeline(doj, scaleKey, basic, endDate) {
+        const ladder = ropa90Ladder(scaleKey);
+        if (!ladder.length || doj > endDate) return { rows: [] };
+        let idx = ladder.indexOf(basic);
+        if (idx === -1) { idx = ladder.findIndex(v => v >= basic); if (idx === -1) idx = ladder.length - 1; }
+        let pay = ladder[idx];
+        const scaleStr = ropa90ScaleLabel(scaleKey);
+        const mk = (date, label) => ({ date: new Date(date), label, scaleStr, trackCol: '', gpDisplay: '', basicDisplay: pay.toLocaleString('en-IN'), slipHTML: '', snapBasicPay: pay, snapScaleKey: scaleKey });
+        const rows = [mk(doj, 'DOA / ROPA-1990')];
+        for (let yr = doj.getFullYear() + 1; ; yr++) {
+            const d = new Date(yr, doj.getMonth(), 1);
+            if (d > endDate) break;
+            if (idx >= ladder.length - 1) break;      // stagnation at the top of the scale
+            idx += 1; pay = ladder[idx];
+            rows.push(mk(d, 'INCREMENT'));
+        }
+        finalizeDot(rows, endDate);
+        return { rows, finalBasic: pay };
+    }
 
     function toggleRopa98Section() {
         const enabled = document.getElementById('enableRopa98').checked;
@@ -2828,6 +2956,19 @@
 
         let ropa98Rows = [];
         let ropa09Rows = [];
+        // ---- ROPA-1990 leg (runs from joining up to the day before the ROPA-1998 date) ----
+        let ropa90Rows = [];
+        if (document.getElementById('enableRopa90').checked && enableRopa98) {
+            const o98 = document.getElementById('ropa98OptionDate').value;
+            const sc90 = parseInt(document.getElementById('ropa90Scale').value, 10);
+            const bp90 = parseInt(document.getElementById('ropa90BasicPay').value, 10);
+            if (o98 && !isNaN(sc90) && !isNaN(bp90)) {
+                const o98d = new Date(o98);
+                const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
+                ropa90Rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
+            }
+        }
+        window.CAS_ropa90Rows = ropa90Rows;
         let carryGp, carryBasic, carryLevel;
         let carryNote = "";
         let carryNote98 = "";
@@ -2966,6 +3107,9 @@
           {key:'ROPA-19', rows: result19.rows}
         ]);
 
+        renderRows98('payTableBody90', 'sbPrintTableBody90', ropa90Rows);
+        document.getElementById('ropa90Section').style.display = document.getElementById('enableRopa90').checked ? '' : 'none';
+        document.getElementById('sbRopa90Block').style.display = (document.getElementById('enableRopa90').checked && ropa90Rows.length) ? '' : 'none';
         renderRows98('payTableBody98', 'sbPrintTableBody98', ropa98Rows);
         renderRows('payTableBody09', 'sbPrintTableBody09', ropa09Rows);
         let rows19Disp = result19.rows;
@@ -4140,7 +4284,7 @@ function casGenerateHmAhmForm() {
 function psfEsc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function psfScale(row, regime){
     const sc = row.scaleStr || '';
-    if (regime === '98') return sc;
+    if (regime === '98' || regime === '90') return sc;
     if (regime === '09') return sc.replace(/:([0-9])/,'-$1').replace(/-GP-(\d+)/,'-GP-RS-$1');
     const lv = (sc.match(/Level-(\d+)/i) || [])[1] || '';
     const gp = parseInt(String(row.gpDisplay||'').replace(/,/g,''),10);
@@ -4180,7 +4324,7 @@ function generatePayStructureStatement(){
     const school = (document.getElementById('schoolName').value || '').toUpperCase();
     const addr = (document.getElementById('casSchoolAddress') || {}).value || '';
     const sign = document.getElementById('psfSignatory').value || 'Headmaster';
-    const sets = [['98', window.CAS_ropa98Rows], ['09', window.CAS_ropa09Rows], ['19', window.CAS_ropa19Rows]];
+    const sets = [['90', window.CAS_ropa90Rows], ['98', window.CAS_ropa98Rows], ['09', window.CAS_ropa09Rows], ['19', window.CAS_ropa19Rows]];
     let body = '', n = 0;
     sets.forEach(([reg, rows]) => (rows || []).forEach(r => {
         if (!r || !(r.date instanceof Date) || r.date < doj || (cutoff && r.date > cutoff)) return;
