@@ -854,7 +854,7 @@
         </div>
         <div class="grid-inputs">
             <div class="form-group">
-                <label>Dearness Allowance at AICPI 1510 (1960=100) on the basic pay (Rs.; enter 0 if not applicable)</label>
+                <label>Dearness Allowance at AICPI 1510 (auto: option date on/after 01-01-1996 = Basic on option date x 1.48, rounded; else 0)</label>
                 <input type="number" id="ropa90DA" value="0" min="0">
             </div>
             <div class="form-group">
@@ -1695,6 +1695,20 @@
 
 
     /* ---------- ROPA-1998 fixation (Rule 7, WBS(ROPA) Rules 1998) from ROPA-1990 pay ---------- */
+    /* DA rate history (reference) - total rate of D.A. on ROPA-1990 basic pay [date, %, order] */
+    const DA_RATES_90 = [
+        ['1987-03-01',4,'3360-F & 3367-F dt. 04.04.1987'],['1987-12-01',8,'12890-F dt. 28-11-1987'],['1988-06-01',13,'5690-F dt. 17-05-1988'],
+        ['1989-02-01',18,'610-F dt. 17-01-1989'],['1989-06-01',23,'5619-F dt. 20-05-1989'],['1989-11-01',29,'11560-F dt. 20-10-1989'],
+        ['1990-06-01',34,'5075-F dt. 24-05-1990'],['1990-12-01',38,'11715-F dt. 22-11-1990'],['1991-04-01',43,'2880-F dt. 26-03-1991'],
+        ['1992-01-01',51,'11210-F dt. 05-12-1991'],['1992-11-01',60,'10485-F dt. 14-10-1992'],['1993-07-01',71,'7801-F dt. 02-07-1993'],
+        ['1993-12-01',83,'12550-F dt. 26-11-1993'],['1994-05-01',92,'4130-F dt. 12-04-1994'],['1994-11-01',97,'10410-F dt. 28-10-1994'],
+        ['1995-02-01',104,'975-F dt. 31-01-1995'],['1995-06-01',114,'5733-F dt. 01-06-1995'],['1995-12-01',125,'11200-F dt. 13-11-1995'],
+        ['1996-04-01',136,'2675-F dt. 08-03-1996']
+    ];
+    // Rule 7 DA (AICPI 1510): =IF(option date >= 01-01-1996, ROUND(basic on option date * 1.48, 0), 0)
+    function ropa98DaRule(optionDate, basicOnOption) {
+        return (optionDate >= new Date(1996, 0, 1)) ? Math.round(basicOnOption * 1.48) : 0;
+    }
     function computeRopa98Fixation(sc, basic90, da) {
         const ladder = matrixData98[sc] || [];
         const ir1 = 100;                                   // first instalment of interim relief
@@ -1774,24 +1788,31 @@
             return res;
         }
         if (note) { note.style.color = '#14532d'; note.style.background = '#f0fdf4'; note.style.borderColor = '#bbf7d0'; }
-        const da90 = parseInt(document.getElementById('ropa90DA').value, 10) || 0;
-        const lastB = res.rows[res.rows.length - 1].snapBasicPay;
-        const f = computeRopa98Fixation(scEnd90, lastB, da90);
+        // Rule 7 fixation is made on the basic pay in force ON THE ROPA-1998 DATE OF OPTION (not on the pay at the end of ROPA-1990).
+        const ok = d => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+        let optRow = res.rows[0];
+        res.rows.forEach(r => { if (ok(r.date) <= ok(o98d)) optRow = r; });
+        const lastB = optRow.snapBasicPay;
+        const scOpt90 = optRow.snapScaleKey || scEnd90;
+        const da90 = ropa98DaRule(o98d, lastB);
+        const daEl = document.getElementById('ropa90DA');
+        if (daEl) { daEl.value = da90; daEl.readOnly = true; daEl.style.background = '#f1f5f9'; daEl.title = 'Auto: IF(option date >= 01-01-1996, ROUND(basic on option date x 1.48, 0), 0)'; }
+        const f = computeRopa98Fixation(scOpt90, lastB, da90);
         const auto = document.getElementById('ropa90AutoFix').checked;
         const pay98El = document.getElementById('ropa98BasicPay');
         if (auto) {
-            document.getElementById('ropa98Scale').value = String(scEnd90);
+            document.getElementById('ropa98Scale').value = String(scOpt90);
             pay98El.value = f.fixed;
         }
         pay98El.readOnly = auto;                       // generated, not typed
         pay98El.style.background = auto ? '#f1f5f9' : '';
         pay98El.title = auto ? 'Generated automatically from ROPA-1990 (rule 7)' : '';
         const usedPay = parseInt(document.getElementById('ropa98BasicPay').value, 10) || f.fixed;
-        window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: scEnd90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
+        window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: scOpt90, optRowDate: optRow.date, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
         res.fix = window.CAS_fix98;
         if (note) {
             note.style.display = '';
-            note.textContent = 'ROPA-1990 pay on ' + formatDate(end90) + ': Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation as on ' + formatDate(o98d) + ': Basic ' + lastB + ' + DA ' + da90 + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]');
+            note.textContent = 'ROPA-1990 basic pay on ' + formatDate(o98d) + ' (date of option): Rs. ' + lastB.toLocaleString('en-IN') + '.  Rule 7 fixation: Basic ' + lastB + ' + DA ' + da90 + (da90 ? ' (148% at AICPI 1510)' : ' (nil - option before 01-01-1996)') + ' + IR ' + (f.ir1 + f.ir2) + ' + 40% ' + f.forty + ' = Rs. ' + f.total.toLocaleString('en-IN') + '  \u2192  pay fixed at Rs. ' + f.fixed.toLocaleString('en-IN') + (f.personal > 0 ? ' (+ personal pay Rs. ' + f.personal.toLocaleString('en-IN') + ')' : '') + (auto ? '  [set as ROPA-1998 Initial Basic Pay]' : '  [manual pay in use]');
         }
         return res;
     }
@@ -3332,6 +3353,17 @@
 
             const result98 = computeRopa98Timeline(doj, ropa98OptionDate, ropa98Scale, ropa98BasicPay, ropa98EndDate, promoChain);
             ropa98Rows = result98.rows;
+            if (window.CAS_fix98 && ropa98Rows.length && document.getElementById('enableRopa90').checked) {
+                const fx = window.CAS_fix98;
+                ropa98Rows[0].slipHTML = slipBoxHTML([
+                    ['RULE 7 FIXATION (WBS ROPA-98) on ' + formatDate(fx.optionDate), null, 1],
+                    ['1. Basic Pay in ROPA-1990 scale on ' + formatDate(fx.optionDate), slipR(fx.basic90)],
+                    ['2. D.A. @148% at AICPI 1510 = IF(option date >= 01-01-1996, ROUND(Basic x 1.48, 0), 0)', slipR(fx.da)],
+                    ['3. Interim Relief (Rs.100 + 10% of Basic, min Rs.100)', slipR(fx.ir1 + fx.ir2)],
+                    ['4. 40% of Basic Pay', slipR(fx.forty)],
+                    ['5. Total (1+2+3+4)', slipR(fx.total), 1],
+                    ['6. Pay fixed at next higher stage in the ROPA-98 scale' + (fx.personal > 0 ? ' (+ personal pay ' + slipR(fx.personal) + ')' : ''), slipR(fx.fixed), 1]]);
+            }
             appendCessationNoteToLastRow(ropa98Rows, ropa98EndDate);
 
             const ropa09OptionInputForSnap = document.getElementById('ropa09OptionDate').value;
