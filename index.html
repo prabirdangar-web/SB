@@ -1811,10 +1811,13 @@
         if (id === 'ropa90BasicPay' || id === 'ropa90DA') { try { ropa90Evaluate(); } catch (err) {} }
     });
 
-    /* ROPA-1990 timeline. Promotion / Higher Scale events entered in 1a are applied exactly on the ROPA-1998 pattern:
-       Promotion = one additional increment in the old scale, then fitment in the new scale; Higher Scale = fitment only;
-       AHM / HM(Jr) = designation change + one increment in the same scale; Reversion = pay as AT would have drawn (protected).
-       A promotion / higher scale restarts the annual increment cycle in the month of the event. */
+    /* ROPA-1990 timeline. Promotion / Higher Scale events entered in 1a are applied as follows:
+       Higher Scale (Edn.(B) G.O. No. 304(6)-Edn.(B) dt. 21.06.1983, para (c)):
+         (i)   existing pay below the minimum of the higher scale -> pay fixed at that minimum (new increment cycle from the date of fixation);
+         (ii)  existing pay fits exactly at a stage -> pay fixed there, date of next increment UNCHANGED;
+         (iii) no exact fit -> pay fixed at the next higher stage, date of next increment UNCHANGED.
+       Promotion = one additional increment in the old scale, then fitment in the new scale, increment cycle restarts in the month of promotion.
+       AHM / HM(Jr) = designation change + one increment in the same scale (increment date unchanged); Reversion = pay as AT would have drawn (protected). */
     function computeRopa90Timeline(doj, scaleKey, basic, endDate, promos, _isBg) {
         if (!ropa90Ladder(scaleKey).length || doj > endDate) return { rows: [] };
         const has90 = k => ropa90Ladder(k).length > 0;
@@ -1825,62 +1828,68 @@
             if (!p.isRevert && !p.designationOnly) { if (!has90(p.targetGp)) { p.targetGp = probeKey; p.noScale90 = true; } else probeKey = p.targetGp; }
         });
         if (!_isBg) chain.forEach(p => { if (p.bgPromos) { const bg = computeRopa90Timeline(doj, scaleKey, basic, endDate, p.bgPromos, true); const prior = (bg.rows || []).filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; } });
-        const events = [];
-        const push = (d, data) => events.push({ date: new Date(d), ...data });
-        push(doj, { label: 'DOA / ROPA-1990', isInitial: true });
-        chain.forEach(p => push(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap }));
-        const cutEv = chain.filter(p => !p.designationOnly && !p.sameScaleIncr98);
-        const cuts = [doj, ...cutEv.map(p => p.date)];
-        const cutRevert = [null, ...cutEv.map(p => p.isRevert ? p : null)];
-        for (let k = 0; k < cuts.length; k++) {
-            const segStart = cuts[k], segEnd = (k + 1 < cuts.length) ? cuts[k + 1] : null;
-            let anchorMonth = segStart.getMonth();
-            const rv = cutRevert[k];
-            if (rv) {
-                const atEv = (rv.bgPromos || []).filter(x => x.kind === 'highscale' && x.date <= rv.date && x.date > doj).sort((x, y) => y.date - x.date)[0];
-                anchorMonth = (atEv ? atEv.date : doj).getMonth();
-            }
-            for (let yr = segStart.getFullYear() + (rv ? 0 : 1); yr <= endDate.getFullYear() + 1; yr++) {
-                const d = new Date(yr, anchorMonth, 1);
-                if (segEnd && d >= segEnd) break;
-                if (d > endDate) break;
-                if (k === 0 ? d <= doj : d <= segStart) continue;
-                push(d, { label: 'INCREMENT', isAnnual: true });
-            }
-        }
-        events.sort((x, y) => (x.date - y.date) || ((y.isPromotion ? 1 : 0) - (x.isPromotion ? 1 : 0)) || ((y.isInitial ? 1 : 0) - (x.isInitial ? 1 : 0)));
+        const evs = chain.slice().sort((x, y) => x.date - y.date);
+
         let curKey = scaleKey, ladder = ropa90Ladder(curKey);
         let idx = ladder.indexOf(basic);
         if (idx === -1) { idx = ladder.findIndex(v => v >= basic); if (idx === -1) idx = ladder.length - 1; }
         let pay = ladder[idx];
-        const setFrom = snap => { curKey = snap.snapScaleKey; ladder = ropa90Ladder(curKey); let i = ladder.indexOf(snap.snapBasicPay); if (i === -1) { i = ladder.findIndex(v => v >= snap.snapBasicPay); if (i === -1) i = ladder.length - 1; } idx = i; pay = ladder[idx]; };
+        let anchor = doj.getMonth();          // month of the annual increment
         const rows = [];
-        events.forEach(ev => {
-            if (ev.isInitial) { /* starting pay */ }
-            else if (ev.isPromotion && ev.bgSnap && !ev.designationOnly && !ev.isRevert) { setFrom(ev.bgSnap); }
-            if (ev.isInitial) { /* nothing */ }
-            else if (ev.isRevert) {
-                const prot = pay;
-                if (ev.bgSnap) setFrom(ev.bgSnap);
-                if (!ev.noProtect && prot > pay) { let pi = ladder.findIndex(v => v >= prot); if (pi === -1) pi = ladder.length - 1; idx = pi; pay = ladder[idx]; }
-            } else if (ev.isPromotion && ev.designationOnly) {
-                /* designation only: no change in pay */
-            } else if (ev.isPromotion) {
-                let pre = pay;
-                if (ev.evType === 'promo') { if (idx < ladder.length - 1) idx += 1; pre = ladder[idx]; }
-                const nl = ropa90Ladder(ev.targetGp);
-                if (nl.length) {
-                    let ni = nl.findIndex(v => v >= pre);
-                    if (ni === -1) ni = nl.length - 1;
-                    curKey = ev.targetGp; ladder = nl; idx = ni;
-                }
-                pay = ladder[idx];
-            } else if (ev.isAnnual) {
+        const addRow = (date, label, kind) => rows.push({ date: new Date(date), label, scaleStr: ropa90ScaleLabel(curKey), trackCol: '', gpDisplay: '', basicDisplay: pay.toLocaleString('en-IN'), slipHTML: '', snapBasicPay: pay, snapScaleKey: curKey, evKind: kind || null, anchor });
+        const setFrom = snap => { curKey = snap.snapScaleKey; ladder = ropa90Ladder(curKey); let i = ladder.indexOf(snap.snapBasicPay); if (i === -1) { i = ladder.findIndex(v => v >= snap.snapBasicPay); if (i === -1) i = ladder.length - 1; } idx = i; pay = ladder[idx]; };
+        // annual increments on the 1st of `anchor` month, after `from` and before `limit` (exclusive; null = up to endDate)
+        const genIncr = (from, limit) => {
+            for (let yr = from.getFullYear(); yr <= endDate.getFullYear() + 1; yr++) {
+                const d = new Date(yr, anchor, 1);
+                if (d <= from) continue;
+                if (limit && d >= limit) break;
+                if (d > endDate) break;
                 if (idx < ladder.length - 1) idx += 1;
                 pay = ladder[idx];
+                addRow(d, 'INCREMENT');
             }
-            rows.push({ date: new Date(ev.date), label: ev.label, scaleStr: ropa90ScaleLabel(curKey), trackCol: '', gpDisplay: '', basicDisplay: pay.toLocaleString('en-IN'), slipHTML: '', snapBasicPay: pay, snapScaleKey: curKey, evKind: ev.kind || null });
+        };
+
+        addRow(doj, 'DOA / ROPA-1990');
+        let from = doj;
+        evs.forEach(ev => {
+            genIncr(from, ev.date);
+            if (ev.isRevert) {
+                const prot = pay;
+                if (ev.bgSnap) { setFrom(ev.bgSnap); if (ev.bgSnap.anchor != null) anchor = ev.bgSnap.anchor; }
+                if (!ev.noProtect && prot > pay) { let pi = ladder.findIndex(v => v >= prot); if (pi === -1) pi = ladder.length - 1; idx = pi; pay = ladder[idx]; }
+            } else if (ev.designationOnly) {
+                /* designation only: no change in pay or increment date */
+            } else {
+                if (ev.bgSnap) setFrom(ev.bgSnap);   // HM straight from AT: re-fit as AT first
+                const nl = ropa90Ladder(ev.targetGp);
+                if (ev.evType === 'highscale') {
+                    // para (c): (i) below minimum -> minimum, new cycle; (ii)/(iii) fit / next higher stage, increment date unchanged
+                    if (nl.length) {
+                        const belowMin = pay < nl[0];
+                        let ni = nl.findIndex(v => v >= pay);
+                        if (ni === -1) ni = nl.length - 1;
+                        curKey = ev.targetGp; ladder = nl; idx = ni; pay = ladder[idx];
+                        if (belowMin) anchor = ev.date.getMonth();
+                    }
+                } else {
+                    // promotion / AHM / HM: one additional increment in the old scale, then fitment in the new scale
+                    if (idx < ladder.length - 1) idx += 1;
+                    const pre = ladder[idx];
+                    if (nl.length) {
+                        let ni = nl.findIndex(v => v >= pre);
+                        if (ni === -1) ni = nl.length - 1;
+                        curKey = ev.targetGp; ladder = nl; idx = ni;
+                    }
+                    pay = ladder[idx];
+                    if (!ev.sameScaleIncr98) anchor = ev.date.getMonth();   // AHM / HM(Jr): increment date stays as per AT
+                }
+            }
+            addRow(ev.date, ev.label, ev.kind);
+            from = ev.date;
         });
+        genIncr(from, null);
         finalizeDot(rows, endDate);
         return { rows, finalBasic: pay, finalScaleKey: curKey };
     }
