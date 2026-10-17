@@ -1757,7 +1757,9 @@
         const doj = new Date(startV || dojV); const o98d = new Date(o98);
         const end90 = new Date(o98d.getFullYear(), o98d.getMonth(), o98d.getDate() - 1);
         const dor = getDOR();
-        res.rows = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor).rows;
+        const t90 = computeRopa90Timeline(doj, sc90, bp90, end90 < dor ? end90 : dor, getPromotionEvents());
+        res.rows = t90.rows;
+        const scEnd90 = t90.finalScaleKey || sc90;   // scale in force at the end of ROPA-1990 (after any promotion / higher scale)
         if (!res.rows.length) {
             hideNote();
             if (note) { note.style.display = ''; note.style.color = '#b91c1c'; note.style.background = '#fef2f2'; note.style.borderColor = '#fecaca';
@@ -1770,18 +1772,18 @@
         if (note) { note.style.color = '#14532d'; note.style.background = '#f0fdf4'; note.style.borderColor = '#bbf7d0'; }
         const da90 = parseInt(document.getElementById('ropa90DA').value, 10) || 0;
         const lastB = res.rows[res.rows.length - 1].snapBasicPay;
-        const f = computeRopa98Fixation(sc90, lastB, da90);
+        const f = computeRopa98Fixation(scEnd90, lastB, da90);
         const auto = document.getElementById('ropa90AutoFix').checked;
         const pay98El = document.getElementById('ropa98BasicPay');
         if (auto) {
-            document.getElementById('ropa98Scale').value = String(sc90);
+            document.getElementById('ropa98Scale').value = String(scEnd90);
             pay98El.value = f.fixed;
         }
         pay98El.readOnly = auto;                       // generated, not typed
         pay98El.style.background = auto ? '#f1f5f9' : '';
         pay98El.title = auto ? 'Generated automatically from ROPA-1990 (rule 7)' : '';
         const usedPay = parseInt(document.getElementById('ropa98BasicPay').value, 10) || f.fixed;
-        window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: sc90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
+        window.CAS_fix98 = Object.assign({}, f, { optionDate: o98d, scale: scEnd90, fixed: usedPay, personal: (usedPay === f.fixed ? f.personal : 0), manual: !auto });
         res.fix = window.CAS_fix98;
         if (note) {
             note.style.display = '';
@@ -1809,24 +1811,78 @@
         if (id === 'ropa90BasicPay' || id === 'ropa90DA') { try { ropa90Evaluate(); } catch (err) {} }
     });
 
-    function computeRopa90Timeline(doj, scaleKey, basic, endDate) {
-        const ladder = ropa90Ladder(scaleKey);
-        if (!ladder.length || doj > endDate) return { rows: [] };
+    /* ROPA-1990 timeline. Promotion / Higher Scale events entered in 1a are applied exactly on the ROPA-1998 pattern:
+       Promotion = one additional increment in the old scale, then fitment in the new scale; Higher Scale = fitment only;
+       AHM / HM(Jr) = designation change + one increment in the same scale; Reversion = pay as AT would have drawn (protected).
+       A promotion / higher scale restarts the annual increment cycle in the month of the event. */
+    function computeRopa90Timeline(doj, scaleKey, basic, endDate, promos, _isBg) {
+        if (!ropa90Ladder(scaleKey).length || doj > endDate) return { rows: [] };
+        const has90 = k => ropa90Ladder(k).length > 0;
+        const chain = prepPromoChain(promos || [], scaleKey, doj, doj, endDate, '98');
+        // a target scale that does not exist in the ROPA-1990 tables cannot be fitted: keep the current scale (increment only)
+        let probeKey = scaleKey;
+        chain.forEach(p => {
+            if (!p.isRevert && !p.designationOnly) { if (!has90(p.targetGp)) { p.targetGp = probeKey; p.noScale90 = true; } else probeKey = p.targetGp; }
+        });
+        if (!_isBg) chain.forEach(p => { if (p.bgPromos) { const bg = computeRopa90Timeline(doj, scaleKey, basic, endDate, p.bgPromos, true); const prior = (bg.rows || []).filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; } });
+        const events = [];
+        const push = (d, data) => events.push({ date: new Date(d), ...data });
+        push(doj, { label: 'DOA / ROPA-1990', isInitial: true });
+        chain.forEach(p => push(p.date, { label: p.label, isPromotion: true, targetGp: p.targetGp, evType: p.evType, kind: p.kind, designationOnly: p.designationOnly, isRevert: p.isRevert, noProtect: p.noProtect, bgSnap: p.bgSnap }));
+        const cutEv = chain.filter(p => !p.designationOnly && !p.sameScaleIncr98);
+        const cuts = [doj, ...cutEv.map(p => p.date)];
+        const cutRevert = [null, ...cutEv.map(p => p.isRevert ? p : null)];
+        for (let k = 0; k < cuts.length; k++) {
+            const segStart = cuts[k], segEnd = (k + 1 < cuts.length) ? cuts[k + 1] : null;
+            let anchorMonth = segStart.getMonth();
+            const rv = cutRevert[k];
+            if (rv) {
+                const atEv = (rv.bgPromos || []).filter(x => x.kind === 'highscale' && x.date <= rv.date && x.date > doj).sort((x, y) => y.date - x.date)[0];
+                anchorMonth = (atEv ? atEv.date : doj).getMonth();
+            }
+            for (let yr = segStart.getFullYear() + (rv ? 0 : 1); yr <= endDate.getFullYear() + 1; yr++) {
+                const d = new Date(yr, anchorMonth, 1);
+                if (segEnd && d >= segEnd) break;
+                if (d > endDate) break;
+                if (k === 0 ? d <= doj : d <= segStart) continue;
+                push(d, { label: 'INCREMENT', isAnnual: true });
+            }
+        }
+        events.sort((x, y) => (x.date - y.date) || ((y.isPromotion ? 1 : 0) - (x.isPromotion ? 1 : 0)) || ((y.isInitial ? 1 : 0) - (x.isInitial ? 1 : 0)));
+        let curKey = scaleKey, ladder = ropa90Ladder(curKey);
         let idx = ladder.indexOf(basic);
         if (idx === -1) { idx = ladder.findIndex(v => v >= basic); if (idx === -1) idx = ladder.length - 1; }
         let pay = ladder[idx];
-        const scaleStr = ropa90ScaleLabel(scaleKey);
-        const mk = (date, label) => ({ date: new Date(date), label, scaleStr, trackCol: '', gpDisplay: '', basicDisplay: pay.toLocaleString('en-IN'), slipHTML: '', snapBasicPay: pay, snapScaleKey: scaleKey });
-        const rows = [mk(doj, 'DOA / ROPA-1990')];
-        for (let yr = doj.getFullYear() + 1; ; yr++) {
-            const d = new Date(yr, doj.getMonth(), 1);
-            if (d > endDate) break;
-            if (idx >= ladder.length - 1) break;      // stagnation at the top of the scale
-            idx += 1; pay = ladder[idx];
-            rows.push(mk(d, 'INCREMENT'));
-        }
+        const setFrom = snap => { curKey = snap.snapScaleKey; ladder = ropa90Ladder(curKey); let i = ladder.indexOf(snap.snapBasicPay); if (i === -1) { i = ladder.findIndex(v => v >= snap.snapBasicPay); if (i === -1) i = ladder.length - 1; } idx = i; pay = ladder[idx]; };
+        const rows = [];
+        events.forEach(ev => {
+            if (ev.isInitial) { /* starting pay */ }
+            else if (ev.isPromotion && ev.bgSnap && !ev.designationOnly && !ev.isRevert) { setFrom(ev.bgSnap); }
+            if (ev.isInitial) { /* nothing */ }
+            else if (ev.isRevert) {
+                const prot = pay;
+                if (ev.bgSnap) setFrom(ev.bgSnap);
+                if (!ev.noProtect && prot > pay) { let pi = ladder.findIndex(v => v >= prot); if (pi === -1) pi = ladder.length - 1; idx = pi; pay = ladder[idx]; }
+            } else if (ev.isPromotion && ev.designationOnly) {
+                /* designation only: no change in pay */
+            } else if (ev.isPromotion) {
+                let pre = pay;
+                if (ev.evType === 'promo') { if (idx < ladder.length - 1) idx += 1; pre = ladder[idx]; }
+                const nl = ropa90Ladder(ev.targetGp);
+                if (nl.length) {
+                    let ni = nl.findIndex(v => v >= pre);
+                    if (ni === -1) ni = nl.length - 1;
+                    curKey = ev.targetGp; ladder = nl; idx = ni;
+                }
+                pay = ladder[idx];
+            } else if (ev.isAnnual) {
+                if (idx < ladder.length - 1) idx += 1;
+                pay = ladder[idx];
+            }
+            rows.push({ date: new Date(ev.date), label: ev.label, scaleStr: ropa90ScaleLabel(curKey), trackCol: '', gpDisplay: '', basicDisplay: pay.toLocaleString('en-IN'), slipHTML: '', snapBasicPay: pay, snapScaleKey: curKey, evKind: ev.kind || null });
+        });
         finalizeDot(rows, endDate);
-        return { rows, finalBasic: pay };
+        return { rows, finalBasic: pay, finalScaleKey: curKey };
     }
 
     function toggleRopa98Section() {
