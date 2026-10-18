@@ -2286,6 +2286,21 @@
         return `Appointed as ${post} on ${formatDate(promoDate)} but, as the date of appointment falls within 2.1 to 30.6, option exercised and pay fixed w.e.f. ${formatDate(optDate)} instead of ${formatDate(promoDate)} (date of promotion) as per ${ropaName} rules and granted by MCR / Administrator Order No. ____________ dated ____________.`;
     }
 
+    // HM option row on 01-Jul: any 10 / 18 / 20-Year benefit that takes effect on that same 01-Jul is clubbed
+    // INTO the HM row (benefit first, then promotion) so 01-Jul is not repeated in the pay table.
+    function clubSameDayMilestones(rows, optDate) {
+        const out = [];
+        if (!optDate) return out;
+        while (rows.length) {
+            const r = rows[rows.length - 1];
+            // club earlier 10/18/20-Year rows AND the normal annual INCREMENT row falling on the same day
+            if (!(r.isMilestoneRow || r.label === 'INCREMENT') || !r.date || r.date.getFullYear() !== optDate.getFullYear() ||
+                r.date.getMonth() !== optDate.getMonth() || r.date.getDate() !== optDate.getDate()) break;
+            out.unshift(rows.pop());
+        }
+        return out;
+    }
+
     function resolveDateNoWindow(originalDate, entries) {
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
@@ -2391,9 +2406,9 @@
     function sortTimelineEvents(events) {
         function eventPriority(ev) {
             if (ev.isInitial) return 0;
-            if (ev.isAnnual && !ev.isHmAhmOptionIncrementRow) return 1;
-            if (ev.isMilestone) return 2;
-            if (ev.isPromotion) return 3;
+            if (ev.isAnnual) return 1;            // normal 01-Jul increment (incl. the HM option-year one) FIRST
+            if (ev.isMilestone) return 2;         // then 10 / 18 / 20-Year benefit
+            if (ev.isPromotion) return 3;         // then HM fixation, based on the last 01-Jul basic
             if (ev.isHmAhmOptionIncrementRow) return 4;
             return 5;
         }
@@ -2657,6 +2672,9 @@
             const _tLevel09 = levelMap19[p.targetGp - (p.agp || 0)] || 0;
             const _hmOpt09 = (!p.designationOnly && !p.agpOnly && !p.isRevert && _tLevel09 === 16 && isInPromoIncrWindow(p.date))
                 ? new Date(p.date.getFullYear(), 6, 1) : null;
+            if (_hmOpt09) {
+                pushEvent(_hmOpt09, { label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: _hmOpt09 });
+            }
             pushEvent(p.date, {
                 hmOptDate: _hmOpt09,
                 label: p.label,
@@ -2872,12 +2890,7 @@
                     runningBandPay += incAmt;
                     runningBasicPay = runningBandPay + runningGp;
                     // HM appointed 02-Jan to 30-Jun, option on 01-Jul: the normal 01-Jul increment is given in the
-                    // SAME row (no separate repeated 01-Jul row); next increment falls on 01-Jul of the next year.
-                    if (ev.hmOptDate) {
-                        optInc09 = calculate09Increment(runningBandPay, runningGp);
-                        runningBandPay += optInc09;
-                        runningBasicPay = runningBandPay + runningGp;
-                    }
+                    // SAME row
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
@@ -2976,9 +2989,14 @@
                 const _bg = runningGp - runningAgp;
                 colScaleStr = `${pbMap09[_bg] || ''}-GP-${_bg}` + (agpLabel ? `+AGP-${agpLabel}` : '');
             }
+            const _club09 = [];
+            if (_club09.length) {
+                slipBlockHTML = _club09.map(r => r.slipHTML).join('<hr style="border:0;border-top:1px dashed #94a3b8;margin:6px 0;">') + '<hr style="border:0;border-top:1px dashed #94a3b8;margin:6px 0;">' + slipBlockHTML;
+            }
             compiledRows.push({
+                isMilestoneRow: !!ev.isMilestone,
                 date: ev.hmOptDate || ev.date,
-                label: ev.label,
+                label: _club09.map(r => r.label).concat(ev.label).join(' + '),
                 evKind: ev.kind || null,
                 fx: (ev.isPromotion && !ev.designationOnly) ? { kind: ev.kind, evType: ev.evType, isRevert: !!ev.isRevert, noProtect: !!ev.noProtect, agpOnly: !!ev.agpOnly, existingBand: existingBandPay, existingGp: existingGp, existingAgp: exAgp09, incAmt: incAmt, bgNote: bgNote, fit98: ev._fit98 ? ev._fit98Info : null, r98rev: ev._r98rev || null } : null,
                 scaleStr: colScaleStr,
@@ -2986,7 +3004,7 @@
                 gpDisplay: agpLabel ? ((runningGp - runningAgp).toLocaleString('en-IN') + '+AGP-' + agpLabel) : runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
-                casRemark: ev.hmOptDate ? hmOptionRemarkText(ev.kind, ev.date, ev.hmOptDate, 'ROPA-2009') : (ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : ''),
+                casRemark: _club09.map(r => r.casRemark).concat(ev.hmOptDate ? hmOptionRemarkText(ev.kind, ev.date, ev.hmOptDate, 'ROPA-2009') : (ev.isMilestone ? milestoneRemarkText(ev, existingGp !== runningGp, 'ROPA-2009') : '')).filter(Boolean).join('<br>'),
                 snapBandPay: runningBandPay,
                 snapGp: runningGp,
                 snapAgp: runningAgp
@@ -3251,15 +3269,20 @@
             colScaleStr = `Level-${runningLevel}`;
 
             const _hmOptRow19 = (promoDetail && promoDetail.optionApplied && promoDetail.date) ? promoDetail.date : null;
+            const _club19 = [];
+            if (_club19.length) {
+                slipBlockHTML = _club19.map(r => r.slipHTML).join('<hr style="border:0;border-top:1px dashed #94a3b8;margin:6px 0;">') + '<hr style="border:0;border-top:1px dashed #94a3b8;margin:6px 0;">' + slipBlockHTML;
+            }
             compiledRows.push({
+                isMilestoneRow: !!ev.isMilestone,
                 date: _hmOptRow19 || ev.date,
-                label: ev.label,
+                label: _club19.map(r => r.label).concat(ev.label).join(' + '),
                 scaleStr: colScaleStr,
                 trackCol: colTrackingInfo,
                 gpDisplay: runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
                 slipHTML: slipBlockHTML,
-                casRemark: _hmOptRow19 ? hmOptionRemarkText(ev.kind, ev.date, _hmOptRow19, 'ROPA-2019') : (ev.isMilestone ? milestoneRemarkText(ev, existingLevel !== runningLevel, 'ROPA-2019') : ''),
+                casRemark: _club19.map(r => r.casRemark).concat(_hmOptRow19 ? hmOptionRemarkText(ev.kind, ev.date, _hmOptRow19, 'ROPA-2019') : (ev.isMilestone ? milestoneRemarkText(ev, existingLevel !== runningLevel, 'ROPA-2019') : '')).filter(Boolean).join('<br>'),
                 promoDetail: promoDetail,
                 evKind: ev.kind || null,
                 fx19: ev.isRevert ? { isRevert: true, noProtect: !!ev.noProtect, kind: ev.kind, oldBasic: existingBasic, oldLevel: existingLevel, newBasic: runningBasicPay, newLevel: runningLevel, newGp: runningGp, cell: colTrackingInfo } : null,
