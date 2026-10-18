@@ -2832,7 +2832,7 @@
                 }
                 slipBlockHTML = `
                     <div class="slip-box">
-                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span>2. Reverted to AT &mdash; ${protApplied09 ? 'pay drawn is PROTECTED (not reduced); new GP of AT, balance in Band Pay' : 'pay re-fixed as AT would have drawn had no promotion been given'}</span><span>BP: Rs. ${runningBandPay.toLocaleString('en-IN')}, GP: Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay Fixed on Reversion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                     </div>`;
@@ -2844,14 +2844,14 @@
                 runningBasicPay = runningBandPay + runningGp;
                 slipBlockHTML = `
                     <div class="slip-box">
-                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)} as HM (High School)</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)} as HM (High School)</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span>2. HM (Higher Secondary): only AGP Rs. ${(ev.agp || 0).toLocaleString('en-IN')} added; no increment, no re-fixation</span><span>+ Rs. ${(ev.agp || 0).toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay w.e.f ${formatDate(ev.date)} (date of next increment continues as per HM High School)</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                     </div>`;
             } else if (ev.isPromotion && ev.designationOnly) {
                 slipBlockHTML = `
                     <div class="slip-box">
-                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
                         <div class="slip-row"><span>2. Designation changed (${ev.label.replace(/ \(DESIGNATION ONLY.*$/, '')}) &mdash; same scale/GP already in force; no increment, no re-fixation</span><span>&mdash;</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay continues w.e.f ${formatDate(ev.date)} (date of next increment unchanged)</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                     </div>`;
@@ -2893,7 +2893,7 @@
                     // SAME row
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.a) One Additional Increment in Existing Scale</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>${(ev.kind === 'ahm' || ev.kind === 'hmjr') ? '&nbsp;&nbsp;&nbsp;b) GP of AT Rs. ' + oldGp.toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') + ' added after the one additional increment in old scale' : (ev.kind === 'hmhs' ? '&nbsp;&nbsp;&nbsp;b) GP of HM (Higher Sec.) = Rs. ' + (runningGp - (ev.agp || 0)).toLocaleString('en-IN') + ' + AGP Rs. ' + (ev.agp || 0).toLocaleString('en-IN') : '&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post')}</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
                             ${optInc09 ? `<div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b1) Normal annual increment due on ${formatDate(ev.hmOptDate)} (option)</span><span>Rs. ${optInc09.toLocaleString('en-IN')}</span></div>` : ''}
@@ -2907,7 +2907,7 @@
                     runningBasicPay = runningBandPay + runningGp;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2. Fitted directly into Higher Scale GP ${runningGp.toLocaleString('en-IN')} (No promotional increment)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Fixed Basic Pay w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
@@ -2964,7 +2964,8 @@
                 const asWhat = (ev.kind === 'ahm') ? 'AHM HIGH SECY' : (ev.kind === 'hmjr' ? 'HM JR HIGH SCHOOL (AS AHM)' : (ev.kind === 'hmhs' ? 'HEADMASTER HIGH SECY' : 'HEADMASTER HIGH SCHOOL'));
                 const dniEv2 = events.slice(evIdx + 1).find(e => e.isAnnual && !e.isHmAhmOptionIncrementRow);
                 const dni2 = dniEv2 ? dniEv2.date : nextJuly(ev.date);
-                const bpDate = isAhmStyle ? dotDate(ev.date) : dotDate(ev.date).replace(/\.(\d{2})(\d{2})$/, '.$2');
+                const _bpD = ev.hmOptDate || ev.date;
+                const bpDate = isAhmStyle ? dotDate(_bpD) : dotDate(_bpD).replace(/\.(\d{2})(\d{2})$/, '.$2');
                 const effDate = isAhmStyle ? formatDate(ev.hmOptDate || ev.date) : dotDate(ev.hmOptDate || ev.date);
                 const dniTxt = isAhmStyle ? formatDate(dni2) : dotDate(dni2);
                 slipBlockHTML = `
@@ -3132,7 +3133,7 @@
                 colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
                 slipBlockHTML = `
                     <div class="slip-box">
-                        <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.hmOptDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                         <div class="slip-row"><span>2. Reverted to AT &mdash; ${protApplied19 ? 'pay drawn is PROTECTED; fitted at equal/next-higher cell of AT Level' : 'pay re-fixed as AT would have drawn had no promotion been given'}</span><span>L-${runningLevel}</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay Fixed on Reversion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${colTrackingInfo})</span></div>
                     </div>`;
@@ -3140,7 +3141,7 @@
                 colTrackingInfo = cellData.cell;
                 slipBlockHTML = `
                     <div class="slip-box">
-                        <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${runningLevel}, GP ${runningGp.toLocaleString('en-IN')})</span></div>
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.hmOptDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${runningLevel}, GP ${runningGp.toLocaleString('en-IN')})</span></div>
                         <div class="slip-row"><span>2. Designation changed (${ev.label.replace(/ \(DESIGNATION ONLY.*$/, '')}) &mdash; same Level already in force; no increment, no re-fixation</span><span>&mdash;</span></div>
                         <div class="slip-row"><span class="slip-bold">3. Pay continues w.e.f ${formatDate(ev.date)} (date of next increment unchanged)</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${cellData.cell})</span></div>
                     </div>`;
@@ -3192,7 +3193,7 @@
                     colTrackingInfo = fitted.cell;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.hmOptDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                             <div class="slip-row"><span>2.a) One Increment within Existing Level ${oldLevel}</span><span>Rs. ${oneStepAdded.toLocaleString('en-IN')} &rarr; Rs. ${oneStepValue.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.b) One More Increment for HM/AHM in Existing Level ${oldLevel}</span><span>Rs. ${secondStepAdded.toLocaleString('en-IN')} &rarr; Rs. ${twoStepValue.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.c) Fit into Target Level ${targetLevel} at equal/next-higher cell</span><span>Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
@@ -3214,7 +3215,7 @@
                     colTrackingInfo = fitted.cell;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.hmOptDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                             <div class="slip-row"><span>2. Fitted directly into Target Level ${targetLevel} (equal/next-higher cell - No increment)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Pay Fixed w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
                         </div>`;
