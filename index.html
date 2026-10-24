@@ -591,6 +591,7 @@
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
     <nav class="top-tabs" aria-label="All sections">
         <a href="#tab-staff" title="Staff & Service"><i>&#128100;</i><b>1 Staff</b></a>
+        <a href="#tab-share" title="Staff Link & Submissions"><i>&#128279;</i><b>Share</b></a>
         <a href="#tab-promotion" title="Promotion / Higher Scale"><i>&#127941;</i><b>1A Promo</b></a>
         <a href="#tab-ropa98" title="ROPA-1998"><i>&#128220;</i><b>R-98</b></a>
         <a href="#tab-ropa09" title="ROPA-2009"><i>&#128216;</i><b>R-09</b></a>
@@ -701,6 +702,32 @@
 
     <div class="output-box" id="dorOutput">
         <strong>Date of Retirement (DOR):</strong> Loading...
+    </div>
+
+    <h3 id="tab-share">1B. Staff Pay-Table Link &amp; Submissions (share link / fetch by admin key)</h3>
+    <div class="panel" id="sharePanel" style="background:#eff6ff;border:2px solid #3b82f6;">
+        <div style="font-weight:800;font-size:1rem;color:#1e3a8a;margin-bottom:6px;">A. Share link for staff</div>
+        <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">Upload <b>TFHS_Staff_Pay_Table.html</b> to your own site (GitHub Pages, Netlify, school website) and paste its web address below. The link opens the staff self-service page &mdash; pay tables, pay-slip generator and Leave A/c print &mdash; and every submission goes to the Google Sheet used in part B.</div>
+        <div class="grid-inputs">
+            <div class="form-group" style="grid-column:span 2;"><label>Web address where the Staff Pay Table page is hosted</label><input type="text" id="shPageUrl" placeholder="https://yourname.github.io/tfhs/TFHS_Staff_Pay_Table.html"></div>
+            <div class="form-group" style="grid-column:span 2;"><label>Message to staff (used for WhatsApp / copy)</label><input type="text" id="shMsg" value="TFHS staff: please open this link, fill your service details, check your pay tables and press Submit."></div>
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn-add" onclick="shBuildLink()">&#128279; Create share link</button>
+            <button type="button" class="btn-add" style="background:#475569;" onclick="shCopyLink()">&#128203; Copy link</button>
+            <button type="button" class="btn-add" style="background:#16a34a;" onclick="shWhatsApp()">WhatsApp</button>
+            <button type="button" class="btn-add" style="background:#7c3aed;" onclick="shOpenLink()">Open page</button>
+        </div>
+        <input type="text" id="shLinkOut" readonly onclick="this.select()" style="width:100%;box-sizing:border-box;margin-top:8px;padding:8px;border:1px solid #93c5fd;border-radius:6px;background:#fff;font-size:.85rem;" placeholder="The share link appears here">
+        <div id="shLinkStatus" style="font-size:.8rem;font-weight:600;margin-top:4px;"></div>
+
+        <div style="font-weight:800;font-size:1rem;color:#1e3a8a;margin:16px 0 6px;border-top:1px dashed #93c5fd;padding-top:12px;">B. Fetch staff submissions (enter admin key)</div>
+        <div class="grid-inputs">
+            <div class="form-group" style="grid-column:span 2;"><label>Google Apps Script web-app URL (/exec)</label><input type="text" id="shGasUrl"></div>
+            <div class="form-group"><label>Admin key</label><input type="password" id="shAdminKey" autocomplete="off" onkeydown="if(event.key==='Enter')shFetch();"></div>
+            <div class="form-group" style="display:flex;align-items:end;"><button type="button" class="btn-add" onclick="shFetch()">&#8681; Fetch submissions</button></div>
+        </div>
+        <div id="shList" style="margin-top:8px;font-size:.8rem;overflow-x:auto;"></div>
     </div>
 
     <h3 id="tab-promotion">1a. Promotion / Career Advancement / Higher Scale Movement</h3>
@@ -6888,6 +6915,78 @@ window.printAnnex98 = function () {
     w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Annexure_VIII_ROPA98</title><style>@page{size:A4 portrait;margin:10mm}body{margin:0}.fxf-page{border:none!important;border-radius:0!important;margin:0!important;padding:2mm 3mm!important}' + css + '</style></head><body>' + window._annex98Html + '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
     w.document.close();
 };
+</script>
+<script>
+/* Staff Pay-Table: share link + fetch submissions by admin key (same Apps Script as TFHS_Staff_Pay_Table.html) */
+(function(){
+  var GAS_DEFAULT = 'https://script.google.com/macros/s/AKfycbzQwOdkuoGhzh2VGyzOBItf1qQQempZ7JBX_ZoxPx5Qv9oftLD3u_Algl3J0jlsesw0DQ/exec';
+  var K_GAS = 'TFHS_PAY_SUBMIT_URL', K_PAGE = 'TFHS_PAYPAGE_URL';
+  var rows = [];
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var ls = function(k,v){ try{ if(v===undefined) return localStorage.getItem(k)||''; localStorage.setItem(k,v); }catch(e){ return ''; } };
+  function lstat(t, ok){ var e=$('shLinkStatus'); if(!e) return; e.style.color = ok?'#065f46':'#b91c1c'; e.textContent = t; }
+  function validPage(){ var u = ($('shPageUrl').value||'').trim(); if(!/^https?:\/\/\S+$/i.test(u)){ lstat('Enter the full web address (starting with https://) where the Staff Pay Table page is hosted.', false); return ''; } return u; }
+  window.shBuildLink = function(){ var u = validPage(); if(!u) return; ls(K_PAGE,u); $('shLinkOut').value = u; lstat('Share link ready. Copy it or send it by WhatsApp.', true); };
+  window.shCopyLink = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; o.select();
+    var done=function(){ lstat('Link copied.', true); };
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(o.value).then(done,function(){ try{document.execCommand('copy');done();}catch(e){lstat('Press and hold the link to copy it.',false);} }); }
+    else { try{ document.execCommand('copy'); done(); }catch(e){ lstat('Press and hold the link to copy it.', false); } } };
+  window.shWhatsApp = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; window.open('https://wa.me/?text='+encodeURIComponent(($('shMsg').value||'')+' '+o.value),'_blank'); };
+  window.shOpenLink = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; window.open(o.value,'_blank'); };
+
+  function sep(){ return $('shGasUrl').value.indexOf('?')>-1 ? '&' : '?'; }
+  window.shFetch = function(){
+    var url = ($('shGasUrl').value||'').trim(), key = ($('shAdminKey').value||'').trim(), box = $('shList');
+    if(!url || !key){ box.innerHTML = '<span style="color:#b91c1c;font-weight:700;">Enter the web-app URL and the admin key.</span>'; return; }
+    ls(K_GAS,url); box.textContent = 'Fetching...';
+    fetch(url + sep() + 'action=list&key=' + encodeURIComponent(key)).then(function(r){ return r.json(); }).then(function(j){
+      if(j.error){ box.innerHTML = '<span style="color:#b91c1c;font-weight:700;">'+esc(j.error)+'</span>'; return; }
+      rows = j.rows || [];
+      if(!rows.length){ box.innerHTML = '<span style="color:#475569;">No submissions yet.</span>'; return; }
+      box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.78rem;"><thead><tr style="background:#1e293b;color:#fff;"><th style="padding:4px;">Ref</th><th>Name</th><th>Designation</th><th>Basic</th><th>Status</th><th>Action</th></tr></thead><tbody>' +
+        rows.map(function(x,i){ var p=x.payload||{}, cur=p.current||{}, st=p.staff||{};
+          return '<tr style="border-bottom:1px solid #cbd5e1;"><td style="padding:4px;">'+esc(x.ref)+'</td><td>'+esc(x.name)+'</td><td>'+esc(st.designation||'')+'</td><td style="text-align:right;">'+esc(cur.basic||'')+'</td><td>'+esc(x.status)+'</td><td style="white-space:nowrap;">' +
+          '<button type="button" class="btn-add" style="padding:4px 8px;font-size:.72rem;" onclick="shLoad('+i+')">Load</button> ' +
+          '<button type="button" class="btn-add admin-only" style="padding:4px 8px;font-size:.72rem;background:#059669;" onclick="shSaveCloud('+i+')">Load &amp; Save</button> ' +
+          '<button type="button" class="btn-add" style="padding:4px 8px;font-size:.72rem;background:#475569;" onclick="shMark('+i+')">Mark imported</button> ' +
+          '<button type="button" class="btn-add" style="padding:4px 8px;font-size:.72rem;background:#7c3aed;" onclick="shDl('+i+')">JSON</button></td></tr>'; }).join('') +
+        '</tbody></table><div class="btn-row"><button type="button" class="btn-add" style="background:#0891b2;" onclick="shDlAll()">&#11015; Download all (JSON)</button></div><div id="shLoadMsg" style="margin-top:6px;font-weight:700;"></div>';
+    }).catch(function(e){ box.innerHTML = '<span style="color:#b91c1c;font-weight:700;">Fetch failed: '+esc(e.message)+'. Check the URL and your internet.</span>'; });
+  };
+  function lmsg(t, ok){ var e=$('shLoadMsg'); if(e){ e.style.color = ok?'#065f46':'#b91c1c'; e.textContent = t; } }
+  window.shLoad = function(i, quiet){
+    var x = rows[i], p = x && x.payload;
+    if(!p || !p.dashboard){ lmsg('This submission has no dashboard data (it may have been too large). Ask the staff to submit again, or use the JSON.', false); return false; }
+    try{
+      applyDashboardState(p.dashboard);
+      try{ processFixationTimeline(); }catch(e){}
+      if(!quiet) lmsg('Loaded: '+(x.name||x.ref)+' ('+x.ref+'). Check the pay tables, then use Save Teacher to keep the record.', true);
+      return true;
+    }catch(e){ lmsg('Load failed: '+e.message, false); return false; }
+  };
+  window.shSaveCloud = function(i){
+    if(typeof isAdmin==='undefined' || !isAdmin){ lmsg('Log in as admin (lock icon, top right) to save to the cloud.', false); return; }
+    if(!window.shLoad(i,true)) return;
+    var d = saveTeacherRecord(false);
+    lmsg(d ? 'Loaded and saved to cloud: '+d.staffName : 'Loaded, but saving failed - see the message under Teacher-wise Data Save.', !!d);
+  };
+  window.shMark = function(i){
+    var url=($('shGasUrl').value||'').trim(), key=($('shAdminKey').value||'').trim();
+    fetch(url + sep() + 'action=mark&ref=' + encodeURIComponent(rows[i].ref) + '&key=' + encodeURIComponent(key)).then(function(){ window.shFetch(); }).catch(function(e){ lmsg('Could not mark: '+e.message, false); });
+  };
+  function dl(name, text){ var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+  window.shDl = function(i){ dl('TFHS_PAY_'+rows[i].ref+'.json', JSON.stringify(rows[i].payload,null,2)); };
+  window.shDlAll = function(){ dl('TFHS_PAY_ALL_'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(rows.map(function(x){return x.payload;}),null,2)); };
+
+  function init(){
+    if(!$('shGasUrl')) return;
+    $('shGasUrl').value = ls(K_GAS) || GAS_DEFAULT;
+    $('shPageUrl').value = ls(K_PAGE);
+    if($('shPageUrl').value) $('shLinkOut').value = $('shPageUrl').value;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 </script>
 </body>
 </html>
