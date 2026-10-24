@@ -710,11 +710,26 @@
         <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">The staff page is hosted at the address below (upload <b>TFHS_Staff_Pay_Table.html</b> there as <b>index.html</b>; change the address only if you move it). The link opens the staff self-service page &mdash; pay tables, pay-slip generator and Leave A/c print &mdash; and every submission goes to the Google Sheet used in part B.</div>
         <div class="grid-inputs">
             <div class="form-group" style="grid-column:span 2;"><label>Web address where the Staff Pay Table page is hosted</label><input type="text" id="shPageUrl" placeholder="https://prabirdangar-web.github.io/staff_sb/"></div>
-            <div class="form-group" style="grid-column:span 2;"><label>Message to staff (used for WhatsApp / copy)</label><input type="text" id="shMsg" value="TFHS staff: please open this link, fill your service details, check your pay tables and press Submit."></div>
+            <div class="form-group" style="grid-column:1/-1;"><label>Message to staff (Bengali instruction + expected output; sent with the link)</label><textarea id="shMsg" rows="14" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;">TFHS কর্মচারীদের জন্য পে-টেবিল / পে-স্লিপ / Leave A/c
+
+কী করবেন:
+১) নিচের লিংক খুলুন। নাম, জন্মতারিখ ও চাকরিতে যোগদানের তারিখ (সার্ভিস বুক অনুযায়ী) লিখুন।
+২) "Generate Pay Tables" চাপুন।
+৩) আপনার ROPA পে-টেবিল ও বর্তমান বেতন মিলিয়ে দেখুন।
+৪) মাস বেছে "Generate Pay Slip" চাপুন (Employee ID, PAN, ব্যাংক A/c ও IFS দিন)।
+৫) দরকার হলে Leave A/c-তে ছুটি লিখে প্রিন্ট করুন।
+৬) সব ঠিক থাকলে টিক দিয়ে "Submit to school" চাপুন।
+
+আপনি যা পাবেন:
+• ROPA-98/09/19 অনুযায়ী পে-টেবিল ও বর্তমান বেসিক পে
+• নির্বাচিত মাসের পে-স্লিপ (PT, I-Tax, GPF সহ) – PDF/প্রিন্ট
+• Leave A/c (A4 Landscape) প্রিন্ট
+• জমা দিলে একটি Reference No. আসবে – স্ক্রিনশট রাখুন। ভুল থাকলে একই ফোন থেকে আবার Submit করুন।</textarea></div>
         </div>
         <div class="btn-row">
             <button type="button" class="btn-add" onclick="shBuildLink()">&#128279; Create share link</button>
             <button type="button" class="btn-add" style="background:#475569;" onclick="shCopyLink()">&#128203; Copy link</button>
+            <button type="button" class="btn-add" style="background:#0f766e;" onclick="shCopyMsg()">&#128203; Copy message + link</button>
             <button type="button" class="btn-add" style="background:#16a34a;" onclick="shWhatsApp()">WhatsApp</button>
             <button type="button" class="btn-add" style="background:#7c3aed;" onclick="shOpenLink()">Open page</button>
         </div>
@@ -6933,7 +6948,11 @@ window.printAnnex98 = function () {
     var done=function(){ lstat('Link copied.', true); };
     if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(o.value).then(done,function(){ try{document.execCommand('copy');done();}catch(e){lstat('Press and hold the link to copy it.',false);} }); }
     else { try{ document.execCommand('copy'); done(); }catch(e){ lstat('Press and hold the link to copy it.', false); } } };
-  window.shWhatsApp = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; window.open('https://wa.me/?text='+encodeURIComponent(($('shMsg').value||'')+' '+o.value),'_blank'); };
+  window.shWhatsApp = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; window.open('https://wa.me/?text='+encodeURIComponent(full(o.value)),'_blank'); };
+  function full(l){ return ($('shMsg').value||'').trim()+'\n\n\uD83D\uDD17 \u09B2\u09BF\u0982\u0995: '+l; }
+  window.shCopyMsg = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; var t=full(o.value);
+    var ok=function(){ lstat('Message with link copied.', true); };
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,function(){ lstat('Could not copy automatically; select the message and copy it.', false); }); } else { lstat('Could not copy automatically; select the message and copy it.', false); } };
   window.shOpenLink = function(){ var o=$('shLinkOut'); if(!o.value) window.shBuildLink(); if(!o.value) return; window.open(o.value,'_blank'); };
 
   function sep(){ return $('shGasUrl').value.indexOf('?')>-1 ? '&' : '?'; }
