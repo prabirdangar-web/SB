@@ -707,9 +707,9 @@
     <h3 id="tab-share">1B. Staff Pay-Table Link &amp; Submissions (share link / fetch by admin key)</h3>
     <div class="panel" id="sharePanel" style="background:#eff6ff;border:2px solid #3b82f6;">
         <div style="font-weight:800;font-size:1rem;color:#1e3a8a;margin-bottom:6px;">A. Share link for staff</div>
-        <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">Upload <b>TFHS_Staff_Pay_Table.html</b> to your own site (GitHub Pages, Netlify, school website) and paste its web address below. The link opens the staff self-service page &mdash; pay tables, pay-slip generator and Leave A/c print &mdash; and every submission goes to the Google Sheet used in part B.</div>
+        <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">The staff page is hosted at the address below (upload <b>TFHS_Staff_Pay_Table.html</b> there as <b>index.html</b>; change the address only if you move it). The link opens the staff self-service page &mdash; pay tables, pay-slip generator and Leave A/c print &mdash; and every submission goes to the Google Sheet used in part B.</div>
         <div class="grid-inputs">
-            <div class="form-group" style="grid-column:span 2;"><label>Web address where the Staff Pay Table page is hosted</label><input type="text" id="shPageUrl" placeholder="https://yourname.github.io/tfhs/TFHS_Staff_Pay_Table.html"></div>
+            <div class="form-group" style="grid-column:span 2;"><label>Web address where the Staff Pay Table page is hosted</label><input type="text" id="shPageUrl" placeholder="https://prabirdangar-web.github.io/staff_sb/"></div>
             <div class="form-group" style="grid-column:span 2;"><label>Message to staff (used for WhatsApp / copy)</label><input type="text" id="shMsg" value="TFHS staff: please open this link, fill your service details, check your pay tables and press Submit."></div>
         </div>
         <div class="btn-row">
@@ -6920,6 +6920,7 @@ window.printAnnex98 = function () {
 /* Staff Pay-Table: share link + fetch submissions by admin key (same Apps Script as TFHS_Staff_Pay_Table.html) */
 (function(){
   var GAS_DEFAULT = 'https://script.google.com/macros/s/AKfycbzQwOdkuoGhzh2VGyzOBItf1qQQempZ7JBX_ZoxPx5Qv9oftLD3u_Algl3J0jlsesw0DQ/exec';
+  var PAGE_DEFAULT = 'https://prabirdangar-web.github.io/staff_sb/';
   var K_GAS = 'TFHS_PAY_SUBMIT_URL', K_PAGE = 'TFHS_PAYPAGE_URL';
   var rows = [];
   var $ = function(id){ return document.getElementById(id); };
@@ -6982,7 +6983,7 @@ window.printAnnex98 = function () {
   function init(){
     if(!$('shGasUrl')) return;
     $('shGasUrl').value = ls(K_GAS) || GAS_DEFAULT;
-    $('shPageUrl').value = ls(K_PAGE);
+    $('shPageUrl').value = ls(K_PAGE) || PAGE_DEFAULT;
     if($('shPageUrl').value) $('shLinkOut').value = $('shPageUrl').value;
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
