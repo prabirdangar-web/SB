@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1e3a8a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="TFHS SB">
+    <meta name="apple-mobile-web-app-title" content="ROPA Pay Fix">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
@@ -518,9 +518,12 @@
 .nsb-wrap .fxh{font-size:7.5pt;font-weight:bold;font-style:italic;text-align:left;margin-top:5px;border-top:1px dashed #777;padding-top:2px}
 .nsb-wrap td.c2{text-align:left}
 .nsb-wrap .mofbox{margin-top:4px}.nsb-wrap .mofbox>div{font-size:8pt!important;margin-top:0!important;border-color:#000!important}.nsb-wrap .mofbox div,.nsb-wrap .mofbox td{font-size:8pt!important;text-align:left;line-height:1.25;border-color:#555!important}.nsb-wrap .mofbox>div>div:first-child{text-align:center!important}.nsb-wrap .mofbox td:nth-child(2){text-align:right}.nsb-wrap .mofbox table{width:100%;table-layout:auto}
+@media (max-width:700px){input,select,textarea{font-size:16px !important;}button{min-height:42px;}#mainTable{min-width:900px;}}
+.table-responsive,.panel{overflow-x:auto;}
 </style>
 </head>
 <body>
+<div id="pwaBar" class="no-print" style="display:none;position:fixed;left:8px;bottom:8px;z-index:99998;background:#0f172a;color:#fff;padding:8px 12px;border-radius:12px;font-size:12px;gap:8px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.3);"><span>&#128241; Use as a mobile app</span><button type="button" onclick="pwaInstall()" style="background:#22c55e;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;">Install</button><button type="button" onclick="this.parentNode.style.display='none'" style="background:transparent;color:#cbd5e1;border:0;font-size:16px;">&times;</button></div>
 
 <div id="syncStatus" style="position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.2);" class="no-print">Connecting…</div>
 
@@ -707,24 +710,25 @@
     <h3 id="tab-share">1B. Staff Pay-Table Link &amp; Submissions (share link / fetch by admin key)</h3>
     <div class="panel" id="sharePanel" style="background:#eff6ff;border:2px solid #3b82f6;">
         <div style="font-weight:800;font-size:1rem;color:#1e3a8a;margin-bottom:6px;">A. Share link for staff</div>
-        <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">The staff page is hosted at the address below (upload <b>TFHS_Staff_Pay_Table.html</b> there as <b>index.html</b>; change the address only if you move it). The link opens the staff self-service page &mdash; pay tables, pay-slip generator and Leave A/c print &mdash; and every submission goes to the Google Sheet used in part B.</div>
+        <div style="font-size:.8rem;color:#334155;margin-bottom:8px;">The staff page is hosted at the address below (upload the <b>Staff Pay Table</b> files &mdash; <b>index.html</b>, manifest.json, sw.js and the icons &mdash; there; change the address only if you move it). The link opens the staff self-service page &mdash; pay tables, salary / pay slip and Leave A/c print &mdash; which staff can also <b>install as a mobile app</b>. Every submission goes to the Google Sheet used in part B, and staff can fetch their own submission back by Reference No. or by Mobile no. + Date of Birth (re-deploy the updated Apps Script given in the staff page for this).</div>
         <div class="grid-inputs">
             <div class="form-group" style="grid-column:span 2;"><label>Web address where the Staff Pay Table page is hosted</label><input type="text" id="shPageUrl" placeholder="https://prabirdangar-web.github.io/staff_sb/"></div>
-            <div class="form-group" style="grid-column:1/-1;"><label>Message to staff (Bengali instruction + expected output; sent with the link)</label><textarea id="shMsg" rows="14" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;">TFHS কর্মচারীদের জন্য পে-টেবিল / পে-স্লিপ / Leave A/c
+            <div class="form-group" style="grid-column:1/-1;"><label>Message to staff (Bengali instruction + expected output; sent with the link)</label><textarea id="shMsg" rows="14" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;">কর্মচারীদের জন্য পে-টেবিল / পে-স্লিপ / Leave A/c
 
 কী করবেন:
-১) নিচের লিংক খুলুন। নাম, জন্মতারিখ ও চাকরিতে যোগদানের তারিখ (সার্ভিস বুক অনুযায়ী) লিখুন।
-২) "Generate Pay Tables" চাপুন।
-৩) আপনার ROPA পে-টেবিল ও বর্তমান বেতন মিলিয়ে দেখুন।
-৪) মাস বেছে "Generate Pay Slip" চাপুন (Employee ID, PAN, ব্যাংক A/c ও IFS দিন)।
-৫) দরকার হলে Leave A/c-তে ছুটি লিখে প্রিন্ট করুন।
-৬) সব ঠিক থাকলে টিক দিয়ে "Submit to school" চাপুন।
+১) নিচের লিংক খুলুন (মোবাইলে "Install App" দিয়ে অ্যাপ হিসেবে রাখা যাবে)। নাম, জন্মতারিখ, চাকরিতে যোগদানের তারিখ (সার্ভিস বুক অনুযায়ী) এবং মোবাইল নম্বর (বাধ্যতামূলক) লিখুন।
+২) ROPA-90/98/09/19 এর "Date of Option" খুব মন দিয়ে সার্ভিস বুকের সঙ্গে মিলিয়ে নিন – এটি অত্যন্ত গুরুত্বপূর্ণ।
+৩) "Generate Pay Tables" চাপুন।
+৪) আপনার ROPA পে-টেবিল ও বর্তমান বেসিক পে মিলিয়ে দেখুন।
+৫) মাস বেছে Salary সেকশনে Basic, DA, HRA, MA (অন্য ভাতা থাকলে লিখুন) এবং PF, I-Tax, P-Tax দেখে "Generate Pay Slip" চাপুন (Employee ID, PAN, ব্যাংক A/c ও IFS দিন)।
+৬) Leave A/c-তে নির্দেশনা অনুযায়ী ধাপে ধাপে ছুটি লিখে প্রিন্ট করুন।
+৭) সব ঠিক থাকলে টিক দিয়ে "Submit to Provider" চাপুন।
 
 আপনি যা পাবেন:
 • ROPA-98/09/19 অনুযায়ী পে-টেবিল ও বর্তমান বেসিক পে
-• নির্বাচিত মাসের পে-স্লিপ (PT, I-Tax, GPF সহ) – PDF/প্রিন্ট
+• নির্বাচিত মাসের পে-স্লিপ (PF, I-Tax, P-Tax সহ) – PDF/প্রিন্ট
 • Leave A/c (A4 Landscape) প্রিন্ট
-• জমা দিলে একটি Reference No. আসবে – স্ক্রিনশট রাখুন। ভুল থাকলে একই ফোন থেকে আবার Submit করুন।</textarea></div>
+• জমা দিলে একটি Reference No. আসবে – স্ক্রিনশট রাখুন। পরে Reference No. অথবা মোবাইল নম্বর + জন্মতারিখ দিয়ে নিজের জমা দেওয়া তথ্য আবার আনতে (Fetch) পারবেন। ভুল থাকলে তথ্য এনে সংশোধন করে আবার Submit করুন।</textarea></div>
         </div>
         <div class="btn-row">
             <button type="button" class="btn-add" onclick="shBuildLink()">&#128279; Create share link</button>
@@ -1012,6 +1016,16 @@
         </div>
     </div>
 
+    <div id="ropaWarn" style="border:3px solid #dc2626;background:#fef2f2;border-radius:10px;padding:12px 14px;margin:14px 0;">
+        <div style="font-weight:800;color:#b91c1c;font-size:1rem;">&#9888; VERY IMPORTANT &mdash; check every ROPA Date of Option before you press Generate Pay Tables</div>
+        <div style="font-size:.86rem;margin-top:6px;">Every table (fixation, increments, current basic pay, arrear and leave effects) depends on the <b>Date of Option</b> and Date of Joining entered for <b>ROPA-1990 / ROPA-1998 / ROPA-2009 / ROPA-2019</b>. A wrong option date makes the whole fixation wrong.
+            <ul style="margin:6px 0 6px 18px;padding:0;">
+                <li>Compare each option date, the option form / fixation entry and the DOJ with the <b>Service Book</b>, one by one.</li>
+                <li>Untick a ROPA that did not apply; fill dates only for those that did.</li>
+                <li>Check the initial basic / band pay, grade pay and promotion / higher-scale dates as well.</li>
+            </ul>
+            <span lang="bn"><b>খুব গুরুত্বপূর্ণ:</b> Generate চাপার আগে ROPA-90/98/09/19 প্রতিটির &ldquo;Date of Option&rdquo; সার্ভিস বুকের সঙ্গে খুব ভালোভাবে মিলিয়ে নিন। অপশনের তারিখ ভুল হলে পুরো পে-টেবিল ভুল আসবে।</span></div>
+    </div>
     <div class="btn-group">
         <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
         <button type="button" class="btn-print" onclick="printPayFixation()">Print Pay Fixation (A4 Portrait)</button>
@@ -1091,6 +1105,17 @@
     <h3 id="tab-leave" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">5. Leave Account (Register)</h3>
     <div id="errorBanner" style="display:none;background:#fee2e2;border:1px solid #dc2626;color:#991b1b;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:.85rem;font-weight:600;"></div>
     <p style="font-size:.8rem;color:#555;">Uses the Name, Designation and Date of Joining entered in Section 1 above. Set a retirement / generate-up-to date below (defaults to the DOR already calculated in Section 1).</p>
+    <div class="output-box" style="border-left-color:#0f766e;background:#f0fdfa;font-size:.82rem;">
+        <b>How to fill the Leave A/c &mdash; follow these steps in order</b>
+        <ol style="margin:6px 0 4px 18px;padding:0;">
+            <li><b>Step 1 &ndash; Period rows (5.1):</b> set <i>Generate rows up to</i> (retirement date or today). If the staff was <u>transferred</u>, choose <i>Yes</i> and add the joining date of each new school. Press <b>Auto-Generate</b>.</li>
+            <li><b>Step 2 &ndash; Opening balance:</b> fill it only if the service book shows a balance at joining; otherwise keep 0.</li>
+            <li><b>Step 3 &ndash; Add every leave (5.3):</b> pick the <i>Leave Type</i> &rarr; pick the entry mode (date range, list of dates, or only number of days) &rarr; fill the dates &rarr; press <b>Add</b>. Repeat for each leave. A wrong entry can be deleted from the list below.</li>
+            <li><b>Step 4 &ndash; Check</b> the Leave Account table (5.4). A negative / red balance means a leave is wrongly entered or exceeds the balance.</li>
+            <li><b>Step 5 &ndash; Print</b> with <b>Print Leave A/c</b> (choose <b>A4 Landscape</b>; &ldquo;Save as PDF&rdquo; keeps a copy).</li>
+        </ol>
+        <span lang="bn"><b>বাংলায়:</b> ধাপ ১ &ndash; তারিখ বসিয়ে Auto-Generate; ধাপ ২ &ndash; ওপেনিং ব্যালান্স সার্ভিস বুকে থাকলে তবেই; ধাপ ৩ &ndash; ছুটির ধরন বেছে তারিখ/দিন লিখে Add, প্রতিটি ছুটির জন্য; ধাপ ৪ &ndash; টেবিল মিলিয়ে দেখুন; ধাপ ৫ &ndash; A4 Landscape-এ প্রিন্ট/PDF।</span>
+    </div>
 
     <h4>5.1 Auto-Generate Period of Duty Rows</h4>
     <div class="panel">
@@ -6964,9 +6989,9 @@ window.printAnnex98 = function () {
       if(j.error){ box.innerHTML = '<span style="color:#b91c1c;font-weight:700;">'+esc(j.error)+'</span>'; return; }
       rows = j.rows || [];
       if(!rows.length){ box.innerHTML = '<span style="color:#475569;">No submissions yet.</span>'; return; }
-      box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.78rem;"><thead><tr style="background:#1e293b;color:#fff;"><th style="padding:4px;">Ref</th><th>Name</th><th>Designation</th><th>Basic</th><th>Status</th><th>Action</th></tr></thead><tbody>' +
+      box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.78rem;"><thead><tr style="background:#1e293b;color:#fff;"><th style="padding:4px;">Ref</th><th>Name</th><th>Mobile</th><th>Designation</th><th>Basic</th><th>Status</th><th>Action</th></tr></thead><tbody>' +
         rows.map(function(x,i){ var p=x.payload||{}, cur=p.current||{}, st=p.staff||{};
-          return '<tr style="border-bottom:1px solid #cbd5e1;"><td style="padding:4px;">'+esc(x.ref)+'</td><td>'+esc(x.name)+'</td><td>'+esc(st.designation||'')+'</td><td style="text-align:right;">'+esc(cur.basic||'')+'</td><td>'+esc(x.status)+'</td><td style="white-space:nowrap;">' +
+          return '<tr style="border-bottom:1px solid #cbd5e1;"><td style="padding:4px;">'+esc(x.ref)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.mobile||p.mobile||'')+'</td><td>'+esc(st.designation||'')+'</td><td style="text-align:right;">'+esc(cur.basic||'')+'</td><td>'+esc(x.status)+'</td><td style="white-space:nowrap;">' +
           '<button type="button" class="btn-add" style="padding:4px 8px;font-size:.72rem;" onclick="shLoad('+i+')">Load</button> ' +
           '<button type="button" class="btn-add admin-only" style="padding:4px 8px;font-size:.72rem;background:#059669;" onclick="shSaveCloud('+i+')">Load &amp; Save</button> ' +
           '<button type="button" class="btn-add" style="padding:4px 8px;font-size:.72rem;background:#475569;" onclick="shMark('+i+')">Mark imported</button> ' +
@@ -7006,6 +7031,16 @@ window.printAnnex98 = function () {
     if($('shPageUrl').value) $('shLinkOut').value = $('shPageUrl').value;
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+<script>
+(function(){
+  var dp=null, bar=document.getElementById('pwaBar');
+  var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone;
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); dp=e; if(bar&&!standalone) bar.style.display='flex'; });
+  window.addEventListener('appinstalled',function(){ if(bar) bar.style.display='none'; });
+  window.pwaInstall=function(){ if(dp){ dp.prompt(); dp.userChoice.then(function(){ dp=null; if(bar) bar.style.display='none'; }); } };
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone&&bar){ bar.firstChild.innerHTML='Install: tap <b>Share</b> &rarr; <b>Add to Home Screen</b>'; bar.querySelectorAll('button')[0].style.display='none'; bar.style.display='flex'; }
 })();
 </script>
 </body>
