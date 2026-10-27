@@ -2847,12 +2847,8 @@
 
         events.forEach((ev, evIdx) => {
             let bgNote = null;
-            // AGP is shown only in its fixation row; later increments are computed on pay excluding AGP.
-            if (runningAgp > 0 && !ev.isPromotion && !ev.isInitial) {
-                runningGp -= runningAgp;
-                runningAgp = 0;
-                runningBasicPay = runningBandPay + runningGp;
-            }
+            // AGP (Rs.200) stays part of the Grade Pay / basic pay in later increments (pay = band + GP + AGP);
+            // annual & additional increments are computed on band pay + GP + AGP (e.g. 17,710 + 5,000 -> +690 = 18,400).
             if (ev.isPromotion && ev.bgSnap && !ev.designationOnly && !ev.isRevert) {
                 // HM straight from AT: pay re-fitted in background as AT (AHM stage ignored)
                 runningBandPay = ev.bgSnap.snapBandPay;
@@ -2997,8 +2993,8 @@
             } else if (ev.isMilestone) {
                 incAmt = calculate09Increment(runningBandPay, runningGp);
                 runningBandPay += incAmt;
-                if (ev.label === "18 YEARS" && eligibleFor18YScaleChange && promoMap09[runningGp]) {
-                    runningGp = promoMap09[runningGp];
+                if (ev.label === "18 YEARS" && eligibleFor18YScaleChange && promoMap09[runningGp - runningAgp]) {
+                    runningGp = promoMap09[runningGp - runningAgp] + runningAgp;
                 }
                 runningBasicPay = runningBandPay + runningGp;
 
@@ -4515,7 +4511,9 @@ function casNextPayDetails(row, regime) {
         }
     }
     if (regime === '09') {
-        const gp = parseInt(String(row.gpDisplay || '0').replace(/,/g, ''), 10) || 0;
+        const _gpTxt = String(row.gpDisplay || '0').replace(/,/g, '');
+        const _agpM = _gpTxt.match(/AGP-?\s*(\d+)/i);
+        const gp = (parseInt(_gpTxt, 10) || 0) + (_agpM ? parseInt(_agpM[1], 10) : 0);   // GP + AGP (AGP stays in pay)
         const band = Math.max(0, basic - gp);
         const inc = calculate09Increment(band, gp);
         return { amount: inc, nextPay: basic + inc, nextLabel: row.scaleStr || '' };
