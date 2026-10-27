@@ -2191,7 +2191,7 @@
         else if (p.kind === 'hmhs') base = 'PROMOTION - HM (HIGHER SEC. SCHOOL)';
         else if (p.kind === 'hmjr') base = 'PROMOTION - HM (JR) AS AHM';
         else if (p.kind === 'revert') base = 'REVERSION TO AT';
-        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM BENEFIT DEDUCTED)';
+        else if (p.kind === 'recast') base = 'RECAST AS AT (AHM / hm Jr High School / TIC BENEFIT DEDUCTED)';
         const fj = p.forcedJuly ? ' [W.E.F. 01-07-' + p.date.getFullYear() + ' - DATE FALLS 02-JAN TO 30-JUN]' : '';
         if (p.agpOnly) return base + ' (AGP Rs.200 ADDED ONLY - INCREMENT DATE UNCHANGED)' + fj;
         return (p.designationOnly ? base + ' (DESIGNATION ONLY - NO CHANGE IN PAY)' : base) + fj;
@@ -2884,7 +2884,7 @@
                     runningBasicPay = runningBandPay + runningGp;
                 }
                 // Recast / Reversion falling AFTER the 01-01-2006 option date but inside the ROPA-1998 notional window:
-                // the ROPA-98 timeline already holds the correct AT pay on this date (AHM benefit deducted), so ROPA-09 pay
+                // the ROPA-98 timeline already holds the correct AT pay on this date (AHM / hm Jr High School / TIC BENEFIT DEDUCTED), so ROPA-09 pay
                 // = that ROPA-98 basic x 1.86 (rounded up to next Rs.10) + AT Grade Pay - same method as the 01-01-2006 fixation.
                 const r98rev = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate)
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /RECAST|REVERSION/i.test(r.label) && r.snapBasicPay)
@@ -3020,7 +3020,7 @@
                         <div class="slip-row"><span class="slip-bold">P.B.4: 9000-40500, G.P. - ${pl(runningGp)}</span></div>
                         <div class="slip-row"><span class="slip-bold">PAY FIXED AS ASSISTANT TEACHER</span></div>
                         ${ev._r98rev
-                            ? `<div class="slip-row"><span>BASIC PAY AS ON ${d2(ev.date)} AS PER ROPA-98 (AHM BENEFIT DEDUCTED)- RS.${ev._r98rev.b98}</span></div>
+                            ? `<div class="slip-row"><span>BASIC PAY AS ON ${d2(ev.date)} AS PER ROPA-98 (AHM / hm Jr High School / TIC BENEFIT DEDUCTED)- RS.${ev._r98rev.b98}</span></div>
                         <div class="slip-row"><span>Rs.${ev._r98rev.b98} x 1.86 = ${ev._r98rev.raw.toFixed(2)} rounded up to next Rs.10 = ${runningBandPay} (Pay Band) + G.P. ${runningGp}</span></div>`
                             : atRows.map(r => `<div class="slip-row"><span>BASIC PAY AS ON ${d2(r.date)}- RS.${String(r.basicDisplay).replace(/,/g, '')}</span></div>`).join('')}
                         <div class="slip-row"><span>i.e. BASIC PAY AS ON ${d2(ev.date)}- RS.${pl(runningBasicPay)}</span></div>
