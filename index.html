@@ -2356,7 +2356,7 @@
     function hmOptionRemarkText(kind, promoDate, optDate, ropaName) {
         const post = (kind === 'hmhs') ? 'Headmaster (Higher Secondary School)'
                    : (kind === 'hmjr') ? 'Headmaster (Junior High School)'
-                   : (kind === 'ahm') ? 'Assistant Headmaster'
+                   : (kind === 'ahm') ? 'Assistant Headmaster (High School)'
                    : 'Headmaster (High School)';
         return `Appointed as ${post} on ${formatDate(promoDate)} but, as the date of appointment falls within 2.1 to 30.6, option exercised and pay fixed w.e.f. ${formatDate(optDate)} instead of ${formatDate(promoDate)} (date of promotion) as per ${ropaName} rules and granted by MCR / Administrator Order No. ____________ dated ____________.`;
     }
@@ -2742,14 +2742,18 @@
 
         const chain09 = prepPromoChain(promos, gpInput, doj, optionDate, endDate, '09', initialAgp);
         if (!_isBg) chain09.forEach(p => { if (p.bgPromos) { const bg = computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, p.bgPromos, true, initialAgp); const prior = bg.rows.filter(r => p.isRevert ? r.date <= p.date : r.date < p.date); p.bgSnap = prior.length ? prior[prior.length - 1] : null; p.bgRows = prior; } });
+        const _ahmOptPending09 = [];
         chain09.forEach(p => {
             // HM (Level-16 / GP 5400) appointed 02-Jan to 30-Jun: option exercised, pay shown from 01-Jul
             const _tLevel09 = levelMap19[p.targetGp - (p.agp || 0)] || 0;
-            const _hmOpt09 = (!p.designationOnly && !p.agpOnly && !p.isRevert && _tLevel09 === 16 && isInPromoIncrWindow(p.date))
+            // ROPA-09 ONLY: AHM / HM (Jr) (GP of AT + AGP Rs.200) follows the same 02-Jan to 30-Jun rule as HM.
+            const _isAhmKind09 = (p.kind === 'ahm' || p.kind === 'hmjr');
+            const _hmOpt09 = (!p.designationOnly && !p.agpOnly && !p.isRevert && (_tLevel09 === 16 || _isAhmKind09) && isInPromoIncrWindow(p.date))
                 ? new Date(p.date.getFullYear(), 6, 1) : null;
-            if (_hmOpt09) {
+            if (_hmOpt09 && !_isAhmKind09) {
                 pushEvent(_hmOpt09, { label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: _hmOpt09 });
             }
+            if (_hmOpt09 && _isAhmKind09) _ahmOptPending09.push(_hmOpt09);
             pushEvent(p.date, {
                 hmOptDate: _hmOpt09,
                 label: p.label,
@@ -2831,6 +2835,13 @@
                     pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
                 }
             }
+        });
+
+        // AHM / HM(Jr) option on 01-Jul (ROPA-09): the normal 01-Jul increment is given first (same as HM), then the
+        // promotion fixation (one additional increment + AGP) on the same date. Add it only if the AT cycle has not already.
+        _ahmOptPending09.forEach(od => {
+            const has = events.some(e => e.isAnnual && e.date.getTime() === od.getTime());
+            if (!has) events.push({ date: new Date(od), label: "INCREMENT", isAnnual: true, isHmAhmOptionIncrementRow: true, notionalDate: od });
         });
 
         sortTimelineEvents(events);
