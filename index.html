@@ -495,6 +495,132 @@
         }
         @media print{.secSel{display:none!important}}
     </style>
+<style id="fxpStyle">
+/* =====================================================================
+   PRINT ENHANCEMENTS
+   (1) Mixed Pay Statement  -> A4 LANDSCAPE, enlarged to fill the sheet
+   (2) Fixation Forms       -> A4 PORTRAIT, auto-scaled to fill each sheet,
+                               HM / AHM / Promotion fixation added under the
+                               respective ROPA.  10 / 18 / 20 year fixation
+                               is NOT included in this print.
+   ===================================================================== */
+#fxpRoot { display: none; }
+
+/* ---------- fixation sheet (works on screen for measuring AND in print) ---------- */
+.fxp-page { --s: 1; box-sizing: border-box; width: 100%; display: flex; flex-direction: column;
+    font-family: 'Times New Roman', Times, serif; color: #000; background: #fff;
+    page-break-after: always; break-after: page; }
+.fxp-page:last-child { page-break-after: auto; break-after: auto; }
+.fxp-page.fxp-fill { min-height: 277mm; }
+.fxp-page.fxp-measure { min-height: 0; height: auto; }
+.fxp-annex { display: block; }
+
+.fxp-page .annex-title { text-align: center; font-weight: bold; text-decoration: underline;
+    font-size: calc(15pt * var(--s)) !important; margin: 0 0 calc(3mm * var(--s)) 0; }
+.fxp-page .annex-seepara { text-align: center; font-weight: bold; font-size: calc(10.5pt * var(--s)) !important;
+    margin: calc(-1mm * var(--s)) 0 calc(3mm * var(--s)) 0; }
+.fxp-page .annex-desc { font-size: calc(9.5pt * var(--s)); line-height: 1.3; margin-bottom: calc(2.5mm * var(--s)); }
+.fxp-page .annex-desc p { margin: 0 0 calc(1mm * var(--s)) 0; font-size: inherit !important; }
+.fxp-page .annex-rule { text-align: center; text-decoration: underline; font-size: calc(10.5pt * var(--s));
+    margin: calc(2mm * var(--s)) 0 calc(4mm * var(--s)) 0; }
+.fxp-page .annex-memo { font-weight: bold; text-align: center; font-size: calc(9.5pt * var(--s)); line-height: 1.35;
+    margin: calc(1.5mm * var(--s)) 0 calc(5mm * var(--s)) 0; }
+.fxp-page table.annex-table { width: 100%; border-collapse: collapse; font-size: calc(10pt * var(--s)); margin: 0; }
+.fxp-page table.annex-table td { border: none !important; background: none !important;
+    padding: calc(1.8mm * var(--s)) calc(1.5mm * var(--s)); vertical-align: top; font-size: calc(10pt * var(--s)); }
+.fxp-page table.annex-table .a-num { width: 6%; }
+.fxp-page table.annex-table .a-label { width: 47%; }
+.fxp-page table.annex-table .a-colon { width: 3%; text-align: center; }
+.fxp-page table.annex-table .a-value { width: 44%; font-weight: bold; font-size: calc(11pt * var(--s)) !important; }
+.fxp-page table.annex-table .a-sub { padding-left: calc(6mm * var(--s)); font-weight: normal; }
+.fxp-page table.annex-table .a-gap td { padding-top: calc(3.2mm * var(--s)); }
+.fxp-page .fxp-annex > div[style] { font-size: calc(10pt * var(--s)) !important; margin-top: calc(3mm * var(--s)) !important; }
+.fxp-page table.annex-table td[style*="width:70%"] { font-size: calc(10.5pt * var(--s)) !important; }
+.fxp-page table.annex-increment { width: 100%; border-collapse: collapse; margin: calc(2mm * var(--s)) 0 calc(3mm * var(--s)) 0;
+    font-size: calc(9.5pt * var(--s)); }
+.fxp-page table.annex-increment th, .fxp-page table.annex-increment td { border: 1px solid #000 !important;
+    padding: calc(1.5mm * var(--s)) calc(1.5mm * var(--s)); text-align: center; font-size: calc(9.5pt * var(--s)); }
+.fxp-page table.annex-increment th { background: #ffff00 !important; color: #c00000 !important; font-weight: 800;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.fxp-page table.annex-increment td.a-incamt { font-weight: bold; font-size: calc(10.5pt * var(--s)); }
+.fxp-page .annex-note { font-size: calc(8.3pt * var(--s)); color: #333; font-style: italic; margin-top: calc(1mm * var(--s)); }
+.fxp-page .annex-sig { margin-top: auto; padding-top: calc(9mm * var(--s)); text-align: right;
+    font-size: calc(9pt * var(--s)); font-style: italic; }
+.fxp-page .annex-sig-line { border-top: 1px solid #000; width: calc(75mm * var(--s)); margin-left: auto; padding-top: 1mm; }
+
+/* promotion / AHM / HM fixation */
+.fxp-sub { font-weight: bold; text-align: center; text-transform: uppercase; font-size: calc(11pt * var(--s));
+    border-top: 2px solid #000; border-bottom: 1px solid #000; padding: calc(1.2mm * var(--s)) 0;
+    margin: calc(5mm * var(--s)) 0 calc(3mm * var(--s)) 0; }
+.fxp-sub small { display: block; font-weight: normal; text-transform: none; font-size: calc(8.5pt * var(--s)); font-style: italic; }
+.fxp-card { border: 1.3px solid #000; margin: 0 0 calc(4mm * var(--s)); page-break-inside: avoid; break-inside: avoid; }
+.fxp-card-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 4mm;
+    background: #ffff00; color: #c00000; font-weight: bold; font-size: calc(10.5pt * var(--s));
+    padding: calc(1.3mm * var(--s)) calc(2mm * var(--s)); border-bottom: 1px solid #000;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.fxp-card-h .ml-note { color: #333; font-weight: normal; font-size: .75em; }
+.fxp-strip { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; }
+.fxp-strip th, .fxp-strip td { border: 1px solid #000; padding: calc(.9mm * var(--s)) calc(1mm * var(--s));
+    text-align: center; font-size: calc(9pt * var(--s)); word-wrap: break-word; }
+.fxp-strip th { background: #eeeeee !important; color: #000 !important; font-weight: bold; font-size: calc(8pt * var(--s));
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.fxp-strip td { font-weight: bold; }
+.fxp-remark { font-size: calc(9pt * var(--s)); text-align: justify; line-height: 1.3; padding: calc(1.5mm * var(--s)) calc(2mm * var(--s)) 0; }
+.fxp-card .slip-box { font-size: calc(9.5pt * var(--s)) !important; margin: calc(1.8mm * var(--s)) calc(2mm * var(--s)) calc(2mm * var(--s)) !important;
+    padding: calc(1.5mm * var(--s)) calc(2.5mm * var(--s)) !important; border: 1px solid #000 !important; border-radius: 0; background: none !important;
+    font-family: 'Courier New', Courier, monospace; color: #000; text-align: justify; }
+.fxp-card .slip-row { display: flex; justify-content: space-between; gap: 3mm; border-bottom: 1px dashed #888; padding: .3mm 0; }
+.fxp-card .slip-row > span:last-child { text-align: right; white-space: nowrap; }
+.fxp-card .slip-bold { font-weight: bold; }
+.fxp-card .slip-row > span:first-child { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; flex: 1 1 auto; text-align: left; }
+.fxp-card .slip-box, .fxp-card .fxp-remark { overflow-wrap: anywhere; max-width: 100%; box-sizing: border-box; }
+.fxp-page { overflow: hidden; }
+.fxp-page.fxp-fill { overflow: visible; }
+.fxp-card div[style*="font-size:.78em"] { font-size: calc(9pt * var(--s)) !important; }
+
+@media print {
+    /* page margins come from @page only - remove the screen padding of <body> in these two print modes */
+    body.print-fix, body.print-paystmt { padding: 0 !important; margin: 0 !important; background: #fff !important; }
+    /* ----- Fixation forms: A4 portrait ----- */
+    body.print-fix #printArea > :not(#fxpRoot) { display: none !important; }
+    body.print-fix #fxpRoot { display: block !important; }
+
+    /* ----- Mixed Pay Statement: A4 landscape ----- */
+    body.print-paystmt #printArea > .annex-page,
+    body.print-paystmt #sbLeaveBlock,
+    body.print-paystmt #fxpRoot { display: none !important; }
+    body.print-paystmt .sb-header { margin-bottom: 3mm; padding-bottom: 1.5mm; }
+    body.print-paystmt .sb-header h1 { font-size: 18pt; }
+    body.print-paystmt .sb-header h2 { font-size: 13pt; margin: 1mm 0 0 0; }
+    body.print-paystmt .sb-meta-table { margin-bottom: 2mm; }
+    body.print-paystmt .sb-meta-table td { font-size: 11.5pt; padding: 1mm 0; }
+    body.print-paystmt .sb-section-title { page-break-before: auto !important; break-before: auto !important;
+        page-break-after: avoid; break-after: avoid; font-size: 13.5pt; margin: 5mm 0 2mm 0; padding-bottom: 1mm; }
+    body.print-paystmt .sb-main-table { table-layout: fixed; width: 100%; margin-top: 0; }
+    body.print-paystmt .sb-main-table thead th { font-size: 10pt !important; padding: 1.6mm 1mm !important; line-height: 1.15; }
+    body.print-paystmt .sb-main-table td { font-size: 10.5pt !important; padding: 1.5mm 1.8mm !important; vertical-align: middle; line-height: 1.25; }
+    body.print-paystmt .sb-main-table td[style*="font-size"] { font-size: 10pt !important; }
+    body.print-paystmt .sb-main-table td .slip-box { font-size: 9.6pt !important; padding: 1.5mm 3mm !important; margin-top: 1.2mm; }
+    body.print-paystmt .sb-main-table td .slip-row { padding: .4mm 0; }
+    body.print-paystmt .sb-main-table td .slip-row > span:first-child { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; flex: 1 1 auto; text-align: left; }
+    body.print-paystmt .sb-main-table td div[style*="font-size:.78em"] { font-size: .92em !important; }
+    /* column widths (sum = 100%) so the table always fills the full landscape width */
+    body.print-paystmt #sbTable90 th:nth-child(1), body.print-paystmt #sbTable98 th:nth-child(1) { width: 10%; }
+    body.print-paystmt #sbTable90 th:nth-child(2), body.print-paystmt #sbTable98 th:nth-child(2) { width: 10%; }
+    body.print-paystmt #sbTable90 th:nth-child(3), body.print-paystmt #sbTable98 th:nth-child(3) { width: 16%; }
+    body.print-paystmt #sbTable90 th:nth-child(4), body.print-paystmt #sbTable98 th:nth-child(4) { width: 10%; }
+    body.print-paystmt #sbTable90 th:nth-child(5), body.print-paystmt #sbTable98 th:nth-child(5) { width: 54%; }
+    body.print-paystmt #sbTable09 th:nth-child(1) { width: 8.5%; }  body.print-paystmt #sbTable09 th:nth-child(2) { width: 8.5%; }
+    body.print-paystmt #sbTable09 th:nth-child(3) { width: 15%; }   body.print-paystmt #sbTable09 th:nth-child(4) { width: 7.5%; }
+    body.print-paystmt #sbTable09 th:nth-child(5) { width: 8%; }    body.print-paystmt #sbTable09 th:nth-child(6) { width: 8.5%; }
+    body.print-paystmt #sbTable09 th:nth-child(7) { width: 44%; }
+    body.print-paystmt #sbTable19 th:nth-child(1) { width: 8.5%; }  body.print-paystmt #sbTable19 th:nth-child(2) { width: 8.5%; }
+    body.print-paystmt #sbTable19 th:nth-child(3) { width: 13%; }   body.print-paystmt #sbTable19 th:nth-child(4) { width: 5.5%; }
+    body.print-paystmt #sbTable19 th:nth-child(5) { width: 8%; }    body.print-paystmt #sbTable19 th:nth-child(6) { width: 9.5%; }
+    body.print-paystmt #sbTable19 th:nth-child(7) { width: 47%; }
+}
+</style>
+
 <style id="nsbStyle">
 .nsb-r{display:grid;grid-template-columns:150px 1fr 140px 1.4fr 34px;gap:6px;align-items:start;margin-bottom:6px}
 .nsb-r b{font-size:.78rem;color:#1e3a8a;padding-top:6px}
@@ -1028,7 +1154,8 @@
     </div>
     <div class="btn-group">
         <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
-        <button type="button" class="btn-print" onclick="printPayFixation()">Print Pay Fixation (A4 Portrait)</button>
+        <button type="button" class="btn-print" onclick="printPayStatement()">Print Mixed Pay Statement (A4 Landscape)</button>
+        <button type="button" class="btn-print" style="background:#047857;" onclick="printFixationForms()">Print Fixation Forms (A4 Portrait)</button>
         <label class="inline-check" style="margin-left:10px;"><input type="checkbox" id="ropa19FullTable" checked> ROPA-2019 PAY: generate year-by-year (untick = only pay as on option date + next increment date)</label>
         <label class="inline-check" style="margin-left:10px;">Generate ROPA-2019 up to (blank = up to DOR): <input type="date" id="ropa19UptoDate"></label>
     </div>
@@ -1628,6 +1755,8 @@
         <div class="annex-note" id="ax19Note"></div>
         <div class="annex-sig"><div class="annex-sig-line">Signature of the Head of the Institution with Designation</div></div>
     </div>
+
+    <div id="fxpRoot"></div>
 
     <div id="sbLeaveBlock">
         <h2 class="sb-section-title">Leave Account (Register)</h2>
@@ -4345,16 +4474,184 @@ function renderAll(){
 }
 
 function _printMode(mode){
+  const PAGE = {
+    leave:   'size:A4 landscape;margin:8mm;',
+    pay:     'size:A4 portrait;margin:10mm;',
+    paystmt: 'size:A4 landscape;margin:7mm 8mm;',
+    fix:     'size:A4 portrait;margin:8mm;'
+  };
   const st=document.createElement('style'); st.id='dynPageStyle';
-  st.textContent = mode==='leave' ? '@page{size:A4 landscape;margin:8mm;}' : '@page{size:A4 portrait;margin:10mm;}';
+  st.textContent = '@page{' + (PAGE[mode] || PAGE.pay) + '}';
   document.head.appendChild(st);
   document.body.classList.add('print-'+mode);
-  const clean=()=>{document.body.classList.remove('print-leave','print-pay'); st.remove(); window.removeEventListener('afterprint',clean);};
+  const clean=()=>{
+    document.body.classList.remove('print-leave','print-pay','print-paystmt','print-fix');
+    st.remove();
+    const fr=document.getElementById('fxpRoot'); if(fr) fr.innerHTML='';
+    window.removeEventListener('afterprint',clean);
+  };
   window.addEventListener('afterprint',clean);
   window.print();
 }
 function printLeaveAc(){ _printMode('leave'); }
-function printPayFixation(){ _printMode('pay'); }
+/* Mixed Pay Statement (ROPA-90/98/09/19 pay tables, incl. 10/18/20-yr + HM/AHM boxes) - A4 LANDSCAPE */
+function printPayStatement(){ _printMode('paystmt'); }
+function printPayFixation(){ printPayStatement(); }
+
+/* =====================================================================
+   FIXATION FORMS - A4 PORTRAIT
+   Annexure forms (ROPA-98 Annex VIII / ROPA-09 & ROPA-19 Annexure-III) are
+   enlarged so each fills a whole A4 sheet.  Promotion / AHM / HM fixation of
+   the same ROPA is added under its Annexure (or on its own sheet when there is
+   no Annexure for that ROPA, e.g. ROPA-98 / ROPA-90).  10 / 18 / 20 year
+   milestone fixation is intentionally NOT part of this print.
+   ===================================================================== */
+(function(){
+  const PROMO_RE = /PROMOTION|HIGHER SCALE|REVERSION|RECAST/i;
+  const PX_PER_MM = 96 / 25.4;
+  const AVAIL_PX = 277 * PX_PER_MM;          // usable height of one A4 portrait sheet (297 - 2x8mm margin, small safety)
+  const strip = s => String(s == null ? '' : s).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const fd = d => (d instanceof Date && !isNaN(d)) ? formatDate(d) : '';
+  const val = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  const REG = {
+    '90': { name: 'ROPA-1990', go: '' },
+    '98': { name: 'ROPA-1998', go: (typeof CAS_GO_REF !== 'undefined' && CAS_GO_REF['98']) || '' },
+    '09': { name: 'ROPA-2009', go: (typeof CAS_GO_REF !== 'undefined' && CAS_GO_REF['09']) || '' },
+    '19': { name: 'ROPA-2019', go: (typeof CAS_GO_REF !== 'undefined' && CAS_GO_REF['19']) || '' }
+  };
+
+  function promoRows(rows){
+    return (rows || []).filter(r => r && r.date instanceof Date && PROMO_RE.test(strip(r.label)));
+  }
+
+  function card(r, key){
+    let cols;
+    const rup = v => (v == null || v === '' || v === '-') ? '-' : '&#8377; ' + v;
+    if (key === '09') cols = [['W.E.F.', fd(r.date)], ['Up to', fd(r.dot)], ['Scale / Pay Band', r.scaleStr], ['Band Pay', r.trackCol], ['Grade Pay', rup(r.gpDisplay)], ['Basic Pay', rup(r.basicDisplay)]];
+    else if (key === '19') cols = [['W.E.F.', fd(r.date)], ['Up to', fd(r.dot)], ['Level', r.scaleStr], ['Cell', r.trackCol], ['Grade Pay', rup(r.gpDisplay)], ['Basic Pay', rup(r.basicDisplay)]];
+    else cols = [['W.E.F.', fd(r.date)], ['Up to', fd(r.dot)], ['Scale of Pay', r.scaleStr], ['Basic Pay', rup(r.basicDisplay)]];
+    const widths = (key === '09' || key === '19') ? [14, 14, 26, 12, 14, 20] : [18, 18, 40, 24];
+    return '<div class="fxp-card">' +
+      '<div class="fxp-card-h"><span>' + (r.label || '') + '</span></div>' +
+      '<table class="fxp-strip"><colgroup>' + widths.map(w => '<col style="width:' + w + '%">').join('') + '</colgroup>' +
+      '<tr>' + cols.map(c => '<th>' + c[0] + '</th>').join('') + '</tr>' +
+      '<tr>' + cols.map(c => '<td>' + (c[1] == null || c[1] === '' ? '-' : c[1]) + '</td>').join('') + '</tr></table>' +
+      (r.casRemark ? '<div class="fxp-remark">' + r.casRemark + '</div>' : '') +
+      (r.slipHTML || '') + '</div>';
+  }
+
+  function subHead(key){
+    return '<div class="fxp-sub">Fixation on Promotion / AHM / HM &mdash; ' + REG[key].name +
+           (REG[key].go ? '<small>' + REG[key].go + '</small>' : '') + '</div>';
+  }
+
+  function metaBlock(key){
+    const sel = document.getElementById('empStatus');
+    const status = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.toUpperCase() : 'SUBSTANTIVE';
+    return '<div class="annex-title">Fixation on Promotion / AHM / HM</div>' +
+      '<div class="annex-seepara">Pay under ' + REG[key].name + (REG[key].go ? '<br><span style="font-weight:normal;font-size:.85em;">' + REG[key].go + '</span>' : '') + '</div>' +
+      '<table class="annex-table">' +
+        '<tr><td class="a-num">1.</td><td class="a-label">Name of the Institute / Office</td><td class="a-colon">:</td><td class="a-value">' + val('schoolName') + '</td></tr>' +
+        '<tr class="a-gap"><td class="a-num">2.</td><td class="a-label">Name and Designation of the Employee</td><td class="a-colon">:</td><td class="a-value">' + val('staffName') + ' ; ' + val('designation') + '</td></tr>' +
+        '<tr class="a-gap"><td class="a-num">3.</td><td class="a-label">Status (Substantive / Officiating)</td><td class="a-colon">:</td><td class="a-value">' + status + '</td></tr>' +
+      '</table>';
+  }
+
+  const SIG = '<div class="annex-sig"><div class="annex-sig-line">Signature of the Head of the Institution with Designation</div></div>';
+
+  function annexParts(node){
+    const c = node.cloneNode(true);
+    c.removeAttribute('id'); c.removeAttribute('style');
+    c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    const sig = c.querySelector('.annex-sig'); let sigHtml = SIG;
+    if (sig) { sigHtml = sig.outerHTML; sig.remove(); }
+    return { body: c.innerHTML, sig: sigHtml };
+  }
+
+  function page(inner, s, fill){
+    const el = document.createElement('section');
+    el.className = 'fxp-page' + (fill ? ' fxp-fill' : ' fxp-measure');
+    el.style.setProperty('--s', s.toFixed(3));
+    el.innerHTML = inner;
+    return el;
+  }
+
+  function heightAt(box, inner, s){
+    box.innerHTML = '';
+    const el = page(inner, s, false);
+    box.appendChild(el);
+    return el.getBoundingClientRect().height;
+  }
+
+  // largest scale in [lo,hi] whose content still fits on ONE sheet
+  function bestScale(box, inner, lo, hi){
+    if (heightAt(box, inner, hi) <= AVAIL_PX) return { s: hi, fit: true };
+    if (heightAt(box, inner, lo) > AVAIL_PX) return { s: lo, fit: false };
+    for (let i = 0; i < 8; i++) {
+      const mid = (lo + hi) / 2;
+      if (heightAt(box, inner, mid) <= AVAIL_PX) lo = mid; else hi = mid;
+    }
+    return { s: lo, fit: true };
+  }
+
+  function buildSheets(){
+    const box = document.createElement('div');
+    box.style.cssText = 'position:absolute;left:-20000px;top:0;width:194mm;visibility:hidden;';
+    document.body.appendChild(box);
+    const sheets = [];
+    const add = (inner, lo, hi) => { const r = bestScale(box, inner, lo, hi); sheets.push({ inner, s: r.s }); };
+
+    const regimes = [
+      ['90', document.getElementById('enableRopa90') && document.getElementById('enableRopa90').checked ? (window.CAS_ropa90Rows || []) : [], null],
+      ['98', window.CAS_ropa98Rows || [], document.getElementById('annexRopa98Page')],
+      ['09', window.CAS_ropa09Rows || [], document.getElementById('annexRopa09Page')],
+      ['19', window.CAS_ropa19Rows || [], document.getElementById('annexRopa19Page')]
+    ];
+
+    regimes.forEach(([key, rows, node]) => {
+      const pr = promoRows(rows);
+      const hasAnnex = node && node.style.display !== 'none';
+      const cards = pr.map(r => card(r, key));
+      let A = null;
+      if (hasAnnex) A = annexParts(node);
+
+      if (hasAnnex) {
+        if (cards.length) {
+          const combined = '<div class="fxp-annex">' + A.body + '</div>' + subHead(key) + cards.join('') + A.sig;
+          const r = bestScale(box, combined, 0.85, 1.4);
+          if (r.fit && r.s >= 1.0) { sheets.push({ inner: combined, s: r.s }); return; }
+        }
+        add('<div class="fxp-annex">' + A.body + '</div>' + A.sig, 0.9, 1.5);
+      }
+      if (cards.length) {
+        // promotion fixation on its own sheet(s) - greedy packing at s=0.9, then enlarge each sheet to fill
+        const mk = list => metaBlock(key) + subHead(key).replace('Fixation on Promotion / AHM / HM &mdash; ', 'Fixation Details &mdash; ') + list.join('') + SIG;
+        let i = 0;
+        while (i < cards.length) {
+          let j = i + 1;
+          while (j < cards.length && heightAt(box, mk(cards.slice(i, j + 1)), 0.9) <= AVAIL_PX) j++;
+          add(mk(cards.slice(i, j)), 0.9, 1.5);
+          i = j;
+        }
+      }
+    });
+    box.remove();
+    return sheets;
+  }
+
+  window.printFixationForms = function(){
+    if (!window.CAS_dataReady) { alert('Please click "Generate Pay Tables" first, then print the fixation forms.'); return; }
+    const root = document.getElementById('fxpRoot');
+    if (!root) return;
+    let sheets;
+    try { sheets = buildSheets(); } catch (e) { console.error(e); alert('Could not prepare the fixation forms: ' + e.message); return; }
+    if (!sheets.length) { alert('No fixation form to print.'); return; }
+    root.innerHTML = '';
+    sheets.forEach(sh => root.appendChild(page(sh.inner, sh.s, true)));
+    _printMode('fix');
+  };
+})();
+
 function doPrint(){
   printLeaveAc();
 }
