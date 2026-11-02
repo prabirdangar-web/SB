@@ -4190,7 +4190,7 @@ function annotateAllTablesWithLeave(tables){
   const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', commuted:'Commuted Leave', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
 
   tables.forEach(t=>{
-    (t.rows||[]).forEach((row,idx)=>{ row._lineNum = idx+1; row._leaveNotes = []; });
+    (t.rows||[]).forEach((row,idx)=>{ row._lineNum = idx+1; row._leaveNotes = []; row._leaveTot = {}; });
   });
 
   const firstSeen = {};
@@ -4204,6 +4204,7 @@ function annotateAllTablesWithLeave(tables){
         const overlapStart = eFrom > row.date ? eFrom : row.date;
         const overlapEnd = eTo < row.dot ? eTo : row.dot;
         if(overlapStart <= overlapEnd){
+          { const _sd = daysBetween(toISO(overlapStart), toISO(overlapEnd)); row._leaveTot[entry.type] = (row._leaveTot[entry.type]||0) + _sd; }
           if(!firstSeen[entry.id]){
             const segDays = daysBetween(toISO(overlapStart), toISO(overlapEnd));
             const label = typeLabel[entry.type] || entry.type;
@@ -4227,8 +4228,14 @@ function annotateAllTablesWithLeave(tables){
   tables.forEach(t=>{
     (t.rows||[]).forEach(row=>{
       const notes = row._leaveNotes.length ? [...new Set(row._leaveNotes)] : ['NO LEAVE'];
+      // period-wise quick-check totals (days of each leave type falling inside this row's period)
+      const _short = {avg:'ML', half:'HPL', commuted:'Commuted', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
+      const _tk = Object.keys(row._leaveTot||{});
+      const totLine = _tk.length
+        ? '<br><span style="font-weight:700;font-size:.8em;color:#7c2d12;">TOTAL IN THIS PERIOD: ' + _tk.map(k => (_short[k]||k) + ' = ' + row._leaveTot[k] + 'd').join(' | ') + '</span>'
+        : '';
       row.label = (row.label ? row.label + '<br>' : '')
-        + '<span style="font-weight:400;font-size:.78em;color:#334155;">' + notes.join('; ') + '</span>';
+        + '<span style="font-weight:400;font-size:.78em;color:#334155;">' + notes.join('; ') + '</span>' + totLine;
     });
   });
 }
