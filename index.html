@@ -2736,12 +2736,9 @@
                     let cumulativeLwp98 = lwpDaysAppliedBy(lwpEntries98, normalCycleDate);
                     let newLwpThisCycle98 = Math.max(0, cumulativeLwp98 - lwpConsumedSoFar98);
                     let incrementDate;
-                    if (interveningMilestone) {
-                        incrementDate = vestingExtendedNextDate(interveningMilestone.d);
-                        if (incrementDate < normalCycleDate) incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
-                    } else {
-                        incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
-                    }
+                    // A 10/20-year additional increment does NOT disturb the annual increment cycle: the next
+                    // increment stays on the 1st of the usual anchor month (same as ROPA-09 / ROPA-19).
+                    incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
                     lwpConsumedSoFar98 = cumulativeLwp98;
                     const okLower = (k === 0) ? incrementDate >= optionDate : incrementDate > segStart;
                     const okUpper = segEnd ? incrementDate < segEnd : incrementDate <= endDate;
