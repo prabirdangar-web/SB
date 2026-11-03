@@ -3087,7 +3087,7 @@
                 // ROPA-98 basic x 1.86 (rounded up to next Rs.10) + Grade Pay - same method as the 01-01-2006 fixation.
                 // AHM / HM posts are NOT re-fitted from ROPA-98 pay: ROPA-09 pay already drawn runs on (one additional increment in the
                 // existing ROPA-09 pay + change of Grade Pay), as per vetted fixation (e.g. HM High School 06-10-2007: 21,110 + 640 + GP 5400).
-                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
+                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && ev.evType !== 'highscale' && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /PROMOTION|HIGHER SCALE/i.test(r.label) && r.snapBasicPay)
                     : null;
                 if (r98fit) {
@@ -3128,7 +3128,7 @@
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.hmOptDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
-                            <div class="slip-row"><span>2. Fitted directly into Higher Scale GP ${runningGp.toLocaleString('en-IN')} (No promotional increment)</span><span>&mdash;</span></div>
+                            <div class="slip-row"><span>2. Higher Scale (same post): Band Pay unchanged, only difference of Grade Pay added (GP Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}); no re-fitment, no increment</span><span>+ Rs. ${(runningGp - oldGp).toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Fixed Basic Pay w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
                 }
