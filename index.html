@@ -5834,7 +5834,7 @@ let ropaUnsub = null;
 function dashboardFieldState() {
     const state = {};
     document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
-        if (el.id === 'dashboardJsonImport' || el.id === 'savedTeacherSelect') return;
+        if (el.id === 'dashboardJsonImport' || el.id === 'savedTeacherSelect' || el.id === 'topSavedTeacherSelect') return;
         state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
     });
     return state;
@@ -5893,6 +5893,7 @@ function getTeacherRecords() {
 }
 
 function setTeacherRecords(records) {
+    try{ records = JSON.parse(JSON.stringify(records)); }catch(e){}  // drop undefined (Firestore rejects it)
     teacherRecordsCache = records;
     try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records)); }catch(e){}
     const status = document.getElementById('dataSaveStatus');
@@ -6492,7 +6493,7 @@ function addSingleStaff() {
 function armDashboardAutoSave() {
     document.addEventListener('change', function(e) {
         if (!dashboardSaveArmed) return;
-        if (e.target && !['dashboardJsonImport','savedTeacherSelect'].includes(e.target.id)) saveTeacherRecord(false);
+        if (e.target && !['dashboardJsonImport','savedTeacherSelect','topSavedTeacherSelect'].includes(e.target.id)) saveTeacherRecord(false);
     });
 }
 
