@@ -1817,7 +1817,8 @@
         1900: 5400, 2100: 5580, 2300: 5860, 2600: 6240, 2900: 6700,
         3200: 7100, 3600: 7440, 3900: 8370, 4100: 8650,
         4400: 9000, 4600: 9300, 4700: 10230, 4800: 11160,
-        5400: 15600, 6600: 18600, 7000: 18600, 7600: 22320, 8000: 23250
+        5400: 15600, 6600: 18600, 7000: 18600, 7600: 22320, 8000: 23250,
+        8700: 37400, 8900: 37400, 9500: 37400, 10000: 37400
     };
 
     const pbMap19 = {
@@ -3087,7 +3088,7 @@
                 // ROPA-98 basic x 1.86 (rounded up to next Rs.10) + Grade Pay - same method as the 01-01-2006 fixation.
                 // AHM / HM posts are NOT re-fitted from ROPA-98 pay: ROPA-09 pay already drawn runs on (one additional increment in the
                 // existing ROPA-09 pay + change of Grade Pay), as per vetted fixation (e.g. HM High School 06-10-2007: 21,110 + 640 + GP 5400).
-                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && ev.evType !== 'highscale' && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
+                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && (ev.evType !== 'highscale' || ev.date <= new Date(2009, 2, 31)) && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /PROMOTION|HIGHER SCALE/i.test(r.label) && r.snapBasicPay)
                     : null;
                 if (r98fit) {
@@ -3120,7 +3121,8 @@
                             <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.hmOptDate || ev.date)}${ev.hmOptDate ? ' (as per option)' : ''}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
                         </div>`;
                 } else {
-                    const floorBand = minEntryPayBand09[runningGp] || 0;
+                    const _bgp = runningGp - (ev.agp || 0);
+                    const floorBand = _bgp <= 1800 ? 4900 : (_bgp <= 2900 ? 5400 : (_bgp <= 4100 ? 7100 : (_bgp <= 8000 ? 9000 : 37400)));  // minimum of the pay band (G.O. 46-SE(B) Rule 11(1)(b))
                     if (runningBandPay < floorBand) {
                         runningBandPay = floorBand;
                     }
