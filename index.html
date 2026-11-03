@@ -5868,6 +5868,7 @@ function restorePromoExtraRows(list) {
 function collectDashboardState() {
     return {
         version: 5,
+        release: window.__relBlock || undefined,
         savedAt: new Date().toISOString(),
         staffName: (document.getElementById('staffName')?.value || '').trim(),
         fields: dashboardFieldState(),
@@ -5978,6 +5979,7 @@ function loadTeacherRecordFromTop() {
 
 function applyDashboardState(data) {
     if (!data || typeof data !== 'object') throw new Error('Invalid dashboard JSON.');
+    window.__relBlock = data.release || null;
     const fields = data.fields || {};
     Object.keys(fields).forEach(id => {
         const el = document.getElementById(id);
