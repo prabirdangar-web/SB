@@ -2363,6 +2363,12 @@
     // target GP equals the GP already in force (e.g. AHM -> HM in the same scale): no
     // increment, no re-fixation, and the date of next increment is NOT disturbed.
     const AGP_AMOUNT = 200;
+    // Higher scale / promotion that falls AFTER the ROPA-09 Date of Option (i.e. the staff opted ROPA-09 while still in the
+    // lower scale): fixation continues in ROPA-09 on the pay as on the option date (one addl. increment / GP difference as per
+    // ROPA-09 rules) - it is NOT re-taken from the ROPA-98 higher-scale pay x 1.86. The only exception is a RECAST (AHM -> AT,
+    // pay recast, no protection), which still takes the ROPA-98 AT pay. Later HM / HM(High Sec.) events then continue from there.
+    // Set to true only to bring back the old ROPA-98 x 1.86 carry-over for promotions.
+    const ROPA09_USE_ROPA98_FIT = false;
     function prepPromoChain(promos, baseGp, doj, from, to, ropa, baseAgp) {
         const list = (promos || []).filter(p => p.date >= from && p.date <= to).map(p => ({ ...p, _orig: p }));
         const m18 = new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate());
@@ -3036,7 +3042,7 @@
                 // Recast / Reversion falling AFTER the 01-01-2006 option date but inside the ROPA-1998 notional window:
                 // the ROPA-98 timeline already holds the correct AT pay on this date (AHM / hm Jr High School / TIC BENEFIT DEDUCTED), so ROPA-09 pay
                 // = that ROPA-98 basic x 1.86 (rounded up to next Rs.10) + AT Grade Pay - same method as the 01-01-2006 fixation.
-                const r98rev = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate)
+                const r98rev = (!_isBg && ev.noProtect && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate)
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /RECAST|REVERSION/i.test(r.label) && r.snapBasicPay)
                     : null;
                 if (r98rev) {
@@ -3088,7 +3094,7 @@
                 // ROPA-98 basic x 1.86 (rounded up to next Rs.10) + Grade Pay - same method as the 01-01-2006 fixation.
                 // AHM / HM posts are NOT re-fitted from ROPA-98 pay: ROPA-09 pay already drawn runs on (one additional increment in the
                 // existing ROPA-09 pay + change of Grade Pay), as per vetted fixation (e.g. HM High School 06-10-2007: 21,110 + 640 + GP 5400).
-                const r98fit = (!_isBg && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && (ev.evType !== 'highscale' || ev.date <= new Date(2009, 2, 31)) && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
+                const r98fit = (!_isBg && ROPA09_USE_ROPA98_FIT && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && (ev.evType !== 'highscale' || ev.date <= new Date(2009, 2, 31)) && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /PROMOTION|HIGHER SCALE/i.test(r.label) && r.snapBasicPay)
                     : null;
                 if (r98fit) {
