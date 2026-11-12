@@ -738,6 +738,7 @@
         <button type="button" class="ibtn" title="Load selected teacher" onclick="loadTeacherRecordFromTop()"><i>&#128194;</i><b>Load</b></button>
         <button type="button" class="ibtn" title="New Teacher" onclick="newTeacherRecord()"><i>&#10133;</i><b>New</b></button>
         <button type="button" class="ibtn admin-only" style="background:#059669;" title="Save Teacher" onclick="saveTeacherRecord()"><i>&#128190;</i><b>Save</b></button>
+        <button type="button" class="ibtn" style="background:#7c3aed;" title="Open this teacher directly in the Arrear / Over Drawn / DA Dossier" onclick="openInArrearDossier()"><i>&#128209;</i><b>Arrear</b></button>
         <button type="button" class="ibtn" style="background:#7c3aed;" title="Export Teacher JSON" onclick="exportDashboardJSON()"><i>&#11015;</i><b>Export</b></button>
         <span class="qsep"></span>
         <button type="button" class="chip" title="Generate 10-Year CAS documents" onclick="generateCasDocuments('10')">10Y</button>
@@ -6051,6 +6052,18 @@ function applyDashboardState(data) {
     renderAll();
     const status = document.getElementById('dataSaveStatus');
     if (status) status.textContent = '✓ Teacher data loaded successfully.';
+}
+
+// Opens SB_ARREAR.html (same folder) with THIS teacher's data. A fresh copy is handed over through localStorage (same site),
+// and the teacher key is passed in the link so SB_ARREAR can also fall back to the saved cloud record.
+function openInArrearDossier() {
+    const status = document.getElementById('dataSaveStatus');
+    const data = collectDashboardState();
+    const key = teacherRecordKey(data.staffName);
+    if (!key) { if (status) { status.style.color = '#b91c1c'; status.textContent = 'Enter Teacher Name first.'; } return; }
+    try { localStorage.setItem('TFHS_SB_TO_ARREAR', JSON.stringify({ key: key, savedAt: Date.now(), data: data })); } catch (e) {}
+    if (isAdmin) { try { saveTeacherRecord(false); } catch (e) {} }
+    window.open('SB_ARREAR.html?sb=' + encodeURIComponent(key), '_blank');
 }
 
 function saveTeacherRecord(showMessage = true) {
