@@ -7099,8 +7099,8 @@ table.fxf-emol table td{text-align:left;border:none}
     }
     function tail09(ctx, row, dni) {
         const agp = row.snapAgp || 0, gp = row.snapGp - agp;
-        return '<div class="fxf-box"><div class="pl">Pay provisionally fixed at<br>Rs. <b>' + n0(row.snapBandPay + row.snapGp) + '/-</b> on <b>' + dot(row.date) + '</b><br>including Grade Pay Rs. <b>' + n0(gp) + (agp ? ' + AGP Rs.' + agp : '') + '/-</b><br>under the Pay Band Scale Rs. <b>9000/-&nbsp;&ndash;&nbsp;40,500/-</b> in terms of G.O. NO. 46-SE(B) dated 27.2.09 &amp; G.O. NO. 181-SE(B) dated 8.10.09.<br>Date of next increment .......<b>' + (dni ? dot(dni) : '-') + '</b>.' +
-            '<div class="di">District Inspector of Schools<br>(Secondary Education) ' + esc(ctx.district) + '</div></div>' +
+        /* ROPA-09: provisional-fixation note intentionally left blank - DI office affixes its stamp */
+        return '<div class="fxf-box"><div class="pl" style="min-height:28mm"></div>' +
             '<div class="pr"><div class="sigl">Signature of Head of the Institution /Administrator/President</div></div></div>';
     }
     function ax09Rows(o) {
@@ -7165,8 +7165,7 @@ table.fxf-emol table td{text-align:left;border:none}
         '<div class="annex-memo">Form for fixation of initial pay in the revised pay structure under memorandum of West Bengal Recognized Non Govt. Aided &amp; Govt. Sponsored Educational Institutions Revision of Pay and Allowances, 2019.</div>';
     function tail19(ctx, basic, level, date, dni) {
         return '<div class="fxf-box"><div class="pl"></div><div class="pr"><div class="sigl">Signature of the Head of the Institution with Designation</div></div></div>' +
-            '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3">Pay provisionally Fixed at Rs. <b>' + n0(basic) + '/-</b><br>on <b>' + dot(date) + '</b> in the level <b>' + level + '</b> of the Pay Matrix<br>in terms of Memo No-437-SE(P&amp;B) / SL / 5S-408 / 19<br>Dated 13.12.2019.<br>Date of next increment:- <b>' + (dni ? dot(dni) : '-') + '</b>.' +
-            '<div class="di">District Inspector of Schools (SE), ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+            '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3;min-height:28mm"></div><div class="pr"></div></div>';
     }
     function page19Generic(row, i, rows, ctx) {
         const dni = dniOf(rows, i, row);
@@ -7217,9 +7216,9 @@ table.fxf-emol table td{text-align:left;border:none}
                 '<div class="fxf-prov"><div class="pl">On the basis of declaration on option exercised by the employee the Basic Pay Provisionally fixed at Rs. <b>' + esc(T('ax98FixedTotal')) + '</b> on <b>' + esc(T('ax98EffectDate')) + '</b> in the Scale of Pay Rs. <b>' + esc(T('ax98RevScaleA')) + '</b> in terms of G.O. No.-25-SE (B) dated 12.02.1999.<br>The Date of next increment:- <b>' + esc(T('ax98NextIncrement')) + '</b><div class="di">District Inspector of Schools (SE)<br>' + esc(ctx.district) + '</div></div>' +
                 '<div class="pr"><div class="sigl">Signature of Checking Authority</div><div style="margin-top:6mm">Designation</div><div style="margin-top:6mm">Date</div></div></div>';
         } else if (id === 'annexRopa19Page') {
-            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3">Pay provisionally Fixed at Rs. <b>' + esc(T('ax19RevisedBasic').replace(/^Rs\.?\s*/i, '')) + '/-</b><br>on <b>' + esc(window.CAS_axData && window.CAS_axData.ropa19OptionDate ? dot(window.CAS_axData.ropa19OptionDate) : '') + '</b> in the level <b>' + esc(T('ax19Level').replace(/^LEVEL-0?/, '')) + '</b> of the Pay Matrix<br>in terms of Memo No-437-SE(P&amp;B) / SL / 5S-408 / 19<br>Dated 13.12.2019.<br>Date of next increment:- <b>' + esc((function(){ const c = document.querySelector('#ax19IncrementBody tr td'); const t = c ? c.textContent.trim() : ''; return /^\d\d-\d\d-\d{4}$/.test(t) ? t.replace(/-/g, '.') : T('ax19NextIncrement'); })()) + '</b>.<div class="di">District Inspector of Schools (SE), ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="flex:1.3;min-height:28mm"></div><div class="pr"></div></div>';
         } else if (id === 'annexRopa09Page') {
-            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl">Pay provisionally fixed at<br>Rs. <b>' + esc(T('ax09RevisedBasic').replace(/^Rs\.?\s*/i, '')) + '/-</b> on <b>' + esc(T('ax09EffectDate')) + '</b><br>under the Pay Band Scale Rs. <b>9000/- &ndash; 40,500/-</b> in terms of G.O. NO. 46-SE(B) dated 27.2.09 &amp; G.O. NO. 181-SE(B) dated 8.10.09.<br>Date of next increment .......<b>' + esc(T('ax09NextIncrement')) + '</b>.<div class="di">District Inspector of Schools<br>(Secondary Education) ' + esc(ctx.district) + '</div></div><div class="pr"></div></div>';
+            tail = '<div class="fxf-box" style="margin-top:2mm"><div class="pl" style="min-height:28mm"></div><div class="pr"></div></div>';
         }
         return page(el.innerHTML + tail);
     }
