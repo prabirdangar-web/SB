@@ -3094,7 +3094,7 @@
                 // ROPA-98 basic x 1.86 (rounded up to next Rs.10) + Grade Pay - same method as the 01-01-2006 fixation.
                 // AHM / HM posts are NOT re-fitted from ROPA-98 pay: ROPA-09 pay already drawn runs on (one additional increment in the
                 // existing ROPA-09 pay + change of Grade Pay), as per vetted fixation (e.g. HM High School 06-10-2007: 21,110 + 640 + GP 5400).
-                const r98fit = (!_isBg && ROPA09_USE_ROPA98_FIT && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && (ev.evType !== 'highscale' || ev.date <= new Date(2009, 2, 31)) && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
+                const r98fit = (!_isBg && (ROPA09_USE_ROPA98_FIT || ev.evType === 'highscale') && Array.isArray(window.__ropa98FitRows) && ev.date > optionDate && (ev.evType !== 'highscale' || ev.date <= new Date(2009, 2, 31)) && !['ahm', 'hmjr', 'hm', 'hmhs'].includes(ev.kind))
                     ? window.__ropa98FitRows.find(r => r.date.getTime() === ev.date.getTime() && /PROMOTION|HIGHER SCALE/i.test(r.label) && r.snapBasicPay)
                     : null;
                 if (r98fit) {
@@ -3105,6 +3105,15 @@
                     incAmt = 0;
                     ev._fit98 = true;
                     ev._fit98Info = { b98: b98, raw: raw98, scaleKey: r98fit.snapScaleKey };
+                    if (ev.evType === 'highscale') {
+                    // HIGHER SCALE inside the ROPA-98 window: fitted directly in the higher scale (ROPA-98 stage x 1.86 + new GP), no promotional increment
+                    slipBlockHTML = `
+                        <div class="slip-box">
+                            <div class="slip-row"><span>1. Existing Pay on ${formatDate(ev.date)} :</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>2. Fitted directly into Higher Scale GP ${runningGp.toLocaleString('en-IN')} (No promotional increment) :</span><span>&mdash;</span></div>
+                            <div class="slip-row"><span class="slip-bold">3. Fixed Basic Pay w.e.f ${formatDate(ev.date)} :</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                        </div>`;
+                    } else
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. ROPA-1998 basic pay as on ${formatDate(ev.date)} after promotion benefit (${ropa98ScaleLabel(r98fit.snapScaleKey)})</span><span class="slip-bold">Rs. ${b98.toLocaleString('en-IN')}</span></div>
