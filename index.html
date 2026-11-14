@@ -6694,7 +6694,7 @@ function secAll(open){ document.querySelectorAll('.container h3[id^="tab-"]').fo
       h.parentNode.insertBefore(body,h.nextSibling);
       h._setOpen=function(o){ body.style.display=o?'':'none'; h.classList.toggle('closed',!o); };
       h.addEventListener('click',function(){ h._setOpen(body.style.display==='none'); });
-      h._setOpen(i===0);
+      h._setOpen(false);
     });
     var links=[].slice.call(document.querySelectorAll('.top-tabs a'));
     links.forEach(function(a){
@@ -7417,5 +7417,284 @@ window.printAnnex98 = function () {
   if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone&&bar){ bar.firstChild.innerHTML='Install: tap <b>Share</b> &rarr; <b>Add to Home Screen</b>'; bar.querySelectorAll('button')[0].style.display='none'; bar.style.display='flex'; }
 })();
 </script>
+<style id="wdStyle">
+#wdBar{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;z-index:99997;display:none;flex-wrap:wrap;gap:3px;align-items:center;justify-content:center;max-width:96vw;padding:5px 7px;background:#f8fafc;border:1px solid #64748b;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+#wdBar button,#wdBar select{padding:4px 7px;font-size:.78rem;border:1px solid #cbd5e1;border-radius:5px;background:#fff;color:#0f172a;cursor:pointer;min-height:0;font-weight:700}
+#wdBar button:hover{background:#e0e7ff}
+#wdBar input[type=color]{width:28px;height:26px;padding:0;border:1px solid #cbd5e1;border-radius:5px;background:#fff}
+#wdBar .wd-sep{width:1px;height:20px;background:#cbd5e1;margin:0 2px}
+#wdBar .wd-lbl{font-size:.68rem;color:#475569;font-weight:700}
+.wd-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:4px 8px;margin:0 0 6px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:7px;font-family:Arial,sans-serif;font-size:.74rem}
+.wd-ctl .wd-t{flex:1 1 200px;font-weight:800;color:#1e3a8a;cursor:pointer}
+.wd-ctl button{padding:3px 9px;font-size:.72rem;border:none;border-radius:5px;background:#1e3a8a;color:#fff;cursor:pointer;font-weight:700}
+.wd-ctl button[data-a=edit],.wd-ctl button[data-m=edit]{background:#059669}
+.wd-ctl button[data-a=reset]{background:#64748b}
+.wd-ctl label{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:#334155}
+.wd-master{background:#fef9c3;border-color:#fde047}
+.wd-body.wd-collapsed{display:none!important}
+.wd-body.wd-edit{outline:2px dashed #2563eb;outline-offset:3px;background:#fffff0;min-height:30px;caret-color:#1d4ed8}
+.wd-body.wd-edit table td,.wd-body.wd-edit table th{outline:1px dotted #cbd5e1}
+.wd-body [data-pb]{page-break-after:always;break-after:page;height:0}
+.wd-body.wd-edit [data-pb]{border-top:2px dashed #94a3b8;height:6px}
+.wd-body.wd-edit [data-pb]::after{content:"page break";font:9px Arial;color:#64748b}
+@media print{#wdBar,.wd-ctl{display:none!important}}
+</style>
+<script>
+/* =========================================================================
+   WORD-STYLE EDITING OF GENERATED DOCUMENTS (additive; no existing calculation changed)
+   - every generated document (CAS set, All Fixation Forms, Pay Structure Statement,
+     HM/AHM form, Annexure VIII) is COLLAPSED by default, with per-document options:
+     View/Hide, Edit (Word-like toolbar), Reset to generated, Include in print
+   - edits are written back into the same data that the Print buttons already use
+   ========================================================================= */
+(function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var active = null, saved = null;
+
+    /* ---------- floating Word-like toolbar ---------- */
+    var bar = document.createElement('div');
+    bar.id = 'wdBar'; bar.className = 'no-print';
+    var FONTS = ['Times New Roman', 'Lucida Bright', 'Arial', 'Georgia', 'Courier New', 'Nirmala UI', 'Vrinda', 'Verdana'];
+    var SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28];
+    var B = function (c, t, h) { return '<button type="button" data-c="' + c + '" title="' + h + '">' + t + '</button>'; };
+    bar.innerHTML =
+        '<span class="wd-lbl">&#9998; Word tools</span>' +
+        '<select data-s="font" title="Font"><option value="">Font</option>' + FONTS.map(function (f) { return '<option>' + f + '</option>'; }).join('') + '</select>' +
+        '<select data-s="size" title="Font size (pt)"><option value="">Size</option>' + SIZES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>' +
+        '<span class="wd-sep"></span>' +
+        B('bold', '<b>B</b>', 'Bold (Ctrl+B)') + B('italic', '<i>I</i>', 'Italic (Ctrl+I)') + B('underline', '<u>U</u>', 'Underline (Ctrl+U)') + B('strikeThrough', '<s>S</s>', 'Strikethrough') +
+        B('subscript', 'x<sub>2</sub>', 'Subscript') + B('superscript', 'x<sup>2</sup>', 'Superscript') +
+        '<input type="color" data-k="foreColor" value="#000000" title="Text colour"><input type="color" data-k="hiliteColor" value="#ffff00" title="Highlight colour">' +
+        '<span class="wd-sep"></span>' +
+        B('justifyLeft', '&#8676;', 'Align left') + B('justifyCenter', '&#8596;', 'Centre') + B('justifyRight', '&#8677;', 'Align right') + B('justifyFull', '&#9776;', 'Justify') +
+        B('insertUnorderedList', '&bull; List', 'Bullet list') + B('insertOrderedList', '1. List', 'Numbered list') + B('outdent', '&#8678;', 'Decrease indent') + B('indent', '&#8680;', 'Increase indent') +
+        '<span class="wd-sep"></span>' +
+        B('@table', '&#9638; Table', 'Insert table') + B('@addRow', '+Row', 'Add row below') + B('@addCol', '+Col', 'Add column right') + B('@delRow', '&minus;Row', 'Delete row') + B('@delCol', '&minus;Col', 'Delete column') +
+        B('@hr', '&#8213;', 'Horizontal line') + B('@blank', '____', 'Insert blank to fill by hand') + B('@pb', '&#9112; Page break', 'Insert page break') +
+        '<span class="wd-sep"></span>' +
+        B('undo', '&#8630;', 'Undo (Ctrl+Z)') + B('redo', '&#8631;', 'Redo') + B('removeFormat', 'Tx', 'Clear formatting') + B('@find', 'Find&amp;Replace', 'Find and replace in this document') +
+        B('@done', '&#10004; Done', 'Close editing of the active document');
+    document.body.appendChild(bar);
+
+    document.addEventListener('selectionchange', function () {
+        var s = window.getSelection();
+        if (active && s.rangeCount && active.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange();
+    });
+    bar.addEventListener('mousedown', function (e) { if (!/^(SELECT|INPUT)$/.test(e.target.tagName)) e.preventDefault(); });
+    function restore() {
+        if (!active) return false;
+        active.focus();
+        if (saved) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(saved); }
+        return true;
+    }
+    function ping() { if (active) active.dispatchEvent(new Event('input', { bubbles: true })); }
+    function cellOf() {
+        var s = window.getSelection(); if (!s.rangeCount) return null;
+        var n = s.anchorNode; n = n && n.nodeType === 3 ? n.parentNode : n;
+        var c = n && n.closest ? n.closest('td,th') : null;
+        return (c && active && active.contains(c)) ? c : null;
+    }
+    function tableHtml() {
+        var r = parseInt(prompt('Number of rows?', '3'), 10), c = parseInt(prompt('Number of columns?', '3'), 10);
+        if (!(r > 0 && c > 0)) return '';
+        var h = '<table style="border-collapse:collapse;width:100%;margin:6px 0;">';
+        for (var i = 0; i < r; i++) { h += '<tr>'; for (var j = 0; j < c; j++) h += '<td style="border:1px solid #000;padding:4px;">&nbsp;</td>'; h += '</tr>'; }
+        return h + '</table><p><br></p>';
+    }
+    function findReplace() {
+        var a = prompt('Find what?'); if (!a) return;
+        var b = prompt('Replace with? (leave empty to just count)', '');
+        var w = document.createTreeWalker(active, NodeFilter.SHOW_TEXT, null), n, cnt = 0, list = [];
+        while ((n = w.nextNode())) list.push(n);
+        list.forEach(function (t) {
+            var parts = t.nodeValue.split(a);
+            if (parts.length > 1) { cnt += parts.length - 1; if (b !== null && b !== '') t.nodeValue = parts.join(b); }
+        });
+        alert(cnt + ' occurrence(s) ' + ((b !== null && b !== '') ? 'replaced.' : 'found.'));
+        if (b) ping();
+    }
+    function setSize(pt) {
+        if (!restore()) return;
+        document.execCommand('fontSize', false, '7');
+        [].slice.call(active.querySelectorAll('font[size="7"]')).forEach(function (f) {
+            var sp = document.createElement('span'); sp.style.fontSize = pt + 'pt';
+            while (f.firstChild) sp.appendChild(f.firstChild);
+            f.parentNode.replaceChild(sp, f);
+        });
+        ping();
+    }
+    bar.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('button[data-c]'); if (!b || !active) return;
+        var c = b.getAttribute('data-c');
+        if (c === '@done') { var ctl = active._ctl; if (ctl) ctl.setEdit(false); return; }
+        if (!restore()) return;
+        if (c === '@table') { var h = tableHtml(); if (h) document.execCommand('insertHTML', false, h); }
+        else if (c === '@hr') document.execCommand('insertHTML', false, '<hr style="border:0;border-top:1px solid #000;margin:6px 0;"><p><br></p>');
+        else if (c === '@blank') document.execCommand('insertText', false, '_ _ _ _ _ _ _ _ _ _ _ _ _');
+        else if (c === '@pb') document.execCommand('insertHTML', false, '<div data-pb="1" style="page-break-after:always;break-after:page;"></div><p><br></p>');
+        else if (c === '@find') findReplace();
+        else if (c === '@addRow' || c === '@delRow' || c === '@addCol' || c === '@delCol') {
+            var cell = cellOf(); if (!cell) { alert('Click inside a table cell first.'); return; }
+            var tr = cell.parentNode, idx = cell.cellIndex, tbl = tr.closest('table');
+            if (c === '@addRow') { var nr = tr.cloneNode(true); [].slice.call(nr.cells).forEach(function (x) { x.innerHTML = '&nbsp;'; }); tr.parentNode.insertBefore(nr, tr.nextSibling); }
+            else if (c === '@delRow') tr.parentNode.removeChild(tr);
+            else if (c === '@addCol') [].slice.call(tbl.rows).forEach(function (r) { var src = r.cells[Math.min(idx, r.cells.length - 1)]; if (!src) return; var nc = src.cloneNode(false); nc.innerHTML = '&nbsp;'; r.insertBefore(nc, src.nextSibling); });
+            else [].slice.call(tbl.rows).forEach(function (r) { if (r.cells[idx]) r.removeChild(r.cells[idx]); });
+            ping();
+        }
+        else document.execCommand(c, false, null);
+    });
+    bar.addEventListener('change', function (e) {
+        var t = e.target, s = t.getAttribute('data-s'), k = t.getAttribute('data-k');
+        if (s === 'font' && t.value) { if (restore()) document.execCommand('fontName', false, t.value); t.selectedIndex = 0; }
+        else if (s === 'size' && t.value) { setSize(t.value); t.selectedIndex = 0; }
+        else if (k) { if (restore()) document.execCommand(k, false, t.value); }
+    });
+    function updBar() { bar.style.display = document.querySelector('.wd-edit') ? 'flex' : 'none'; }
+
+    /* ---------- helpers ---------- */
+    function clean(el) {
+        var c = el.cloneNode(true);
+        [c].concat([].slice.call(c.querySelectorAll('*'))).forEach(function (n) {
+            n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck');
+            if (n.classList) { n.classList.remove('wd-edit', 'wd-collapsed', 'wd-body'); if (!n.classList.length) n.removeAttribute('class'); }
+        });
+        return c;
+    }
+    function openSec(id) { var h = $(id); if (h && h._setOpen) h._setOpen(true); }
+
+    /* one controller per generated document */
+    function ctl(body, title, sync, opts) {
+        opts = opts || {};
+        var el = document.createElement('div'); el.className = 'wd-ctl no-print';
+        el.innerHTML = '<span class="wd-t" title="Click to show / hide">' + title + '</span>' +
+            '<button type="button" data-a="open"></button><button type="button" data-a="edit"></button>' +
+            '<button type="button" data-a="reset" title="Discard edits and restore the generated text">&#8634; Reset</button>' +
+            (opts.noInc ? '' : '<label><input type="checkbox" data-a="inc" checked> Include in print</label>');
+        var c = { body: body, el: el, inc: true };
+        body._orig = body.innerHTML; body._ctl = c;
+        body.classList.add('wd-body', 'wd-collapsed');
+        var ob = el.querySelector('[data-a=open]'), eb = el.querySelector('[data-a=edit]'), cb = el.querySelector('[data-a=inc]');
+        c.isOpen = function () { return !body.classList.contains('wd-collapsed'); };
+        c.setOpen = function (o) { body.classList.toggle('wd-collapsed', !o); ob.innerHTML = o ? '&#9662; Hide' : '&#9656; View'; };
+        c.setEdit = function (on) {
+            if (on) { c.setOpen(true); body.setAttribute('contenteditable', 'true'); body.setAttribute('spellcheck', 'false'); active = body; saved = null; }
+            else { body.removeAttribute('contenteditable'); body.removeAttribute('spellcheck'); if (active === body) active = null; }
+            body.classList.toggle('wd-edit', !!on);
+            eb.innerHTML = on ? '&#10004; Done editing' : '&#9998; Edit';
+            if (on) body.focus();
+            updBar();
+        };
+        c.setInc = function (v) { c.inc = v; if (cb) cb.checked = v; if (opts.onInc) opts.onInc(v); };
+        el.addEventListener('click', function (e) {
+            var a = e.target.getAttribute && e.target.getAttribute('data-a');
+            if (e.target.classList && e.target.classList.contains('wd-t')) a = 'open';
+            if (a === 'open') c.setOpen(!c.isOpen());
+            else if (a === 'edit') c.setEdit(!body.classList.contains('wd-edit'));
+            else if (a === 'reset') { if (confirm('Discard all edits in this document and restore the generated text?')) { body.innerHTML = body._orig; sync(); } }
+        });
+        if (cb) cb.addEventListener('change', function () { c.setInc(cb.checked); });
+        body.addEventListener('input', sync);
+        body.addEventListener('focusin', function () { if (body.classList.contains('wd-edit')) active = body; });
+        c.setOpen(false); eb.innerHTML = '&#9998; Edit';
+        return c;
+    }
+    function master(host, before, list, label) {
+        var m = document.createElement('div'); m.className = 'wd-ctl wd-master no-print';
+        m.innerHTML = '<b style="color:#713f12">' + label + '</b><button type="button" data-m="open">Expand all</button><button type="button" data-m="close">Collapse all</button>' +
+            '<button type="button" data-m="edit">Edit all</button><button type="button" data-m="lock">Lock all</button>' +
+            '<button type="button" data-m="inc1" style="background:#0f766e">Print: select all</button><button type="button" data-m="inc0" style="background:#64748b">Print: select none</button>';
+        m.addEventListener('click', function (e) {
+            var k = e.target.getAttribute && e.target.getAttribute('data-m'); if (!k) return;
+            list.forEach(function (c) {
+                if (k === 'open') c.setOpen(true); else if (k === 'close') c.setOpen(false);
+                else if (k === 'edit') c.setEdit(true); else if (k === 'lock') c.setEdit(false);
+                else if (k === 'inc1') c.setInc(true); else if (k === 'inc0') c.setInc(false);
+            });
+        });
+        host.insertBefore(m, before);
+    }
+    function hook(name, after) {
+        var orig = window[name];
+        if (typeof orig !== 'function') return;
+        window[name] = function () { var r = orig.apply(this, arguments); try { after(); } catch (e) { console.error('wd', e); } return r; };
+    }
+
+    /* ---------- 1. CAS document set ---------- */
+    hook('generateCasDocuments', function () {
+        var box = $('casDocPreview'), docs = window._casDocs;
+        if (!box || !docs) return;
+        var cards = [].slice.call(box.children).filter(function (x) { return x.matches('div[style*="border:1px solid #cbd5e1"]'); });
+        var list = [];
+        cards.forEach(function (card, i) {
+            var body = card.lastElementChild, head = card.firstElementChild, st = head.querySelector('strong');
+            var c = ctl(body, st ? st.innerHTML : 'Document ' + (i + 1), function () {
+                if (docs[i]) docs[i].body = clean(body).innerHTML;
+            }, { onInc: function (v) { if (docs[i]) docs[i]._skip = !v; } });
+            card.insertBefore(c.el, body);
+            if (st) { st.style.cursor = 'pointer'; st.addEventListener('click', function () { c.setOpen(!c.isOpen()); }); }
+            list.push(c);
+        });
+        if (list.length) master(box, cards[0], list, 'All ' + list.length + ' documents (collapsed by default):');
+        openSec('tab-cas');
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    var pa = window.casPrintAll;
+    if (typeof pa === 'function') window.casPrintAll = function () {
+        var all = window._casDocs || [];
+        var pick = all.filter(function (d) { return !d._skip; });
+        if (!pick.length) { alert('No document is selected for printing.'); return; }
+        window._casDocs = pick;
+        try { pa(); } finally { window._casDocs = all; }
+    };
+
+    /* ---------- 2. All Fixation Forms (ROPA-98 -> 19) ---------- */
+    hook('generateAllFixationForms', function () {
+        var box = $('allFixFormsPreview'); if (!box || !window._fxfDoc) return;
+        var caps = [].slice.call(box.querySelectorAll(':scope > .fxf-cap')), list = [];
+        function syncAll() {
+            window._fxfDoc.html = list.filter(function (c) { return c.inc; }).map(function (c) { return clean(c.body).outerHTML; }).join('');
+        }
+        caps.forEach(function (cap) {
+            var page = cap.nextElementSibling; if (!page || !page.classList.contains('fxf-page')) return;
+            var c = ctl(page, cap.innerHTML, syncAll, { onInc: syncAll });
+            cap.parentNode.insertBefore(c.el, page);
+            cap.style.display = 'none';
+            list.push(c);
+        });
+        if (list.length) master(box, box.firstChild, list, 'All ' + list.length + ' fixation forms (collapsed by default):');
+        openSec('tab-promotion');
+    });
+
+    /* ---------- 3. Pay Structure Statement ---------- */
+    hook('generatePayStructureStatement', function () {
+        var host = $('psfPreview'), body = host && host.querySelector('.psf-doc');
+        if (!body || !window._psfDoc) return;
+        var c = ctl(body, 'Pay Structure Statement', function () { window._psfDoc.html = clean(body).outerHTML; }, { noInc: true });
+        host.insertBefore(c.el, host.firstChild);
+        body.parentNode.style.border = 'none'; body.parentNode.style.padding = '0';
+        openSec('tab-promotion');
+    });
+
+    /* ---------- 4. HM / AHM fixation form (ROPA-2019) ---------- */
+    hook('casGenerateHmAhmForm', function () {
+        var host = $('hmAhmFormPreview'), body = host && host.querySelector('.cas-hmahm-form');
+        if (!body || !window._casHmAhmDoc) return;
+        var c = ctl(body, 'HM / AHM Fixation Form (ROPA-2019)', function () { window._casHmAhmDoc.body = clean(body).innerHTML; }, { noInc: true });
+        body.parentNode.insertBefore(c.el, body);
+        openSec('tab-promotion');
+    });
+
+    /* ---------- 5. Annexure VIII (ROPA-98 Rule 7) ---------- */
+    hook('generateAnnex98', function () {
+        var host = $('annex98Preview'), page = host && host.querySelector('.fxf-page');
+        if (!page || !window._annex98Html) return;
+        var c = ctl(page, 'Annexure VIII (ROPA-98 Rule 7)', function () { window._annex98Html = clean(page).outerHTML; }, { noInc: true });
+        host.insertBefore(c.el, page);
+        openSec('tab-ropa90');
+    });
+})();
+</script>
+
 </body>
 </html>
