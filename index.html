@@ -3315,7 +3315,9 @@
         ];
         if (isExcludedFrom18Y) milestoneDefs19 = milestoneDefs19.filter(m => m.name !== "18 YEARS");
 
-        let lwpConsumedSoFar19 = 0;
+        // LWP that began on/before the ROPA-2019 option date was already dealt with in the earlier ROPA tables,
+        // so it must NOT defer the first ROPA-2019 increments again (e.g. 2005-09 LWP wrongly deferring 01-07-2016).
+        let lwpConsumedSoFar19 = lwpDaysAppliedBy(lwpEntries19, startDate);
         const cutEv19 = chain19.filter(p => !p.designationOnly);   // reversions also start a new segment (AT cycle)
         const cuts19 = [startDate, ...cutEv19.map(p => p.date)];
         const cutRevert19 = [null, ...cutEv19.map(p => p.isRevert)];
