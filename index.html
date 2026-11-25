@@ -2533,14 +2533,36 @@
         return out;
     }
 
+    // Total LWP days that postpone a milestone. The shifted completion date can itself run into further
+    // LWP entries that start AFTER the original date but BEFORE the shifted date, so keep re-counting
+    // until the total is stable (otherwise part of e.g. a 601-day LWP is silently ignored).
+    function lwpTotalForShift(originalDate, entries) {
+        let days = lwpDaysAppliedBy(entries, originalDate);
+        for (let i = 0; i < 25 && days > 0; i++) {
+            const again = lwpDaysAppliedBy(entries, addDays(originalDate, days));
+            if (again === days) break;
+            days = again;
+        }
+        return days;
+    }
+
     function resolveDateNoWindow(originalDate, entries) {
-        const lwpDays = lwpDaysAppliedBy(entries, originalDate);
+        const lwpDays = lwpTotalForShift(originalDate, entries);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
     }
 
+    // Wrapper: adds the NORMAL (no-LWP) benefit date so the remarks can show the correct "notional date"
+    // (01-Jul when the completion falls in 2.1-30.6, otherwise the exact anniversary).
     function resolveDateWithLwp(originalDate, entries) {
+        const r = resolveDateWithLwpCore(originalDate, entries);
+        r.originalWin = checkWindow(originalDate);
+        r.normalDate = r.originalWin === 'A' ? new Date(originalDate.getFullYear(), 6, 1) : new Date(originalDate);
+        return r;
+    }
+
+    function resolveDateWithLwpCore(originalDate, entries) {
         const win = checkWindow(originalDate);
-        const lwpDays = lwpDaysAppliedBy(entries, originalDate);
+        const lwpDays = lwpTotalForShift(originalDate, entries);
 
         // Whenever LWP pushes a 10/18/20-Year milestone forward by that many days and the
         // resulting (shifted) date itself lands within 2.1–30.6 of its own year, ROPA-09 /
@@ -2576,7 +2598,7 @@
         // ROPA-2019 milestone dates, a ROPA-1998 10/18/20-Year milestone is NEVER
         // snapped to a Jan2-Jun30 "window" — it always falls on the exact anniversary
         // of the 1st Date of Joining, shifted only by any LWP days actually taken.
-        const lwpDays = lwpDaysAppliedBy(entries, originalDate);
+        const lwpDays = lwpTotalForShift(originalDate, entries);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
     }
 
@@ -2986,7 +3008,7 @@
             if (milestone.d >= optionDate) {
                 let resolved = resolveDateWithLwp(milestone.d, lwpEntries09);
                 if (resolved.date <= endDate) {
-                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
+                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.normalDate, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
                 }
             }
         });
@@ -3333,7 +3355,7 @@
             if (milestone.d >= startDate) {
                 let resolved = resolveDateWithLwp(milestone.d, lwpEntries19);
                 if (resolved.date <= dor) {
-                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
+                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.normalDate, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
                 }
             }
         });
